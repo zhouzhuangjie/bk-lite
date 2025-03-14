@@ -1,0 +1,23 @@
+version: '3.5'
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: bk-lite
+      PGDATA: /data/postgres
+    volumes:
+       - postgres:/data/postgres
+    networks:
+      - bk-lite
+    ports:
+      - "5432:5432"
+    restart: always
+  
+volumes:
+  postgres:
+
+networks:
+  bk-lite:
+    external: true
