@@ -14,3 +14,4 @@ pyarmor.cli.core.linux==7.6.4
 pyarmor.cli.core.darwin==7.6.4
 
 modelscope==1.23.2
+setuptools==76.0.0
