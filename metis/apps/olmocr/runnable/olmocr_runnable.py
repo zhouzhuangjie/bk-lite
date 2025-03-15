@@ -58,6 +58,8 @@ class OlmOcrRunnable():
             new_tokens, skip_special_tokens=True
         )
         logger.info(text_output)
+        for obj in text_output:
+            logger.info(obj)
         return [Document(text=json.loads(obj)['natural_text']) for obj in text_output]
 
     def register(self, app):
