@@ -1,5 +1,5 @@
 setup:
-	virtualenv .venv -p python3.10
+	virtualenv .venv -p python3.12
 	./.venv/bin/pip install pip-tools
 
 release:
@@ -7,11 +7,16 @@ release:
 	pyarmor gen -O dist -r ./core
 	pyarmor gen -O dist -r ./server.py
 
-install:
+install-example:
 	./.venv/bin/pip-compile ./requirements/requirements-core.txt \
 							./requirements/requirements-example.txt \
+		-v --output-file ./requirements.txt
+	./.venv/bin/pip-sync -v
+
+install-olmocr:
+	./.venv/bin/pip-compile ./requirements/requirements-core.txt \
 							./requirements/requirements-olmocr.txt \
-		-v --output-file ./requirements.txt 
+		-v --output-file ./requirements.txt
 	./.venv/bin/pip-sync -v
 
 clean:

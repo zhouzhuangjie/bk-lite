@@ -1,4 +1,4 @@
-FROM python:3.10
+FROM python:3.12
 
 RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/;
 RUN rm -Rf /etc/apt/sources.list.d \
