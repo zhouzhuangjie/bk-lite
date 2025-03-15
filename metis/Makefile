@@ -19,6 +19,12 @@ install-olmocr:
 		-v --output-file ./requirements.txt
 	./.venv/bin/pip-sync -v
 
+install-paddleocr:
+	./.venv/bin/pip-compile ./requirements/requirements-core.txt \
+							./requirements/requirements-paddleocr.txt \
+		-v --output-file ./requirements.txt
+	./.venv/bin/pip-sync -v
+
 clean:
 	rm -Rf ./dist
 
