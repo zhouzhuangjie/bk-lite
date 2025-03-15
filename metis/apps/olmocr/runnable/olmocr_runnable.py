@@ -1,4 +1,5 @@
 import base64
+import json
 from io import BytesIO
 from typing import List
 from loguru import logger
@@ -57,7 +58,7 @@ class OlmOcrRunnable():
             new_tokens, skip_special_tokens=True
         )
         logger.info(text_output)
-        return [Document(text=obj['natural_text']) for obj in text_output]
+        return [Document(text=json.loads(obj)['natural_text']) for obj in text_output]
 
     def register(self, app):
         add_routes(app,
