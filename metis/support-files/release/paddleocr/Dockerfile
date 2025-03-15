@@ -23,6 +23,6 @@ RUN pip install -r ./requirements/requirements-paddleocr.txt
 ADD ./dist .
 ADD ./support-files/release/service.conf /etc/supervisor/conf.d/service.conf
 
-ADD /home/kt/.paddleocr /root/.paddleocr
+ADD .paddleocr /root/.paddleocr
 ENV INSTALL_APPS="example"
 CMD ["supervisord", "-n"]
