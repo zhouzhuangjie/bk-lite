@@ -16,7 +16,7 @@ from olmocr.prompts import build_finetuning_prompt
 from olmocr.prompts.anchor import get_anchor_text
 import cv2
 from core.user_types.ocr_request import OcrRequest
-
+from paddleocr import PaddleOCR
 
 class OlmOcrRunnable():
     def __init__(self):
@@ -24,7 +24,7 @@ class OlmOcrRunnable():
         self.processor = AutoProcessor.from_pretrained("xhguo5/olmOCR")
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
-        self.ocr = PaddleOCR(use_angle_cls=True, lang="ch")
+        self.ocr_engine = PaddleOCR(table=True, show_log=True, lang='ch', use_angle_cls=True, )
 
     def predict(self, request: OcrRequest) -> List[Document]:
         base_image = base64.b64decode(request.file)
