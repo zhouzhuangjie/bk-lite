@@ -1,17 +1,16 @@
 import base64
 from io import BytesIO
 from typing import List
+from venv import logger
 
 import torch
 from PIL import Image
 from langchain_core.documents import Document
 from langchain_core.runnables import RunnableLambda
 from langserve import add_routes
-from olmocr.prompts import build_finetuning_prompt
-from olmocr.prompts.anchor import get_anchor_text
+from modelscope import AutoProcessor, Qwen2VLForConditionalGeneration
 
 from core.user_types.ocr_request import OcrRequest
-from modelscope import AutoProcessor, Qwen2VLForConditionalGeneration
 
 
 class OlmOcrRunnable():
@@ -57,7 +56,8 @@ class OlmOcrRunnable():
         text_output = self.processor.tokenizer.batch_decode(
             new_tokens, skip_special_tokens=True
         )
-        return [Document(page_content=text_output['natural_text'])]
+        logger.info(text_output)
+        return [Document(page_content=text_output.natural_text)]
 
     def register(self, app):
         add_routes(app,
