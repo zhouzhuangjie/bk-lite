@@ -1,1 +1,1 @@
-olmocr
+olmocr==0.1.58
