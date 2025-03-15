@@ -12,4 +12,4 @@ tests/asserts
 *.egg-info
 *.log
 runtime
-.paddleocr
+models
