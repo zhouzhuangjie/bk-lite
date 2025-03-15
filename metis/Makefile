@@ -1,46 +1,53 @@
+# Configuration
+VENV := ./.venv
+PIP := $(VENV)/bin/pip
+PIP_COMPILE := $(VENV)/bin/pip-compile
+PYARMOR := pyarmor
+DIST_DIR := dist
+RUNTIME_DIR := runtime
+
+# Supported platforms for runtime
+PLATFORMS := linux.x86_64 linux.armv7 linux.aarch64 darwin.aarch64
+
+.PHONY: setup clean install-% compile-% release-% test-%
+
+# Development environment setup
 setup:
-	virtualenv .venv -p python3.12
-	./.venv/bin/pip install pip-tools
+	virtualenv $(VENV) -p python3.12
+	$(PIP) install pip-tools
 
-release:
-	pyarmor gen -O dist -r ./apps
-	pyarmor gen -O dist -r ./core
-	pyarmor gen -O dist -r ./server.py
-
-install-example:
-	./.venv/bin/pip-compile ./requirements/requirements-core.txt \
-							./requirements/requirements-example.txt \
-		-v --output-file ./requirements.txt
-	./.venv/bin/pip-sync -v
-
-install-olmocr:
-	./.venv/bin/pip-compile ./requirements/requirements-core.txt \
-							./requirements/requirements-olmocr.txt \
-		-v --output-file ./requirements.txt
-	./.venv/bin/pip-sync -v
-
-install-paddleocr:
-	./.venv/bin/pip-compile ./requirements/requirements-core.txt \
-							./requirements/requirements-paddleocr.txt \
-		-v --output-file ./requirements.txt
-	./.venv/bin/pip-sync -v
-
+# Cleanup
 clean:
-	rm -Rf ./dist
+	rm -Rf ./$(DIST_DIR)
 
+# Package installation targets
+install-%: ./requirements/requirements-%.txt
+	$(PIP_COMPILE) ./requirements/requirements-core.txt \
+				   ./requirements/requirements-$*.txt \
+		-v --output-file ./requirements.txt
+	$(PIP) sync -v
+
+# Runtime generation
 gen-runtime:
-	pyarmor gen runtime --platform linux.x86_64 --platform linux.armv7 --platform linux.aarch64 --platform darwin.aarch64  -O runtime
+	$(PYARMOR) gen runtime $(foreach platform,$(PLATFORMS),--platform $(platform)) -O $(RUNTIME_DIR)
 
-compile-example:
-	rm -Rf ./dist
-	pyarmor gen --use-runtime runtime -O dist -r ./server.py
-	pyarmor gen --use-runtime runtime -O dist -r ./core
-	pyarmor gen --use-runtime runtime -O dist -r ./apps
-	find ./dist/apps -mindepth 1 -maxdepth 1 -type d -not -name 'example' -exec rm -rf {} +
-	cp -Rf ./runtime/* ./dist
+# Compilation targets
+compile-%: clean
+	$(PYARMOR) gen --use-runtime $(RUNTIME_DIR) -O $(DIST_DIR) -r ./server.py
+	$(PYARMOR) gen --use-runtime $(RUNTIME_DIR) -O $(DIST_DIR) -r ./core
+	$(PYARMOR) gen --use-runtime $(RUNTIME_DIR) -O $(DIST_DIR) -r ./apps
+	find ./$(DIST_DIR)/apps -mindepth 1 -maxdepth 1 -type d -not -name '$*' -exec rm -rf {} +
+	cp -Rf ./$(RUNTIME_DIR)/* ./$(DIST_DIR)
 
-release-example:
-	docker build -t metis:example -f ./support-files/release/example/Dockerfile .
+# Release targets
+release:
+	$(PYARMOR) gen -O $(DIST_DIR) -r ./apps
+	$(PYARMOR) gen -O $(DIST_DIR) -r ./core
+	$(PYARMOR) gen -O $(DIST_DIR) -r ./server.py
 
-test-example:
-	docker run -it --rm --name example -p 8001:8001 metis:example
+release-%:
+	docker build -t metis:$* -f ./support-files/release/$*/Dockerfile .
+
+# Test targets
+test-%:
+	docker run -it --rm --name $* -p 8001:8001 metis:$*
