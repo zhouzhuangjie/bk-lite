@@ -8,7 +8,9 @@ release:
 	pyarmor gen -O dist -r ./server.py
 
 install:
-	./.venv/bin/pip-compile ./requirements.in -v --output-file ./requirements.txt
+	./.venv/bin/pip-compile ./requirements/requirements-core.txt \
+							./requirements/requirements-example.txt \
+		-v --output-file ./requirements.txt 
 	./.venv/bin/pip-sync -v
 
 clean:
