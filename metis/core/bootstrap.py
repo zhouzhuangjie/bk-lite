@@ -37,7 +37,7 @@ class Bootstrap:
     def setup_router(self):
         for app_path in server_settings.get_install_apps():
             try:
-                module = importlib.import_module(f'{app_path}.routes')
+                module = importlib.import_module(f'apps.{app_path}.routes')
                 if hasattr(module, 'register_routes'):
                     module.register_routes(self.app)
             except ModuleNotFoundError:

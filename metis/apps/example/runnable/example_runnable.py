@@ -1,7 +1,7 @@
 from langchain_core.runnables import RunnableLambda
 from langserve import add_routes
 
-from example.user_types.example import ExampleUserType
+from apps.example.user_types.example import ExampleUserType
 
 
 class ExampleRunnable:

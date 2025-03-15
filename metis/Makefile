@@ -16,10 +16,16 @@ install:
 clean:
 	rm -Rf ./dist
 
+gen-runtime:
+	pyarmor gen runtime --platform linux.x86_64 --platform linux.armv7 --platform linux.aarch64 --platform darwin.aarch64  -O runtime
+
 compile-example:
-	pyarmor gen --platform linux.x86_64 --platform linux.armv7 --platform linux.aarch64 --platform darwin.aarch64 -O dist -r ./server.py
-	pyarmor gen --platform linux.armv7 --platform linux.aarch64 --platform darwin.aarch64 -O dist -r ./core
-	pyarmor gen --platform linux.armv7 --platform linux.aarch64 --platform darwin.aarch64 -O dist -r ./example
+	rm -Rf ./dist
+	pyarmor gen --use-runtime runtime -O dist -r ./server.py
+	pyarmor gen --use-runtime runtime -O dist -r ./core
+	pyarmor gen --use-runtime runtime -O dist -r ./apps
+	find ./dist/apps -mindepth 1 -maxdepth 1 -type d -not -name 'example' -exec rm -rf {} +
+	cp -Rf ./runtime/* ./dist
 
 release-example:
 	docker build -t metis:example -f ./support-files/release/example/Dockerfile .
