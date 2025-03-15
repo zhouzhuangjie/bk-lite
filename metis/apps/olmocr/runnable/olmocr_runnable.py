@@ -1,7 +1,7 @@
 import base64
 from io import BytesIO
 from typing import List
-from venv import logger
+from loguru import logger
 
 import torch
 from PIL import Image
@@ -21,7 +21,7 @@ class OlmOcrRunnable():
         self.model.to(self.device)
 
     def predict(self, request: OcrRequest) -> List[Document]:
-        prompt="""
+        prompt = """
         Below is the image of one page of a document, as well as some raw textual content that was previously extracted for it. 
         Just return the plain text representation of this document as if you were reading it naturally.
         Do not hallucinate.
@@ -57,7 +57,7 @@ class OlmOcrRunnable():
             new_tokens, skip_special_tokens=True
         )
         logger.info(text_output)
-        return [Document(page_content=text_output.natural_text)]
+        return [Document(text=obj['natural_text']) for obj in text_output]
 
     def register(self, app):
         add_routes(app,
