@@ -48,9 +48,8 @@ class OlmOcrRunnable():
         output = self.model.generate(
             **inputs,
             temperature=0.8,
-            max_new_tokens=50,
+            max_new_tokens=8000,
             num_return_sequences=1,
-            do_sample=True,
         )
         prompt_length = inputs["input_ids"].shape[1]
         new_tokens = output[:, prompt_length:]
@@ -58,9 +57,10 @@ class OlmOcrRunnable():
             new_tokens, skip_special_tokens=True
         )
         logger.info(text_output)
+        result=[]
         for obj in text_output:
-            logger.info(obj)
-        return [Document(text=json.loads(obj)['natural_text']) for obj in text_output]
+            result.append(json.loads(obj)['natural_text'])
+        return result
 
     def register(self, app):
         add_routes(app,
