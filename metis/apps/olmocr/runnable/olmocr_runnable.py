@@ -3,20 +3,16 @@ import json
 from io import BytesIO
 from typing import List
 
-import numpy as np
-from loguru import logger
-
 import torch
 from PIL import Image
 from langchain_core.documents import Document
 from langchain_core.runnables import RunnableLambda
 from langserve import add_routes
+from loguru import logger
 from modelscope import AutoProcessor, Qwen2VLForConditionalGeneration
-from olmocr.prompts import build_finetuning_prompt
-from olmocr.prompts.anchor import get_anchor_text
-import cv2
+
 from core.user_types.ocr_request import OcrRequest
-from paddleocr import PaddleOCR
+
 
 class OlmOcrRunnable():
     def __init__(self):
@@ -24,28 +20,13 @@ class OlmOcrRunnable():
         self.processor = AutoProcessor.from_pretrained("xhguo5/olmOCR")
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
-        self.ocr_engine = PaddleOCR(table=True, show_log=True, lang='ch', use_angle_cls=True, )
 
     def predict(self, request: OcrRequest) -> List[Document]:
-        base_image = base64.b64decode(request.file)
-        nparr = np.frombuffer(base_image, np.uint8)
-
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        if img is None:
-            logger.error("Failed to decode image")
-            return []
-
-        result = self.ocr_engine.ocr(img, cls=True)
-
-        anchor_text = ""
-        try:
-            for lines in result:
-                for line in lines:
-                    anchor_text += line[1][0] + ''
-        except Exception as e:
-            pass
-
-        prompt = build_finetuning_prompt(anchor_text)
+        prompt = """
+            Below is the image of one page of a document, as well as some raw textual content that was previously extracted for it. 
+            Just return the plain text representation of this document as if you were reading it naturally.
+            Do not hallucinate.
+        """
         messages = [
             {
                 "role": "user",
