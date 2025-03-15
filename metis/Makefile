@@ -46,7 +46,7 @@ release:
 	$(PYARMOR) gen -O $(DIST_DIR) -r ./server.py
 
 release-%:
-	docker build -t metis:$* -f ./support-files/release/$*/Dockerfile .
+	docker build -t $(or $(DOCKER_REGISTRY)/metis:$*,metis:$*) -f ./support-files/release/$*/Dockerfile .
 
 # Test targets
 test-%:
