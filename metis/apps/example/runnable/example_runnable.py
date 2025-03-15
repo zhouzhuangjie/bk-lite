@@ -1,6 +1,6 @@
 from langchain_core.runnables import RunnableLambda
 from langserve import add_routes
-
+from loguru import logger
 from apps.example.user_types.example import ExampleUserType
 
 
@@ -14,4 +14,5 @@ class ExampleRunnable:
                    path='/example')
 
     def example(self, req: ExampleUserType) -> str:
+        logger.info(f"msg: {req.msg}")
         return req.msg

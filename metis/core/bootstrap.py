@@ -1,4 +1,5 @@
 import importlib
+import sys
 from typing import Annotated
 
 import uvicorn
@@ -44,6 +45,7 @@ class Bootstrap:
                 logger.warning(f"app not found: {app_path}")
 
     def start(self):
+
         self.setup_middlewares()
         self.setup_router()
         uvicorn.run(self.app, host=server_settings.app_host, port=server_settings.app_port)

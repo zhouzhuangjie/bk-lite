@@ -10,6 +10,7 @@ release:
 install:
 	./.venv/bin/pip-compile ./requirements/requirements-core.txt \
 							./requirements/requirements-example.txt \
+							./requirements/requirements-olmocr.txt \
 		-v --output-file ./requirements.txt 
 	./.venv/bin/pip-sync -v
 

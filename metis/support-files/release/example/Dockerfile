@@ -21,7 +21,7 @@ RUN pip install -r ./requirements/requirements-core.txt
 RUN pip install -r ./requirements/requirements-example.txt
 
 ADD ./dist .
-ADD ./support-files/release/example/service.conf /etc/supervisor/conf.d/service.conf
+ADD ./support-files/release/service.conf /etc/supervisor/conf.d/service.conf
 
 ENV INSTALL_APPS="example"
 CMD ["supervisord", "-n"]
