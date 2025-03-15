@@ -7,21 +7,5 @@ RUN rm -Rf /etc/apt/sources.list.d \
     && echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm-backports main contrib non-free non-free-firmware" >> /etc/apt/sources.list \
     && echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian-security bookworm-security main contrib non-free non-free-firmware" >> /etc/apt/sources.list;
 
-RUN apt-get update && \
-    apt-get install -y libhdf5-dev vim  unzip curl pkg-config libssl-dev libffi-dev supervisor && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
-
-ADD ./requirements/requirements-core.txt ./requirements/requirements-core.txt
-ADD ./requirements/requirements-example.txt ./requirements/requirements-example.txt
-
-RUN pip install -r ./requirements/requirements-core.txt
-RUN pip install -r ./requirements/requirements-example.txt
-
-ADD ./dist .
-ADD ./support-files/release/example/service.conf /etc/supervisor/conf.d/service.conf
-
-ENV INSTALL_APPS="example"
 CMD ["supervisord", "-n"]

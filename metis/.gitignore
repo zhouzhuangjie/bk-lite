@@ -1,0 +1,13 @@
+.venv
+.idea
+.vscode
+.env
+.pytest_cache
+__pycache__
+*.pyc
+dist
+requirements.txt
+!requirements/requirements.txt
+tests/asserts
+*.egg-info
+*.log
