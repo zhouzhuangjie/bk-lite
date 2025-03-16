@@ -30,5 +30,5 @@ ADD ./apps/paddleocr ./apps/paddleocr
 ADD ./support-files/release/paddleocr/service.conf /etc/supervisor/conf.d/service.conf
 
 ADD ./models/.paddleocr /root/.paddleocr
-ENV INSTALL_APPS="example"
+ENV INSTALL_APPS="paddleocr"
 CMD ["supervisord", "-n"]
