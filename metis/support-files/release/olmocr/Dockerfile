@@ -1,16 +1,15 @@
-FROM python:3.12
-
-RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/;
-RUN rm -Rf /etc/apt/sources.list.d \
-    && echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm main contrib non-free non-free-firmware" > /etc/apt/sources.list \
-    && echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm-updates main contrib non-free non-free-firmware" >> /etc/apt/sources.list \
-    && echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm-backports main contrib non-free non-free-firmware" >> /etc/apt/sources.list \
-    && echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian-security bookworm-security main contrib non-free non-free-firmware" >> /etc/apt/sources.list;
+FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu22.04
 
 RUN apt-get update && \
-    apt-get install -y libhdf5-dev vim  unzip curl pkg-config libssl-dev libffi-dev supervisor && \
+    apt install software-properties-common -y && \
+    add-apt-repository ppa:deadsnakes/ppa -y && \
+    apt-get install -y libhdf5-dev vim  unzip curl pkg-config libssl-dev libffi-dev supervisor python3.12-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+
+RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/;
+
 
 WORKDIR /app
 
@@ -26,6 +25,7 @@ ADD ./server.py ./server.py
 ADD ./core ./core
 ADD ./apps/__init__.py ./apps/__init__.py
 ADD ./apps/olmocr ./apps/olmocr
+ADD ./modelscope /root/.cache/modelscope
 
 ADD ./support-files/release/olmocr/service.conf /etc/supervisor/conf.d/service.conf
 
