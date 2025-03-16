@@ -15,19 +15,19 @@ RUN apt-get update && \
 WORKDIR /app
 
 ADD ./requirements/requirements-core.txt ./requirements/requirements-core.txt
-ADD ./requirements/requirements-olmocr.txt ./requirements/requirements-olmocr.txt
+ADD ./requirements/requirements-chat_service.txt ./requirements/requirements-chat_service.txt
 
 RUN pip install -r ./requirements/requirements-core.txt
-RUN pip install -r ./requirements/requirements-olmocr.txt
+RUN pip install -r ./requirements/requirements-chat_service.txt
 
 #ADD ./dist .
 
 ADD ./server.py ./server.py
 ADD ./core ./core
 ADD ./apps/__init__.py ./apps/__init__.py
-ADD ./apps/olmocr ./apps/olmocr
+ADD ./apps/chat_service ./apps/chat_service
 
-ADD ./support-files/release/olmocr/service.conf /etc/supervisor/conf.d/service.conf
+ADD ./support-files/release/chat_service/service.conf /etc/supervisor/conf.d/service.conf
 
 ENV INSTALL_APPS="example"
 CMD ["supervisord", "-n"]

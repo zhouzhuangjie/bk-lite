@@ -2,6 +2,7 @@
 VENV := ./.venv
 PIP := $(VENV)/bin/pip
 PIP_COMPILE := $(VENV)/bin/pip-compile
+PIP_SYNC := $(VENV)/bin/pip-sync
 PYARMOR := pyarmor
 DIST_DIR := dist
 RUNTIME_DIR := runtime
@@ -25,7 +26,7 @@ install-%: ./requirements/requirements-%.txt
 	$(PIP_COMPILE) ./requirements/requirements-core.txt \
 				   ./requirements/requirements-$*.txt \
 		-v --output-file ./requirements.txt
-	$(PIP) sync -v
+	$(PIP_SYNC) -v
 
 # Runtime generation
 gen-runtime:
