@@ -2,7 +2,7 @@ from mcp.server.fastmcp import FastMCP
 from duckduckgo_search import DDGS
 from typing import Optional
 
-mcp = FastMCP("Web Search", port=8001)
+mcp = FastMCP("Web Search", port=8003)
 
 
 @mcp.tool(description="这是DuckDuckGo的搜索工具，帮助用户在DuckDuckGo上搜索信息,获取互联网信息")
