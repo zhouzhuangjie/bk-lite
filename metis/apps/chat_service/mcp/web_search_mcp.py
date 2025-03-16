@@ -5,7 +5,7 @@ from typing import Optional
 mcp = FastMCP("Web Search", port=8003)
 
 
-@mcp.tool(description="这是DuckDuckGo的搜索工具，帮助用户在DuckDuckGo上搜索信息,获取互联网信息")
+@mcp.tool()
 def duckduckgo_search(query: str, max_results: Optional[int] = 5) -> str:
     """
     使用DuckDuckGo搜索引擎搜索信息
