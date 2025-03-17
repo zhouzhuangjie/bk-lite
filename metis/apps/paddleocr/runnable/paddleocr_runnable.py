@@ -43,4 +43,4 @@ class PaddleOcrRunnable():
     def register(self, app):
         add_routes(app,
                    RunnableLambda(self.predict).with_types(input_type=OcrRequest, output_type=List[Document]),
-                   path='/paddle_ocr/predict')
+                   path='/paddle_ocr')
