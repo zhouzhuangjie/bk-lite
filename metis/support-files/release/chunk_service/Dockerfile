@@ -29,9 +29,5 @@ ADD ./apps/chunk_service ./apps/chunk_service
 
 ADD ./support-files/release/chunk_service/service.conf /etc/supervisor/conf.d/service.conf
 
-ADD ./support-files/release/chunk_service/general_mcp.conf /etc/supervisor/conf.d/general_mcp.conf
-
-ADD ./support-files/release/chunk_service/web_search_mcp.conf /etc/supervisor/conf.d/web_search_mcp.conf
-
 ENV INSTALL_APPS="chunk_service"
 CMD ["supervisord", "-n"]
