@@ -38,3 +38,4 @@ Metis 是以LangServe为核心服务构建的服务应用，包含以下服务�
 | chat-service  | 屏蔽智能体之间的API差异，提供与智能体进行对话、Function Call的能力  |
 | rag-service   | 为智能体提供RAG增强的服务                                           |
 | chunk-service | 为AI模块提供文本分块服务                                            |
+| kube-service  | Kubernetes的基础查询、启动Pilot的服务                               |
