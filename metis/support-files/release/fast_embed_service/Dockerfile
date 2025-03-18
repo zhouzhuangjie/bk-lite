@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu22.04
+FROM python:3.12
 
 RUN apt-get update && \
     apt install software-properties-common -y && \
