@@ -26,7 +26,8 @@ ADD ./server.py ./server.py
 ADD ./core ./core
 ADD ./apps/__init__.py ./apps/__init__.py
 ADD ./apps/bce_embed_service ./apps/bce_embed_service
-
+ADD ./models/bce-embedding-base_v1 ./models/bce-embedding-base_v1
+ADD ./models/bce-reranker-base_v1 ./models/bce-reranker-base_v1
 ADD ./support-files/release/bce_embed_service/service.conf /etc/supervisor/conf.d/service.conf
 
 ENV INSTALL_APPS="bce_embed_service"
