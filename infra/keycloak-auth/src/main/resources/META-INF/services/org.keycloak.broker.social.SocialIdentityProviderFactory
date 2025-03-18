@@ -1,0 +1,4 @@
+org.neverland.social.WechatMpIdentityProviderFactory
+org.neverland.social.WechatOpenIdentityProviderFactory
+org.neverland.social.GiteeIdentityProviderFactory
+org.neverland.social.WeworkIdentityProviderFactory
