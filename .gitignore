@@ -1,4 +1,4 @@
 .idea
 .vscode
 *.tar
-*.jar
+infra/support-files/images/keycloak/*.jar
