@@ -28,6 +28,10 @@ Stargazer是一个基于Sanic，暴露Exporter数据采集服务，提供网络�
 BK Lite的基础服务组件与部署文件
 
 
+## Pilot
+
+基于Rasa的ChatOps应用，提供完整的对话型机器人能力
+
 ## Metis
 
 Metis 是以LangServe为核心服务构建的服务应用，包含以下服务模块:
