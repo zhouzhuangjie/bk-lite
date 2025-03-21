@@ -28,7 +28,7 @@
 ## Roadmap
 
 * [版本日志](docs/changelog/release.md)
-* 
+
 ## Support
 - [wiki](https://github.com/TencentBlueKing/bk-cmdb/wiki)
 - [白皮书](https://docs.bk.tencent.com/)
