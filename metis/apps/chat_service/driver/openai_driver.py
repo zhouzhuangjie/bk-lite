@@ -1,7 +1,7 @@
 import json
 import time
 import base64
-from typing import List, Any, Dict, Tuple, Union, Optional
+from typing import List, Any, Dict, Tuple, Union, Optional, AsyncIterator
 
 from langchain.agents import initialize_agent, AgentType
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -24,6 +24,15 @@ class OpenAIDriver():
         self.client = ChatOpenAI(
             openai_api_key=openai_api_key, openai_api_base=openai_base_url,
             temperature=temperature, model=model, max_retries=3,
+        )
+
+        self.streaming_client = ChatOpenAI(
+            openai_api_key=openai_api_key,
+            openai_api_base=openai_base_url,
+            temperature=temperature,
+            model=model,
+            streaming=True,
+            max_retries=3,
         )
 
         try:
@@ -76,11 +85,11 @@ class OpenAIDriver():
         str, List[Dict]]:
         """
         格式化多模态消息，支持文本和图片
-        
+
         Args:
             user_message: 用户文本消息
             image_data: 图片的base64编码列表
-            
+
         Returns:
             格式化后的消息内容
         """
@@ -102,10 +111,10 @@ class OpenAIDriver():
     def _create_multimodal_message(self, content: Union[str, List[Dict]]) -> HumanMessage:
         """
         创建多模态消息对象
-        
+
         Args:
             content: 消息内容，可以是字符串或包含文本和图片的列表
-            
+
         Returns:
             HumanMessage对象
         """
@@ -212,16 +221,16 @@ class OpenAIDriver():
 
             agent_system_template = """     
                             {system_prompt}
-    
+
                             Here is our chat history:
                             {chat_history}
-    
+
                             Here is some context: 
                             {rag_content}      
-    
+
                             Answer the following questions as best you can. You have access to the following tools:
                             {tools}
-    
+
                             Use the following format:
                             Question: the input question you must answer
                             Thought: you should always think about what to do
@@ -305,3 +314,147 @@ class OpenAIDriver():
                     "output_tokens": 0,
                 }
             }, ensure_ascii=False, indent=4)
+
+    async def _stream_invoke_simple_chain(self, user_message: str,
+                                          message_history: Any,
+                                          system_prompt: str,
+                                          rag_content: str,
+                                          trace_id: str,
+                                          image_data: List[str] = []) -> AsyncIterator[Dict[str, Any]]:
+        """流式方式调用简单对话链"""
+        start_time = time.time()
+        logger.info(f"流式问题[{trace_id}]: {user_message}")
+
+        # 计算输入 token
+        system_content = f"{system_prompt}, Here is some context: {rag_content.replace('{', '').replace('}', '')}"
+        input_tokens = self.count_tokens(system_content) + self.count_tokens(user_message)
+
+        # 为历史消息计算 token
+        if hasattr(message_history, "messages") and message_history.messages:
+            hist_input, hist_output = self.count_message_tokens(message_history.messages)
+            input_tokens += hist_input + hist_output
+
+        # 确保LLM启用流式模式
+        streaming_client = self.streaming_client
+
+        # 处理多模态输入
+        if image_data:
+            logger.info(f"流式处理多模态输入，包含 {len(image_data)} 张图片")
+            formatted_content = self._format_multimodal_message(user_message, image_data)
+            human_message = self._create_multimodal_message(formatted_content)
+
+            # 使用直接调用方式处理多模态输入
+            messages = [
+                {"role": "system", "content": system_content}
+            ]
+
+            # 添加历史消息
+            if hasattr(message_history, "messages") and message_history.messages:
+                messages.extend(message_history.messages)
+
+            # 添加当前带图片的消息
+            messages.append({"role": "user", "content": human_message.content})
+
+            # 流式响应
+            output_tokens = 0
+            final_text = ""
+
+            # 直接调用LLM的流式接口
+            async for chunk in streaming_client.astream(messages):
+                if chunk.content:
+                    final_text += chunk.content
+                    output_tokens = self.count_tokens(final_text)
+                    yield {
+                        "content": chunk.content,
+                        "input_tokens": input_tokens,
+                        "output_tokens": output_tokens,
+                        "done": False
+                    }
+
+        else:
+            # 使用普通链处理纯文本
+            simple_prompt = ChatPromptTemplate.from_messages([
+                ("system", system_content),
+                MessagesPlaceholder(variable_name="chat_history"),
+                ("human", "{input}"),
+            ])
+            chain = simple_prompt | streaming_client
+
+            chain_with_history = RunnableWithMessageHistory(
+                chain,
+                get_session_history=lambda: message_history,
+                input_messages_key="input",
+                history_messages_key="chat_history",
+            )
+
+            output_tokens = 0
+            final_text = ""
+
+            async for chunk in chain_with_history.astream({"input": user_message}):
+                if chunk.content:
+                    final_text += chunk.content
+                    output_tokens = self.count_tokens(final_text)
+                    yield {
+                        "content": chunk.content,
+                        "input_tokens": input_tokens,
+                        "output_tokens": output_tokens,
+                        "done": False
+                    }
+
+        end_time = time.time()
+        duration = end_time - start_time
+
+        # 发送完成消息
+        logger.info(f"流式耗时:[{duration:.4f}秒],完成回复[{trace_id}]")
+        yield {
+            "content": "",
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "done": True
+        }
+
+    async def stream_chat_with_history(self, system_prompt: str, user_message: str,
+                                       message_history: List[ChatHistory], rag_content: str = "",
+                                       mcp_servers: List[McpServer] = [], trace_id: str = '',
+                                       image_data: List[str] = []) -> AsyncIterator[Dict[str, Any]]:
+        """流式方式与历史对话"""
+        try:
+            logger.info(f"流式聊天 - System Prompt: {system_prompt}, User Message: {user_message}")
+            if image_data:
+                logger.info(f"流式检测到多模态输入，包含 {len(image_data)} 张图片")
+
+            total_prompt_tokens = 0
+
+            # 如果有工具服务器，先执行工具调用
+            if mcp_servers:
+                rag_content, tool_prompt_tokens, _ = await self.execute_with_tools(
+                    user_message, message_history, system_prompt, rag_content, mcp_servers
+                )
+                total_prompt_tokens += tool_prompt_tokens
+
+                # 发送工具调用的通知
+                yield {
+                    "content": "",
+                    "type": "tool_execution",
+                    "input_tokens": total_prompt_tokens,
+                    "output_tokens": 0,
+                    "done": False
+                }
+
+            # 流式获取最终结果
+            async for chunk in self._stream_invoke_simple_chain(
+                    user_message, message_history, system_prompt, rag_content, trace_id, image_data
+            ):
+                # 更新token计数
+                chunk["input_tokens"] += total_prompt_tokens
+                yield chunk
+
+        except Exception as e:
+            logger.exception(f"流式聊天错误: {str(e)}")
+            yield {
+                "content": "非常抱歉,触发了智能体的拦截策略,不能回复您哦.....",
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "done": True,
+                "error": str(e)
+            }

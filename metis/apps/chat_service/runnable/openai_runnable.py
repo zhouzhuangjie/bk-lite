@@ -1,3 +1,4 @@
+from typing import AsyncIterator, Dict, Any
 from langchain_core.runnables import RunnableLambda
 
 from langserve import add_routes
@@ -23,8 +24,28 @@ class OpenAIRunnable():
         )
 
         return result
+    
+    async def stream_chat(self, req: OpenAIChatRequest) -> AsyncIterator[Dict[str, Any]]:
+        """支持流式响应的聊天方法"""
+        driver = OpenAIDriver(
+            openai_api_key=req.openai_api_key, openai_base_url=req.openai_api_base,
+            temperature=req.temperature, model=req.model
+        )
+        llm_chat_history = driver.build_chat_history(req.chat_history, req.conversation_window_size)
+
+        async for chunk in driver.stream_chat_with_history(
+            system_prompt=req.system_message_prompt, user_message=req.user_message,
+            message_history=llm_chat_history, rag_content=req.rag_context,
+            mcp_servers=req.mcp_servers, trace_id=req.trace_id, image_data=req.image_data,
+        ):
+            yield chunk
 
     def register(self, app):
         add_routes(app,
                    RunnableLambda(self.openai_chat).with_types(input_type=OpenAIChatRequest, output_type=str),
                    path='/openai')
+        
+        # 添加流式响应的路由
+        add_routes(app,
+                  RunnableLambda(self.stream_chat),
+                  path='/openai/stream')
