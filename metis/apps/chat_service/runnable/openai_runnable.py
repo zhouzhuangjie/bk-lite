@@ -19,7 +19,7 @@ class OpenAIRunnable():
         result = await driver.chat_with_history(
             system_prompt=req.system_message_prompt, user_message=req.user_message,
             message_history=llm_chat_history, rag_content=req.rag_context,
-            mcp_servers=req.mcp_servers, trace_id=req.trace_id,
+            mcp_servers=req.mcp_servers, trace_id=req.trace_id,image_data=req.image_data,
         )
 
         return result

@@ -1,10 +1,12 @@
 import json
 import time
-from typing import List, Any, Dict, Tuple
+import base64
+from typing import List, Any, Dict, Tuple, Union, Optional
 
 from langchain.agents import initialize_agent, AgentType
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_core.messages import HumanMessage
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_openai import ChatOpenAI
 from loguru import logger
@@ -70,11 +72,51 @@ class OpenAIDriver():
         ])
         return simple_prompt | self.client
 
+    def _format_multimodal_message(self, user_message: str, image_data: Optional[List[str]] = None) -> Union[
+        str, List[Dict]]:
+        """
+        格式化多模态消息，支持文本和图片
+        
+        Args:
+            user_message: 用户文本消息
+            image_data: 图片的base64编码列表
+            
+        Returns:
+            格式化后的消息内容
+        """
+        if not image_data:
+            return user_message
+
+        content = [{"type": "text", "text": user_message}]
+
+        for img in image_data:
+            content.append({
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:image/jpeg;base64,{img}"
+                }
+            })
+
+        return content
+
+    def _create_multimodal_message(self, content: Union[str, List[Dict]]) -> HumanMessage:
+        """
+        创建多模态消息对象
+        
+        Args:
+            content: 消息内容，可以是字符串或包含文本和图片的列表
+            
+        Returns:
+            HumanMessage对象
+        """
+        return HumanMessage(content=content)
+
     def _invoke_simple_chain(self, user_message: str,
                              message_history: Any,
                              system_prompt: str,
                              rag_content: str,
-                             trace_id: str):
+                             trace_id: str,
+                             image_data: List[str] = []):
         start_time = time.time()
         logger.info(f"问题[{trace_id}]: {user_message}")
 
@@ -87,14 +129,37 @@ class OpenAIDriver():
             hist_input, hist_output = self.count_message_tokens(message_history.messages)
             input_tokens += hist_input + hist_output
 
-        chain = self.create_simple_chain(system_content)
-        chain_with_history = RunnableWithMessageHistory(
-            chain,
-            get_session_history=lambda: message_history,
-            input_messages_key="input",
-            history_messages_key="chat_history",
-        )
-        result = chain_with_history.invoke({"input": user_message})
+        # 处理多模态输入
+        if image_data:
+            logger.info(f"处理多模态输入，包含 {len(image_data)} 张图片")
+            formatted_content = self._format_multimodal_message(user_message, image_data)
+            human_message = self._create_multimodal_message(formatted_content)
+
+            # 使用直接调用方式处理多模态输入
+            messages = [
+                {"role": "system", "content": system_content}
+            ]
+
+            # 添加历史消息
+            if hasattr(message_history, "messages") and message_history.messages:
+                messages.extend(message_history.messages)
+
+            # 添加当前带图片的消息
+            messages.append({"role": "user", "content": human_message.content})
+
+            # 直接调用LLM
+            result = self.client.invoke(messages)
+
+        else:
+            # 使用普通链处理纯文本
+            chain = self.create_simple_chain(system_content)
+            chain_with_history = RunnableWithMessageHistory(
+                chain,
+                get_session_history=lambda: message_history,
+                input_messages_key="input",
+                history_messages_key="chat_history",
+            )
+            result = chain_with_history.invoke({"input": user_message})
 
         # 计算输出 token
         output_tokens = self.count_tokens(result.content)
@@ -197,9 +262,12 @@ class OpenAIDriver():
 
     async def chat_with_history(self, system_prompt: str, user_message: str,
                                 message_history: List[ChatHistory], rag_content: str = "",
-                                mcp_servers: List[McpServer] = [], trace_id: str = '') -> str:
+                                mcp_servers: List[McpServer] = [], trace_id: str = '',
+                                image_data: List[str] = []) -> str:
         try:
-            logger.info(f"System Prompt: {system_prompt}, User Message: {user_message},mcp_servers:{mcp_servers}")
+            logger.info(f"System Prompt: {system_prompt}, User Message: {user_message}, mcp_servers:{mcp_servers}")
+            if image_data:
+                logger.info(f"检测到多模态输入，包含 {len(image_data)} 张图片")
 
             total_prompt_tokens = total_completion_tokens = 0
 
@@ -211,7 +279,7 @@ class OpenAIDriver():
 
             # 获取最终结果
             simple_result = self._invoke_simple_chain(
-                user_message, message_history, system_prompt, rag_content, trace_id
+                user_message, message_history, system_prompt, rag_content, trace_id, image_data
             )
 
             # 更新token计数
