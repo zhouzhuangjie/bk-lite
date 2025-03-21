@@ -17,6 +17,8 @@ class TestChatService(unittest.TestCase):
             "model": "gpt-4o",
             "user_message": "你好",
             "chat_history": [],
+            "image_data": [
+            ]
         }
 
     async def async_test_chat_stream(self):

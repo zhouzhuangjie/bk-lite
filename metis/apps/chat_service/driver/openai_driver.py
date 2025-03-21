@@ -71,25 +71,81 @@ class OpenAIDriver:
                     continue
 
                 if event.event == "user":
-                    llm_chat_history.add_user_message(event.text)
+                    # 处理可能包含图片的用户消息
+                    if event.image_data:
+                        # 对于包含图片的消息，需要使用多模态格式
+                        content = self._format_multimodal_message(event.text, event.image_data)
+                        llm_chat_history.add_message(HumanMessage(content=content))
+                    else:
+                        llm_chat_history.add_user_message(event.text)
                 elif event.event == "bot":
                     llm_chat_history.add_ai_message(event.text)
 
         return llm_chat_history
 
-    def count_tokens(self, text: str) -> int:
+    def count_tokens(self, text: Any) -> int:
         """
         计算文本的 token 数量
         
         Args:
-            text: 要计算的文本
+            text: 要计算的文本，可以是字符串或其他格式（如列表、字典）
             
         Returns:
             token 数量
         """
         if not text:
             return 0
+            
+        # 处理多模态内容（列表或字典）
+        if isinstance(text, (list, dict)):
+            return self._count_multimodal_tokens(text)
+            
+        # 确保文本是字符串
+        if not isinstance(text, str):
+            text = str(text)
+            
         return len(self.encoding.encode(text))
+        
+    def _count_multimodal_tokens(self, content: Union[List, Dict]) -> int:
+        """
+        计算多模态内容的 token 数量
+        
+        Args:
+            content: 多模态内容，可以是列表或字典
+            
+        Returns:
+            预估的 token 数量
+        """
+        if isinstance(content, dict):
+            # 处理字典格式
+            tokens = 0
+            for key, value in content.items():
+                tokens += self.count_tokens(key)
+                tokens += self.count_tokens(value)
+            return tokens
+            
+        elif isinstance(content, list):
+            # 处理列表格式
+            tokens = 0
+            for item in content:
+                if isinstance(item, dict):
+                    # 特殊处理多模态项
+                    if item.get("type") == "text" and "text" in item:
+                        # 文本项
+                        tokens += self.count_tokens(item["text"])
+                    elif item.get("type") == "image_url" and "image_url" in item:
+                        # 图片项 - 每张图片估算固定 token 量 (根据模型不同而变化，这里使用保守估计)
+                        tokens += 85  # GPT-4V 图片基础 token 消耗估计
+                    else:
+                        # 其他字典项
+                        tokens += self._count_multimodal_tokens(item)
+                else:
+                    # 非字典项
+                    tokens += self.count_tokens(item)
+            return tokens
+            
+        # 不应该到达这里
+        return 0
 
     def count_message_tokens(self, messages: List[Dict]) -> Tuple[int, int]:
         """
@@ -105,7 +161,8 @@ class OpenAIDriver:
 
         for message in messages:
             content = message.content
-            input_tokens += self.count_tokens(content)
+            if content:
+                input_tokens += self.count_tokens(content)
 
         return input_tokens, output_tokens
 
@@ -415,7 +472,7 @@ class OpenAIDriver:
             total_prompt_tokens = total_completion_tokens = 0
 
             # 如果有工具服务器，先执行工具调用
-            if mcp_servers:
+            if (mcp_servers):
                 rag_content, tool_prompt_tokens, tool_completion_tokens = await self.execute_with_tools(
                     user_message, message_history, system_prompt, rag_content, mcp_servers
                 )

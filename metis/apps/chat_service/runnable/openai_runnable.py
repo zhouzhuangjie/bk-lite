@@ -96,7 +96,7 @@ class OpenAIRunnable:
         Returns:
             流式聊天响应的异步迭代器，每个响应都是 JSON 字符串
         """
-        logger.debug(f"接收流式聊天请求: {req.user_message[:100]}...")
+        logger.info(f"接收流式聊天请求: {req.user_message[:100]}...")
 
         # 创建驱动和准备参数
         driver = self._create_driver(req)
