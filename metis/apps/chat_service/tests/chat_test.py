@@ -1,4 +1,5 @@
 import os
+import time
 import unittest
 import asyncio
 from langserve import RemoteRunnable
@@ -14,18 +15,19 @@ class TestChatService(unittest.TestCase):
             "openai_api_base": os.getenv('OPENAI_BASE_URL'),
             "openai_api_key": os.getenv('OPENAI_API_KEY'),
             "model": "gpt-4o",
-            "user_message": "写一个100字的感想",
+            "user_message": "你好",
             "chat_history": [],
         }
 
     async def async_test_chat_stream(self):
         chunks = []
         async for chunk in self.client.astream(self.test_input):
-            content = chunk.get('content', '')
-            import time
-            time.sleep(0.01)
-            print(content, end='', flush=True)  # Print content in real-time
-            chunks.append(chunk)
+            time.sleep(0.1)
+            print(chunk)
+            # content = chunk.get('content', '')
+
+            # print(content, end='', flush=True)  # Print content in real-time
+            # chunks.append(chunk)
 
     def test_chat_stream(self):
         asyncio.run(self.async_test_chat_stream())
