@@ -2,3 +2,4 @@
 .vscode
 *.tar
 infra/support-files/images/keycloak/*.jar
+logs
