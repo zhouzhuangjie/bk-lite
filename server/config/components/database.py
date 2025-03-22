@@ -34,7 +34,7 @@ if db_engine == 'mysql':
     }
 
 if db_engine == 'sqlite':
-    database_name = os.getenv("DB_NAME", "rewind.sqlite3")
+    database_name = os.getenv("DB_NAME", "bk-lite.sqlite3")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
