@@ -2,9 +2,10 @@ from typing import Any, Dict, List, Tuple, Union
 import tiktoken
 from loguru import logger
 
+
 class TokenCounter:
     """Token计数工具类"""
-    
+
     def __init__(self, model: str):
         """
         初始化Token计数器
@@ -18,7 +19,7 @@ class TokenCounter:
         except Exception:
             logger.warning(f"无法找到模型 {model} 的分词器，使用默认分词器")
             self.encoding = tiktoken.get_encoding("cl100k_base")
-    
+
     def count_tokens(self, text: Any) -> int:
         """
         计算文本的 token 数量
@@ -31,17 +32,17 @@ class TokenCounter:
         """
         if not text:
             return 0
-            
+
         # 处理多模态内容（列表或字典）
         if isinstance(text, (list, dict)):
             return self._count_multimodal_tokens(text)
-            
+
         # 确保文本是字符串
         if not isinstance(text, str):
             text = str(text)
-            
+
         return len(self.encoding.encode(text))
-        
+
     def _count_multimodal_tokens(self, content: Union[List, Dict]) -> int:
         """
         计算多模态内容的 token 数量
@@ -59,7 +60,7 @@ class TokenCounter:
                 tokens += self.count_tokens(key)
                 tokens += self.count_tokens(value)
             return tokens
-            
+
         elif isinstance(content, list):
             # 处理列表格式
             tokens = 0
@@ -79,7 +80,7 @@ class TokenCounter:
                     # 非字典项
                     tokens += self.count_tokens(item)
             return tokens
-            
+
         # 不应该到达这里
         return 0
 
