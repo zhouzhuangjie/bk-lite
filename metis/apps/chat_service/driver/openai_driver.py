@@ -1,6 +1,6 @@
 import json
 import time
-from typing import List, Any, Dict, Tuple, Union, Optional, AsyncIterator
+from typing import List, Any, Dict, Tuple, Union, Optional, AsyncIterator, ClassVar, TYPE_CHECKING
 
 from langchain.agents import initialize_agent, AgentType
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -14,10 +14,42 @@ from langchain_community.chat_message_histories import ChatMessageHistory
 
 from apps.chat_service.user_types.chat_history import ChatHistory
 from apps.chat_service.user_types.mcp_server import McpServer
+from apps.chat_service.driver.utils.token_counter import TokenCounter
+from apps.chat_service.driver.utils.formatter import MessageFormatter
 
+# 避免循环导入
+if TYPE_CHECKING:
+    from apps.chat_service.graph.builder import build_chat_graph
 
-class OpenAIDriver:
+from typing import List, Any, Dict, Tuple, Union, Optional, AsyncIterator, ClassVar
+from apps.chat_service.types.base_types import IOpenAIDriver
+
+class OpenAIDriver(IOpenAIDriver):
     """OpenAI 驱动类，处理与 OpenAI 模型的交互"""
+    
+    # 驱动类型常量
+    TYPE_NORMAL: ClassVar[str] = "normal"  # 常规驱动类型
+    TYPE_STREAMING: ClassVar[str] = "streaming"  # 流式驱动类型
+    
+    @classmethod
+    def create(cls, openai_api_key: str, openai_base_url: str, temperature: float, 
+               model: str, driver_type: str = TYPE_NORMAL) -> 'OpenAIDriver':
+        """
+        工厂方法，创建OpenAIDriver实例
+        
+        Args:
+            openai_api_key: OpenAI API 密钥
+            openai_base_url: OpenAI API 基础 URL
+            temperature: 温度参数，控制输出随机性
+            model: 使用的模型名称
+            driver_type: 驱动类型，normal或streaming
+            
+        Returns:
+            配置好的OpenAIDriver实例
+        """
+        driver = cls(openai_api_key, openai_base_url, temperature, model)
+        driver.driver_type = driver_type
+        return driver
     
     def __init__(self, openai_api_key: str, openai_base_url: str, temperature: float, model: str):
         """
@@ -30,6 +62,7 @@ class OpenAIDriver:
             model: 使用的模型名称
         """
         self.model = model
+        self.driver_type = self.TYPE_NORMAL  # 默认为常规类型
         self.common_params = {
             "openai_api_key": openai_api_key,
             "openai_api_base": openai_base_url,
@@ -44,12 +77,18 @@ class OpenAIDriver:
         # 流式响应客户端
         self.streaming_client = ChatOpenAI(**self.common_params, streaming=True)
         
-        # 初始化分词器
-        try:
-            self.encoding = tiktoken.encoding_for_model(model)
-        except Exception:
-            logger.warning(f"无法找到模型 {model} 的分词器，使用默认分词器")
-            self.encoding = tiktoken.get_encoding("cl100k_base")
+        # 初始化工具类
+        self.token_counter = TokenCounter(model)
+        self.formatter = MessageFormatter()
+        
+    def is_streaming(self) -> bool:
+        """
+        检查当前驱动是否为流式类型
+        
+        Returns:
+            是否为流式类型
+        """
+        return self.driver_type == self.TYPE_STREAMING
 
     def build_chat_history(self, chat_history: List[ChatHistory], window_size: int) -> ChatMessageHistory:
         """
@@ -74,7 +113,7 @@ class OpenAIDriver:
                     # 处理可能包含图片的用户消息
                     if event.image_data:
                         # 对于包含图片的消息，需要使用多模态格式
-                        content = self._format_multimodal_message(event.text, event.image_data)
+                        content = self.formatter.format_multimodal_message(event.text, event.image_data)
                         llm_chat_history.add_message(HumanMessage(content=content))
                     else:
                         llm_chat_history.add_user_message(event.text)
@@ -82,89 +121,6 @@ class OpenAIDriver:
                     llm_chat_history.add_ai_message(event.text)
 
         return llm_chat_history
-
-    def count_tokens(self, text: Any) -> int:
-        """
-        计算文本的 token 数量
-        
-        Args:
-            text: 要计算的文本，可以是字符串或其他格式（如列表、字典）
-            
-        Returns:
-            token 数量
-        """
-        if not text:
-            return 0
-            
-        # 处理多模态内容（列表或字典）
-        if isinstance(text, (list, dict)):
-            return self._count_multimodal_tokens(text)
-            
-        # 确保文本是字符串
-        if not isinstance(text, str):
-            text = str(text)
-            
-        return len(self.encoding.encode(text))
-        
-    def _count_multimodal_tokens(self, content: Union[List, Dict]) -> int:
-        """
-        计算多模态内容的 token 数量
-        
-        Args:
-            content: 多模态内容，可以是列表或字典
-            
-        Returns:
-            预估的 token 数量
-        """
-        if isinstance(content, dict):
-            # 处理字典格式
-            tokens = 0
-            for key, value in content.items():
-                tokens += self.count_tokens(key)
-                tokens += self.count_tokens(value)
-            return tokens
-            
-        elif isinstance(content, list):
-            # 处理列表格式
-            tokens = 0
-            for item in content:
-                if isinstance(item, dict):
-                    # 特殊处理多模态项
-                    if item.get("type") == "text" and "text" in item:
-                        # 文本项
-                        tokens += self.count_tokens(item["text"])
-                    elif item.get("type") == "image_url" and "image_url" in item:
-                        # 图片项 - 每张图片估算固定 token 量 (根据模型不同而变化，这里使用保守估计)
-                        tokens += 85  # GPT-4V 图片基础 token 消耗估计
-                    else:
-                        # 其他字典项
-                        tokens += self._count_multimodal_tokens(item)
-                else:
-                    # 非字典项
-                    tokens += self.count_tokens(item)
-            return tokens
-            
-        # 不应该到达这里
-        return 0
-
-    def count_message_tokens(self, messages: List[Dict]) -> Tuple[int, int]:
-        """
-        计算消息列表的输入和输出 token 数量
-        
-        Args:
-            messages: 消息列表
-            
-        Returns:
-            (输入token数, 输出token数) 元组
-        """
-        input_tokens = output_tokens = 0
-
-        for message in messages:
-            content = message.content
-            if content:
-                input_tokens += self.count_tokens(content)
-
-        return input_tokens, output_tokens
 
     def create_prompt_template(self, system_content: str) -> ChatPromptTemplate:
         """
@@ -181,168 +137,6 @@ class OpenAIDriver:
             MessagesPlaceholder(variable_name="chat_history"),
             ("human", "{input}"),
         ])
-
-    def _format_multimodal_message(self, user_message: str, image_data: Optional[List[str]] = None) -> Union[str, List[Dict]]:
-        """
-        格式化多模态消息，支持文本和图片
-        
-        Args:
-            user_message: 用户文本消息
-            image_data: 图片的base64编码列表
-            
-        Returns:
-            格式化后的消息内容
-        """
-        if not image_data:
-            return user_message
-
-        content = [{"type": "text", "text": user_message}]
-
-        for img in image_data:
-            content.append({
-                "type": "image_url",
-                "image_url": {
-                    "url": f"{img}"
-                }
-            })
-
-        return content
-
-    def _prepare_system_content(self, system_prompt: str, rag_content: str) -> str:
-        """
-        准备系统内容
-        
-        Args:
-            system_prompt: 系统提示
-            rag_content: RAG 上下文内容
-            
-        Returns:
-            格式化后的系统内容
-        """
-        # 处理可能包含格式化占位符的 rag_content
-        safe_rag_content = rag_content.replace('{', '{{').replace('}', '}}')
-        return f"{system_prompt}, Here is some context: {safe_rag_content}"
-
-    def _handle_multimodal_input(self, system_content: str, user_message: str, 
-                               message_history: Any, image_data: List[str], is_streaming: bool = False):
-        """
-        处理多模态输入
-        
-        Args:
-            system_content: 系统内容
-            user_message: 用户消息
-            message_history: 消息历史
-            image_data: 图片数据
-            is_streaming: 是否使用流式响应
-            
-        Returns:
-            多模态输入处理的准备信息
-        """
-        logger.info(f"处理多模态输入，包含 {len(image_data)} 张图片")
-        formatted_content = self._format_multimodal_message(user_message, image_data)
-        
-        # 构建消息列表
-        messages = [{"role": "system", "content": system_content}]
-        
-        # 添加历史消息
-        if hasattr(message_history, "messages") and message_history.messages:
-            messages.extend(message_history.messages)
-        
-        # 添加当前带图片的消息
-        messages.append({"role": "user", "content": formatted_content})
-        
-        # 选择客户端
-        client = self.streaming_client if is_streaming else self.client
-        
-        return {'messages': messages, 'client': client}
-
-    def _handle_text_input(self, system_content: str, user_message: str, message_history: Any, is_streaming: bool = False):
-        """
-        处理纯文本输入
-        
-        Args:
-            system_content: 系统内容
-            user_message: 用户消息
-            message_history: 消息历史
-            is_streaming: 是否使用流式响应
-            
-        Returns:
-            文本输入处理的准备信息
-        """
-        # 创建提示模板
-        prompt = self.create_prompt_template(system_content)
-        
-        # 选择客户端
-        client = self.streaming_client if is_streaming else self.client
-        
-        # 创建对话链
-        chain = prompt | client
-        
-        # 添加历史记录
-        chain_with_history = RunnableWithMessageHistory(
-            chain,
-            get_session_history=lambda: message_history,
-            input_messages_key="input",
-            history_messages_key="chat_history",
-        )
-        
-        return {'chain': chain_with_history, 'input': {"input": user_message}}
-
-    def _invoke_simple_chain(self, user_message: str, message_history: Any, 
-                           system_prompt: str, rag_content: str, trace_id: str, 
-                           image_data: List[str] = []):
-        """
-        调用简单对话链
-        
-        Args:
-            user_message: 用户消息
-            message_history: 消息历史
-            system_prompt: 系统提示
-            rag_content: RAG 上下文
-            trace_id: 追踪 ID
-            image_data: 图片数据
-            
-        Returns:
-            LLM 响应结果
-        """
-        start_time = time.time()
-        logger.info(f"问题[{trace_id}]: {user_message}")
-
-        # 准备系统内容
-        system_content = self._prepare_system_content(system_prompt, rag_content)
-        
-        # 计算输入 token
-        input_tokens = self.count_tokens(system_content) + self.count_tokens(user_message)
-
-        # 为历史消息计算 token
-        if hasattr(message_history, "messages") and message_history.messages:
-            hist_input, hist_output = self.count_message_tokens(message_history.messages)
-            input_tokens += hist_input + hist_output
-
-        # 根据输入类型选择处理方法
-        if image_data:
-            # 处理多模态输入
-            mm_data = self._handle_multimodal_input(system_content, user_message, message_history, image_data)
-            result = mm_data['client'].invoke(mm_data['messages'])
-        else:
-            # 处理纯文本输入
-            text_data = self._handle_text_input(system_content, user_message, message_history)
-            result = text_data['chain'].invoke(text_data['input'])
-
-        # 计算输出 token
-        output_tokens = self.count_tokens(result.content)
-
-        # 记录用量数据
-        result.usage_metadata = {
-            'input_tokens': input_tokens,
-            'output_tokens': output_tokens
-        }
-
-        # 计算并记录耗时
-        duration = time.time() - start_time
-        logger.info(f"耗时:[{duration:.4f}秒],回复[{trace_id}]: {result}")
-        
-        return result
 
     async def execute_with_tools(self, user_message: str, message_history: Any, 
                                system_prompt: str, rag_content: str, mcp_servers: List[McpServer]):
@@ -428,7 +222,7 @@ class OpenAIDriver:
             ])
             formatted_prompt = agent_prompt.format(**input_data)
             logger.debug(f"Formatted Prompt:\n{formatted_prompt}")
-            total_prompt_tokens = self.count_tokens(formatted_prompt)
+            total_prompt_tokens = self.token_counter.count_tokens(formatted_prompt)
 
             # 执行工具调用
             tools_response = await agent_executor.ainvoke(input_data)
@@ -441,7 +235,7 @@ class OpenAIDriver:
                     {thoughts_result}
                 </function_call_thought>
                 """
-            total_completion_tokens = self.count_tokens(thoughts_result)
+            total_completion_tokens = self.token_counter.count_tokens(thoughts_result)
 
         return updated_rag_content, total_prompt_tokens, total_completion_tokens
 
@@ -464,37 +258,46 @@ class OpenAIDriver:
         Returns:
             对话结果的 JSON 字符串
         """
+        # 如果是流式驱动，抛出错误提示
+        if self.is_streaming():
+            raise ValueError("流式驱动不支持非流式聊天，请使用stream_chat_with_history方法或正确的驱动类型")
+            
         try:
             logger.info(f"System Prompt: {system_prompt}, User Message: {user_message}, mcp_servers:{mcp_servers}")
             if image_data:
                 logger.info(f"检测到多模态输入，包含 {len(image_data)} 张图片")
 
-            total_prompt_tokens = total_completion_tokens = 0
+            # 延迟导入以避免循环依赖
+            from apps.chat_service.graph.builder import build_chat_graph
+            
+            # 创建并执行 LangGraph 流程
+            chain = build_chat_graph(self)
+            inputs = {
+                "user_message": user_message,
+                "message_history": message_history,
+                "system_prompt": system_prompt,
+                "rag_content": rag_content,
+                "mcp_servers": mcp_servers,
+                "trace_id": trace_id,
+                "image_data": image_data,
+                "result": "",
+                "input_tokens": 0,
+                "output_tokens": 0
+            }
+            
+            for key, value in inputs.items():
+                logger.debug(f"Input - {key}: {value}")
 
-            # 如果有工具服务器，先执行工具调用
-            if (mcp_servers):
-                rag_content, tool_prompt_tokens, tool_completion_tokens = await self.execute_with_tools(
-                    user_message, message_history, system_prompt, rag_content, mcp_servers
-                )
-                total_prompt_tokens += tool_prompt_tokens
-                total_completion_tokens += tool_completion_tokens
+            result = await chain.ainvoke(inputs)
+            
+            logger.info(f"LangGraph result: {result}")
 
-            # 获取最终结果
-            simple_result = self._invoke_simple_chain(
-                user_message, message_history, system_prompt, rag_content, trace_id, image_data
-            )
-
-            # 更新token计数
-            total_prompt_tokens += simple_result.usage_metadata['input_tokens']
-            total_completion_tokens += simple_result.usage_metadata['output_tokens']
-
-            # 返回格式化结果
             return json.dumps({
                 "result": True,
                 "data": {
-                    "content": simple_result.content,
-                    "input_tokens": total_prompt_tokens,
-                    "output_tokens": total_completion_tokens,
+                    "content": result["result"],
+                    "input_tokens": result["input_tokens"],
+                    "output_tokens": result["output_tokens"],
                 }
             }, ensure_ascii=False, indent=4)
 
@@ -508,88 +311,6 @@ class OpenAIDriver:
                     "output_tokens": 0,
                 }
             }, ensure_ascii=False, indent=4)
-
-    async def _stream_invoke_simple_chain(self, user_message: str, message_history: Any,
-                                        system_prompt: str, rag_content: str, trace_id: str,
-                                        image_data: List[str] = []) -> AsyncIterator[Dict[str, Any]]:
-        """
-        流式方式调用简单对话链
-        
-        Args:
-            user_message: 用户消息
-            message_history: 消息历史
-            system_prompt: 系统提示
-            rag_content: RAG 上下文
-            trace_id: 追踪 ID
-            image_data: 图片数据
-            
-        Returns:
-            异步迭代器，生成流式响应内容
-        """
-        start_time = time.time()
-        logger.info(f"流式问题[{trace_id}]: {user_message}")
-
-        # 准备系统内容
-        system_content = self._prepare_system_content(system_prompt, rag_content)
-        
-        # 计算输入 token
-        input_tokens = self.count_tokens(system_content) + self.count_tokens(user_message)
-
-        # 为历史消息计算 token
-        if hasattr(message_history, "messages") and message_history.messages:
-            hist_input, hist_output = self.count_message_tokens(message_history.messages)
-            input_tokens += hist_input + hist_output
-
-        output_tokens = 0
-        final_text = ""
-
-        # 处理多模态输入
-        if image_data:
-            # 准备多模态请求
-            mm_data = self._handle_multimodal_input(
-                system_content, user_message, message_history, image_data, is_streaming=True
-            )
-            
-            # 流式响应
-            async for chunk in mm_data['client'].astream(mm_data['messages']):
-                if chunk.content:
-                    final_text += chunk.content
-                    output_tokens = self.count_tokens(final_text)
-                    yield {
-                        "content": chunk.content,
-                        "input_tokens": input_tokens,
-                        "output_tokens": output_tokens,
-                        "done": False
-                    }
-        else:
-            # 准备文本请求
-            text_data = self._handle_text_input(
-                system_content, user_message, message_history, is_streaming=True
-            )
-            
-            # 流式响应
-            async for chunk in text_data['chain'].astream(text_data['input']):
-                if chunk.content:
-                    final_text += chunk.content
-                    output_tokens = self.count_tokens(final_text)
-                    yield {
-                        "content": chunk.content,
-                        "input_tokens": input_tokens,
-                        "output_tokens": output_tokens,
-                        "done": False
-                    }
-
-        # 计算并记录耗时
-        duration = time.time() - start_time
-        logger.info(f"流式耗时:[{duration:.4f}秒],完成回复[{trace_id}]")
-        
-        # 发送完成消息
-        yield {
-            "content": "",
-            "input_tokens": input_tokens,
-            "output_tokens": output_tokens,
-            "done": True
-        }
 
     async def stream_chat_with_history(self, system_prompt: str, user_message: str,
                                      message_history: List[ChatHistory], rag_content: str = "",
@@ -610,6 +331,10 @@ class OpenAIDriver:
         Returns:
             异步迭代器，生成流式响应内容
         """
+        # 如果是常规驱动，抛出错误提示
+        if not self.is_streaming():
+            raise ValueError("常规驱动不支持流式聊天，请使用chat_with_history方法或正确的驱动类型")
+            
         try:
             # 记录请求信息
             self._log_chat_request(user_message, system_prompt, image_data, trace_id, is_stream=True)
@@ -646,16 +371,7 @@ class OpenAIDriver:
     
     def _log_chat_request(self, user_message: str, system_prompt: str, 
                          image_data: List[str] = None, trace_id: str = "", is_stream: bool = False) -> None:
-        """
-        记录聊天请求的详细信息
-        
-        Args:
-            user_message: 用户消息
-            system_prompt: 系统提示
-            image_data: 图片数据列表
-            trace_id: 追踪ID
-            is_stream: 是否为流式请求
-        """
+        """记录聊天请求的详细信息"""
         request_type = "流式聊天" if is_stream else "聊天"
         trace_info = f"[{trace_id}]" if trace_id else ""
         
@@ -668,19 +384,7 @@ class OpenAIDriver:
     async def _execute_tool_calls_if_needed(self, user_message: str, message_history: Any,
                                           system_prompt: str, rag_content: str,
                                           mcp_servers: List[McpServer]) -> Tuple[str, int]:
-        """
-        如果需要，执行工具调用
-        
-        Args:
-            user_message: 用户消息
-            message_history: 消息历史
-            system_prompt: 系统提示
-            rag_content: RAG上下文
-            mcp_servers: MCP服务器列表
-            
-        Returns:
-            更新后的RAG内容和工具调用消耗的token数量
-        """
+        """如果需要，执行工具调用"""
         if not mcp_servers:
             return rag_content, 0
             
@@ -697,15 +401,7 @@ class OpenAIDriver:
             return rag_content, 0
     
     def _create_tool_execution_chunk(self, prompt_tokens: int) -> Dict[str, Any]:
-        """
-        创建工具执行通知响应块
-        
-        Args:
-            prompt_tokens: 提示token数量
-            
-        Returns:
-            工具执行通知响应块
-        """
+        """创建工具执行通知响应块"""
         return {
             "content": "",
             "type": "tool_execution",
@@ -715,19 +411,169 @@ class OpenAIDriver:
         }
     
     def _create_error_response_chunk(self, error_message: str) -> Dict[str, Any]:
-        """
-        创建错误响应块
-        
-        Args:
-            error_message: 错误消息
-            
-        Returns:
-            错误响应块
-        """
+        """创建错误响应块"""
         return {
             "content": "非常抱歉,触发了智能体的拦截策略,不能回复您哦.....",
             "input_tokens": 0,
             "output_tokens": 0,
             "done": True,
             "error": error_message
+        }
+
+    async def _stream_invoke_simple_chain(self, user_message: str, message_history: Any,
+                                        system_prompt: str, rag_content: str, trace_id: str,
+                                        image_data: List[str] = []) -> AsyncIterator[Dict[str, Any]]:
+        """流式方式调用简单对话链"""
+        start_time = time.time()
+        logger.info(f"流式问题[{trace_id}]: {user_message}")
+
+        # 准备系统内容
+        system_content = self.formatter.prepare_system_content(system_prompt, rag_content)
+        
+        # 计算输入 token
+        input_tokens = self.token_counter.count_tokens(system_content) + self.token_counter.count_tokens(user_message)
+
+        # 为历史消息计算 token
+        if hasattr(message_history, "messages") and message_history.messages:
+            hist_input, hist_output = self.token_counter.count_message_tokens(message_history.messages)
+            input_tokens += hist_input + hist_output
+
+        output_tokens = 0
+        final_text = ""
+
+        # 处理多模态输入
+        if image_data:
+            # 准备多模态请求
+            mm_data = self._handle_multimodal_input(
+                system_content, user_message, message_history, image_data, is_streaming=True
+            )
+            
+            # 流式响应
+            async for chunk in mm_data['client'].astream(mm_data['messages']):
+                if chunk.content:
+                    final_text += chunk.content
+                    output_tokens = self.token_counter.count_tokens(final_text)
+                    yield {
+                        "content": chunk.content,
+                        "input_tokens": input_tokens,
+                        "output_tokens": output_tokens,
+                        "done": False
+                    }
+        else:
+            # 准备文本请求
+            text_data = self._handle_text_input(
+                system_content, user_message, message_history, is_streaming=True
+            )
+            
+            # 流式响应
+            async for chunk in text_data['chain'].astream(text_data['input']):
+                if chunk.content:
+                    final_text += chunk.content
+                    output_tokens = self.token_counter.count_tokens(final_text)
+                    yield {
+                        "content": chunk.content,
+                        "input_tokens": input_tokens,
+                        "output_tokens": output_tokens,
+                        "done": False
+                    }
+
+        # 计算并记录耗时
+        duration = time.time() - start_time
+        logger.info(f"流式耗时:[{duration:.4f}秒],完成回复[{trace_id}]")
+        
+        # 发送完成消息
+        yield {
+            "content": "",
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "done": True
+        }
+
+    def _handle_multimodal_input(self, system_content: str, user_message: str, 
+                               message_history: Any, image_data: List[str], is_streaming: bool = False):
+        """处理多模态输入"""
+        logger.info(f"处理多模态输入，包含 {len(image_data)} 张图片")
+        formatted_content = self.formatter.format_multimodal_message(user_message, image_data)
+        
+        # 构建消息列表
+        messages = [{"role": "system", "content": system_content}]
+        
+        # 添加历史消息
+        if hasattr(message_history, "messages") and message_history.messages:
+            messages.extend(message_history.messages)
+        
+        # 添加当前带图片的消息
+        messages.append({"role": "user", "content": formatted_content})
+        
+        # 选择客户端
+        client = self.streaming_client if is_streaming else self.client
+        
+        return {'messages': messages, 'client': client}
+
+    def _handle_text_input(self, system_content: str, user_message: str, message_history: Any, is_streaming: bool = False):
+        """处理纯文本输入"""
+        # 创建提示模板
+        prompt = self.create_prompt_template(system_content)
+        
+        # 选择客户端
+        client = self.streaming_client if is_streaming else self.client
+        
+        # 创建对话链
+        chain = prompt | client
+        
+        # 添加历史记录
+        chain_with_history = RunnableWithMessageHistory(
+            chain,
+            get_session_history=lambda: message_history,
+            input_messages_key="input",
+            history_messages_key="chat_history",
+        )
+        
+        return {'chain': chain_with_history, 'input': {"input": user_message}}
+
+    def invoke_simple_chain(self, user_message: str, message_history: Any, 
+                           system_prompt: str, rag_content: str, trace_id: str, 
+                           image_data: List[str] = []):
+        """调用简单对话链"""
+        start_time = time.time()
+        logger.info(f"问题[{trace_id}]: {user_message}")
+
+        # 准备系统内容
+        system_content = self.formatter.prepare_system_content(system_prompt, rag_content)
+        
+        # 计算输入 token
+        input_tokens = self.token_counter.count_tokens(system_content) + self.token_counter.count_tokens(user_message)
+
+        # 为历史消息计算 token
+        if hasattr(message_history, "messages") and message_history.messages:
+            hist_input, hist_output = self.token_counter.count_message_tokens(message_history.messages)
+            input_tokens += hist_input + hist_output
+
+        # 根据输入类型选择处理方法
+        if image_data:
+            # 处理多模态输入
+            mm_data = self._handle_multimodal_input(system_content, user_message, message_history, image_data)
+            result = mm_data['client'].invoke(mm_data['messages'])
+        else:
+            # 处理纯文本输入
+            text_data = self._handle_text_input(system_content, user_message, message_history)
+            result = text_data['chain'].invoke(text_data['input'])
+
+        # 计算输出 token
+        output_tokens = self.token_counter.count_tokens(result.content)
+
+        # 记录用量数据
+        result.usage_metadata = {
+            'input_tokens': input_tokens,
+            'output_tokens': output_tokens
+        }
+
+        # 计算并记录耗时
+        duration = time.time() - start_time
+        logger.info(f"耗时:[{duration:.4f}秒],回复[{trace_id}]: {result}")
+        
+        return {
+            "content": result.content,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens
         }

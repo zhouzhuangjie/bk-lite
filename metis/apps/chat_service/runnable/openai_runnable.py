@@ -1,4 +1,4 @@
-from typing import AsyncIterator, Dict, Any
+from typing import AsyncIterator, Dict, Any, TYPE_CHECKING
 from langchain_core.runnables import RunnableLambda
 import json
 
@@ -20,21 +20,25 @@ class OpenAIRunnable:
         """初始化 OpenAIRunnable 实例"""
         logger.info("初始化 OpenAI 可运行服务")
 
-    def _create_driver(self, req: OpenAIChatRequest) -> OpenAIDriver:
+    def _create_driver(self, req: OpenAIChatRequest, streaming: bool = False) -> OpenAIDriver:
         """
         创建 OpenAIDriver 实例
         
         Args:
             req: OpenAI 聊天请求对象
+            streaming: 是否为流式请求
             
         Returns:
             已配置的 OpenAIDriver 实例
         """
-        return OpenAIDriver(
+        driver_type = OpenAIDriver.TYPE_STREAMING if streaming else OpenAIDriver.TYPE_NORMAL
+        
+        return OpenAIDriver.create(
             openai_api_key=req.openai_api_key,
             openai_base_url=req.openai_api_base,
             temperature=req.temperature,
-            model=req.model
+            model=req.model,
+            driver_type=driver_type
         )
 
     def _prepare_chat_params(self, req: OpenAIChatRequest, driver: OpenAIDriver) -> Dict[str, Any]:
@@ -77,8 +81,8 @@ class OpenAIRunnable:
         """
         logger.debug(f"接收聊天请求: {req.user_message[:100]}...")
 
-        # 创建驱动和准备参数
-        driver = self._create_driver(req)
+        # 创建常规驱动和准备参数
+        driver = self._create_driver(req, streaming=False)
         chat_params = self._prepare_chat_params(req, driver)
 
         # 执行聊天并返回结果
@@ -98,8 +102,8 @@ class OpenAIRunnable:
         """
         logger.info(f"接收流式聊天请求: {req.user_message[:100]}...")
 
-        # 创建驱动和准备参数
-        driver = self._create_driver(req)
+        # 创建流式驱动和准备参数
+        driver = self._create_driver(req, streaming=True)
         chat_params = self._prepare_chat_params(req, driver)
 
         # 执行流式聊天并返回结果
