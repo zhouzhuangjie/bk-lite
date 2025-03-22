@@ -1,0 +1,14 @@
+.idea/
+.vscode/
+node_modules/
+dist/
+vendor/
+.venv/
+fusion-collector/*/bin/*
+fusion-collector/*/collector-sidecar
+*.pyc
+__pycache__/
+*.egg-info/
+*.egg
+*.log
+telegraf.local.conf
