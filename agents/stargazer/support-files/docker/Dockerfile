@@ -20,7 +20,7 @@ ADD . .
 ADD support-files/supervisor/service.conf /etc/supervisor/conf.d/service.conf
 
 RUN pip install pip-tools
-RUN pip-compile ./requirements/requirements-core.txt ./requirements/requirements-extra.txt ./requirements/requirements-monitor.txt ./requirements/requirements-collect.txt -v --output-file ./requirements.txt
+RUN pip-compile ./requirements/requirements-core.txt ./requirements/requirements-extra.txt  -v --output-file ./requirements.txt
 
 RUN pip install -r requirements.txt
 
