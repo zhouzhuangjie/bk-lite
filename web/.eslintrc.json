@@ -1,0 +1,36 @@
+{
+  "extends": [
+    "next",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:storybook/recommended"
+  ],
+  "rules": {
+    "@typescript-eslint/consistent-type-definitions": [
+      "error",
+      "interface"
+    ],
+    "@typescript-eslint/no-var-requires": "off",
+    "no-console": "off",
+    "indent": [
+      "error",
+      2,
+      {
+        "SwitchCase": 1,
+        "flatTernaryExpressions": false,
+        "ignoredNodes": [
+          "PropertyDefinition[decorators]",
+          "TSUnionType",
+          "FunctionExpression[params]:has(Identifier[decorators])"
+        ]
+      }
+    ],
+    "react-hooks/exhaustive-deps": "off",
+    "react/display-name": "warn",
+    "@typescript-eslint/no-non-null-assertion": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-unused-expressions": ["error", { "allowShortCircuit": true }]
+  },
+  "plugins": [
+    "@typescript-eslint"
+  ]
+}

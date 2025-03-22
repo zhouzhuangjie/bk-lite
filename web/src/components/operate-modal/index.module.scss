@@ -1,0 +1,21 @@
+.customModal {
+    .customModalContent {
+        padding: 0 0 20px 0 !important;
+    }
+
+    .customModalFooter,
+    .customModalBody {
+        padding: 0 24px !important;
+    }
+
+    .customModalHeader {
+        background: var(--color-modal-header-color) !important;
+        font-weight: 600;
+        font-size: 16px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        padding-left: 20px !important;
+        margin-bottom: 20px !important;
+    }
+}

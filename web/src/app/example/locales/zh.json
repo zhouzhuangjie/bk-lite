@@ -1,0 +1,14 @@
+{
+  "common": {
+    "monitor": "监控",
+    "alarm": "告警"
+  },
+  "app": {
+    "menu": {
+      "home": "首页"
+    }
+  }, 
+  "knowledge": {
+    "menu": "知识库"
+  }
+}

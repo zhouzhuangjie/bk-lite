@@ -1,0 +1,18 @@
+{
+  "zh": [
+    {
+      "title": "首页",
+      "icon": "jiqiren2",
+      "url": "/example",
+      "name": "example"
+    }
+  ],
+  "en": [
+    {
+      "title": "Home",
+      "icon": "jiqiren2",
+      "url": "/example",
+      "name": "example"
+    }
+  ]
+}

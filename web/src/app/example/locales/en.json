@@ -1,0 +1,14 @@
+{
+  "common": {
+    "monitor": "Monitor",
+    "alarm": "Alarm"
+  },
+  "app": {
+    "menu": {
+      "home": "Home"
+    }
+  }, 
+  "knowledge": {
+    "menu": "Knowledge345"
+  }
+}
