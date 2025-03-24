@@ -103,3 +103,9 @@ xmltodict==0.13.0
 boto3==1.21.9
 
 pyvmomi==6.7.3
+
+
+# snmp
+pysnmp==4.4.12
+pyasn1==0.4.8
+pyasn1-modules==0.2.8
