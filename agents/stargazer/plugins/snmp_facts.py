@@ -7,7 +7,7 @@ import socket
 from pysnmp.entity.rfc3413.oneliner import cmdgen
 from pysnmp.hlapi import usmHMACSHAAuthProtocol, usmHMACMD5AuthProtocol, usmAesCfb128Protocol, usmDESPrivProtocol
 
-from stargazer.plugins.base_utils import convert_to_prometheus_format
+from plugins.base_utils import convert_to_prometheus_format
 
 
 class DefineOid:

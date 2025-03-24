@@ -6,7 +6,7 @@ from pyVim.connect import ConnectNoSSL, Disconnect, SmartConnect
 from pyVmomi import vim
 from sanic.log import logger
 
-from stargazer.plugins.base_utils import convert_to_prometheus_format
+from plugins.base_utils import convert_to_prometheus_format
 
 
 class VmwareManage(object):
