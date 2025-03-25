@@ -2,8 +2,6 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-RUN npm run generate-workspace
-
 RUN npm install -g pnpm
 ADD . .
 RUN pnpm install
