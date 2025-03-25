@@ -3,3 +3,6 @@
 *.tar
 infra/support-files/images/keycloak/*.jar
 logs
+
+.history
+pnpm-workspace.yaml
