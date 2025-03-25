@@ -1,3 +1,12 @@
+# -- coding: utf-8 --
+# @File: collect_service.py
+# @Time: 2025/2/27 11:29
+# @Author: windyzhao
+# -- coding: utf-8 --
+# @File: collect_service.py
+# @Time: 2025/2/27 11:29
+# @Author: windyzhao
+import traceback
 import importlib
 from sanic.log import logger
 
@@ -7,7 +16,8 @@ class CollectService(object):
         self.params = params
         self.plugin_name = self.params.pop("plugin_name")
         self.plugin_name_map = {
-            "vmware_info": "VmwareManage"
+            "vmware_info": "VmwareManage",
+            "snmp_facts": "SnmpFacts"
         }
 
     def collect(self):
@@ -19,5 +29,5 @@ class CollectService(object):
             result = plugin_instance.list_all_resources()
             return result
         except Exception as e:
-            logger.info(f"Error loading plugin {self.plugin_name}: {e}")
+            logger.info(f"Error loading plugin {self.plugin_name}: {traceback.format_exc()}")
             return ""
