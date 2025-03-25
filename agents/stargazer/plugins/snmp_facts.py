@@ -171,6 +171,7 @@ class SnmpFacts:
                     results['system']['syslocation'] = current_val
 
             results['system']['ip_addr'] = self.host
+            results['system']['port'] = self.snmp_port
         except Exception as e:
             raise RuntimeError(f"Error during SNMP system information collection: {str(e)}")
 
@@ -233,4 +234,3 @@ class SnmpFacts:
         }
         result = convert_to_prometheus_format(model_data)
         return result
-
