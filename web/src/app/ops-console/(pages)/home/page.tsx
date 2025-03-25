@@ -43,6 +43,7 @@ const ControlPage = () => {
     if (parentElement) {
       parentElement.style.padding = '0';
       return () => {
+        // clean padding style when component unmount
         try {
           if (document.contains(parentElement)) {
             parentElement.style.padding = '';
