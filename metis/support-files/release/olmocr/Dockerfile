@@ -1,5 +1,7 @@
 FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu22.04
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 RUN apt-get update && \
     apt install software-properties-common -y && \
     add-apt-repository ppa:deadsnakes/ppa -y && \
