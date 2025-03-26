@@ -4,7 +4,7 @@ import os
 
 from django.core.management import BaseCommand
 
-from apps.core.utils.keycloak_client import KeyCloakClient
+from apps.system_mgmt.utils.keycloak_client import KeyCloakClient
 
 logger = logging.getLogger(__name__)
 

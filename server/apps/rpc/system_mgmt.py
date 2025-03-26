@@ -84,20 +84,13 @@ class SystemMgmt(object):
         )
         return return_data
 
-    def create_default_group(self, group_name, user_id, default_group_id):
+    def init_user_default_attributes(self, user_id, group_name, default_group_id):
         """
-        :param group_name: 默认组名
         :param user_id: 用户id
+        :param group_name: 组名
         :param default_group_id: 默认组ID
         """
         return_data = self.client.run(
-            "create_default_group", group_name=group_name, user_id=user_id, default_group_id=default_group_id
+            "init_user_default_attributes", user_id=user_id, group_name=group_name, default_group_id=default_group_id
         )
-        return return_data
-
-    def join_default_role(self, user_id):
-        """
-        :param user_id: 用户id
-        """
-        return_data = self.client.run("join_default_role", user_id=user_id)
         return return_data
