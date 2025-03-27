@@ -135,6 +135,24 @@
         "detail": "详情",
         "context": "通知内容"
       }
+    },
+    "data": {
+      "name": "名称",
+      "description": "描述",
+      "group": "所属分组",
+      "deleteConfirm": "确定要删除该数据吗？"
+    },
+    "permission": {
+      "setDataPermission": "设置数据权限",
+      "group": "分组",
+      "pleaseInputGroupName": "请输入分组名称",
+      "dataPermission": "数据权限",
+      "app": "应用",
+      "readOnly": "只读",
+      "readWrite": "读写",
+      "manage": "管理",
+      "fullPermission": "全权限",
+      "dataPermissionRule": "数据权限规则"
     }
   }
 }

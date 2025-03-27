@@ -64,3 +64,4 @@ server.js
 server.key
 
 .env.local
+pnpm-workspace.yaml

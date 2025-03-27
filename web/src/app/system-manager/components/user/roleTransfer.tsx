@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Transfer, Tree } from 'antd';
-import { DeleteOutlined } from '@ant-design/icons';
+import { DeleteOutlined, SettingOutlined } from '@ant-design/icons';
 import type { DataNode as TreeDataNode } from 'antd/lib/tree';
+import PermissionModal from './permissionModal';
 
 interface TreeTransferProps {
   treeData: TreeDataNode[];
@@ -77,15 +78,21 @@ const isFullySelected = (node: TreeDataNode, selectedKeys: string[]): boolean =>
   return selectedKeys.includes(String(node.key));
 };
 
+// 增加事件处理函数接口
+interface NodeHandlers {
+  onPermissionSetting: (node: TreeDataNode, e: React.MouseEvent) => void;
+  onRemove: (newKeys: string[]) => void;
+}
+
 // 新增：当 mode 为 "group" 时，生成右侧树的节点，只保留全选节点
 const transformRightTreeGroup = (
   nodes: TreeDataNode[],
   selectedKeys: string[],
-  onRemove: (newKeys: string[]) => void
+  handlers: NodeHandlers
 ): TreeDataNode[] => {
   return nodes.reduce<TreeDataNode[]>((acc, node) => {
     if (node.children && node.children.length > 0) {
-      const transformedChildren = transformRightTreeGroup(node.children, selectedKeys, onRemove);
+      const transformedChildren = transformRightTreeGroup(node.children, selectedKeys, handlers);
       if (isFullySelected(node, selectedKeys)) {
         // 当所有子节点都选中时，显示父级分组节点
         acc.push({
@@ -93,16 +100,22 @@ const transformRightTreeGroup = (
           title: (
             <div className="flex justify-between items-center w-full">
               <span>{typeof node.title === 'function' ? node.title(node) : node.title}</span>
-              <DeleteOutlined
-                className="cursor-pointer text-[var(--color-text-4)]"
-                onClick={e => {
-                  e.stopPropagation();
-                  const keysToRemove = getSubtreeKeys(node);
-                  let updated = selectedKeys.filter(key => !keysToRemove.includes(key));
-                  updated = cleanSelectedKeys(updated, nodes);
-                  onRemove(updated);
-                }}
-              />
+              <div>
+                <SettingOutlined
+                  className="cursor-pointer text-[var(--color-text-4)] mr-2"
+                  onClick={(e) => handlers.onPermissionSetting(node, e)}
+                />
+                <DeleteOutlined
+                  className="cursor-pointer text-[var(--color-text-4)]"
+                  onClick={e => {
+                    e.stopPropagation();
+                    const keysToRemove = getSubtreeKeys(node);
+                    let updated = selectedKeys.filter(key => !keysToRemove.includes(key));
+                    updated = cleanSelectedKeys(updated, nodes);
+                    handlers.onRemove(updated);
+                  }}
+                />
+              </div>
             </div>
           ),
           children: transformedChildren
@@ -119,16 +132,22 @@ const transformRightTreeGroup = (
           title: (
             <div className="flex justify-between items-center w-full">
               <span>{typeof node.title === 'function' ? node.title(node) : node.title}</span>
-              <DeleteOutlined
-                className="cursor-pointer text-[var(--color-text-4)]"
-                onClick={e => {
-                  e.stopPropagation();
-                  const keysToRemove = getSubtreeKeys(node);
-                  let updated = selectedKeys.filter(key => !keysToRemove.includes(key));
-                  updated = cleanSelectedKeys(updated, nodes);
-                  onRemove(updated);
-                }}
-              />
+              <div>
+                <SettingOutlined
+                  className="cursor-pointer text-[var(--color-text-4)] mr-2"
+                  onClick={(e) => handlers.onPermissionSetting(node, e)}
+                />
+                <DeleteOutlined
+                  className="cursor-pointer text-[var(--color-text-4)]"
+                  onClick={e => {
+                    e.stopPropagation();
+                    const keysToRemove = getSubtreeKeys(node);
+                    let updated = selectedKeys.filter(key => !keysToRemove.includes(key));
+                    updated = cleanSelectedKeys(updated, nodes);
+                    handlers.onRemove(updated);
+                  }}
+                />
+              </div>
             </div>
           )
         });
@@ -144,11 +163,12 @@ const transformRightTree = (
   treeData: TreeDataNode[],
   selectedKeys: string[],
   onRemove: (newKeys: string[]) => void,
+  onPermissionSetting?: (node: TreeDataNode, e: React.MouseEvent) => void,
   mode?: 'group'
 ): TreeDataNode[] => {
   if (mode === 'group') {
     // 使用完整树数据生成全选的分组模式
-    return transformRightTreeGroup(treeData, selectedKeys, onRemove);
+    return transformRightTreeGroup(treeData, selectedKeys, { onPermissionSetting: onPermissionSetting || (() => {}), onRemove });
   }
   return nodes.map(node => ({
     ...node,
@@ -182,63 +202,115 @@ const getAllKeys = (nodes: TreeDataNode[]): string[] => {
 };
 
 const RoleTransfer: React.FC<TreeTransferProps> = ({ treeData, selectedKeys, onChange, mode = 'role' }) => {
-  const flattenedRoleData = flattenRoleData(treeData);
-  const leftExpandedKeys = getAllKeys(treeData);
-  const filteredRightData = filterTreeData(treeData, selectedKeys);
-  // 如需使用 group 模式，将 'group' 参数传入
-  const rightTransformedData = transformRightTree(
-    filteredRightData,
-    treeData,
-    selectedKeys,
-    onChange,
-    mode === 'group' ? 'group' : undefined
+  const [isPermissionModalVisible, setIsPermissionModalVisible] = useState<boolean>(false);
+  const [currentNode, setCurrentNode] = useState<TreeDataNode | null>(null);
+
+  // 使用 useMemo 缓存计算，提高性能
+  const flattenedRoleData = useMemo(() => flattenRoleData(treeData), [treeData]);
+  const leftExpandedKeys = useMemo(() => getAllKeys(treeData), [treeData]);
+  const filteredRightData = useMemo(() => filterTreeData(treeData, selectedKeys), [treeData, selectedKeys]);
+
+  const handlePermissionSetting = (node: TreeDataNode, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentNode(node);
+    setIsPermissionModalVisible(true);
+  };
+
+  const handlePermissionOk = (values: any) => {
+    console.log('权限设置数据:', values, '当前节点:', currentNode);
+    setIsPermissionModalVisible(false);
+  };
+
+  // 右侧树数据转换
+  const rightTransformedData = useMemo(() =>
+    transformRightTree(
+      filteredRightData,
+      treeData,
+      selectedKeys,
+      onChange,
+      handlePermissionSetting,
+      mode === 'group' ? 'group' : undefined
+    ), [filteredRightData, treeData, selectedKeys, onChange, mode]
   );
-  const rightExpandedKeys = getAllKeys(rightTransformedData);
+
+  const rightExpandedKeys = useMemo(() =>
+    getAllKeys(rightTransformedData), [rightTransformedData]
+  );
+
+  // 修改 Transfer 的数据源
+  const transferDataSource = useMemo(() => {
+    if (mode === 'group') {
+      // 对于 group 模式，确保包含所有的叶子节点
+      const getAllLeafNodes = (nodes: TreeDataNode[]): { key: string; title: string }[] => {
+        return nodes.reduce<{ key: string; title: string }[]>((acc, node) => {
+          if (!node.children || node.children.length === 0) {
+            acc.push({ key: node.key as string, title: node.title as string });
+          } else {
+            acc = acc.concat(getAllLeafNodes(node.children));
+          }
+          return acc;
+        }, []);
+      };
+
+      return getAllLeafNodes(treeData);
+    }
+
+    return flattenedRoleData;
+  }, [treeData, mode, flattenedRoleData]);
 
   return (
-    <Transfer
-      oneWay
-      dataSource={flattenedRoleData}
-      targetKeys={selectedKeys}
-      className="tree-transfer"
-      render={(item) => item.title}
-      showSelectAll={false}
-      onChange={(nextTargetKeys) => {
-        onChange(nextTargetKeys as string[]);
-      }}
-    >
-      {({ direction }) => {
-        if (direction === 'left') {
-          return (
-            <div className="p-1 max-h-[250px] overflow-auto">
-              <Tree
-                blockNode
-                checkable
-                selectable={false}
-                expandedKeys={leftExpandedKeys}
-                checkedKeys={selectedKeys}
-                treeData={treeData}
-                onCheck={(checkedKeys, info) => {
-                  const newKeys = info.checkedNodes.map((node: any) => node.key);
-                  onChange(newKeys);
-                }}
-              />
-            </div>
-          );
-        } else if (direction === 'right') {
-          return (
-            <div className="w-full p-1 max-h-[250px] overflow-auto">
-              <Tree
-                blockNode
-                selectable={false}
-                expandedKeys={rightExpandedKeys}
-                treeData={rightTransformedData}
-              />
-            </div>
-          );
-        }
-      }}
-    </Transfer>
+    <>
+      <Transfer
+        oneWay
+        dataSource={transferDataSource}
+        targetKeys={selectedKeys}
+        className="tree-transfer"
+        render={(item) => item.title}
+        showSelectAll={false}
+        onChange={(nextTargetKeys) => {
+          onChange(nextTargetKeys as string[]);
+        }}
+      >
+        {({ direction }) => {
+          if (direction === 'left') {
+            return (
+              <div className="p-1 max-h-[250px] overflow-auto">
+                <Tree
+                  blockNode
+                  checkable
+                  selectable={false}
+                  expandedKeys={leftExpandedKeys}
+                  checkedKeys={selectedKeys}
+                  treeData={treeData}
+                  onCheck={(checkedKeys, info) => {
+                    const newKeys = info.checkedNodes.map((node: any) => node.key);
+                    onChange(newKeys);
+                  }}
+                />
+              </div>
+            );
+          } else if (direction === 'right') {
+            return (
+              <div className="w-full p-1 max-h-[250px] overflow-auto">
+                <Tree
+                  blockNode
+                  selectable={false}
+                  expandedKeys={rightExpandedKeys}
+                  treeData={rightTransformedData}
+                />
+              </div>
+            );
+          }
+        }}
+      </Transfer>
+
+      <PermissionModal
+        visible={isPermissionModalVisible}
+        node={currentNode}
+        onOk={handlePermissionOk}
+        onCancel={() => setIsPermissionModalVisible(false)}
+      />
+    </>
   );
 };
 
