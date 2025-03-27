@@ -10,12 +10,12 @@ APPS=$(echo "$APPS" | tr -d '"' | xargs)
 
   if [ "$APPS" = "*" ]; then
     # If wildcard, add all applications
-    echo "  - 'src/apps/*'"
+    echo "  - 'src/app/*'"
   else
     # Process specific app list
     IFS=', ' read -ra APP_ARRAY <<< "$APPS"
     for app in "${APP_ARRAY[@]}"; do
-      echo "  - 'src/apps/${app}'"
+      echo "  - 'src/app/${app}'"
     done
   fi
 } > pnpm-workspace.temp.yaml
@@ -24,7 +24,7 @@ APPS=$(echo "$APPS" | tr -d '"' | xargs)
 mv pnpm-workspace.temp.yaml pnpm-workspace.yaml
 
 if [ "$APPS" = "*" ]; then
-  echo "➤ Generated workspace for all applications (src/apps/*)"
+  echo "➤ Generated workspace for all applications (src/app/*)"
 else
   IFS=', ' read -ra APP_ARRAY <<< "$APPS"
   echo "➤ Generated workspace for: ${APP_ARRAY[*]}"
