@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Button, Input, Form, message, Spin, Popconfirm, Select } from 'antd';
+import { Button, Input, Form, message, Spin, Popconfirm } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import CustomTable from '@/components/custom-table';
@@ -9,13 +9,17 @@ import DynamicForm from '@/components/dynamic-form';
 import PermissionRule from '@/app/system-manager/components/application/permissionRule';
 
 const { Search } = Input;
-const { Option } = Select;
 
 interface DataItem {
   id: string;
   name: string;
   description: string;
   groupId: string;
+  permissionRule?: {
+    workspace: { type: string; allPermissions: { view: boolean; operate: boolean }; specificData: any[] };
+    agent: { type: string; allPermissions: { view: boolean; operate: boolean }; specificData: any[] };
+    tool: { type: string; allPermissions: { view: boolean; operate: boolean }; specificData: any[] };
+  };
 }
 
 interface Group {
@@ -67,14 +71,14 @@ const DataManagement: React.FC = () => {
 
         const filteredData = search
           ? mockData.filter(item =>
-              item.name.toLowerCase().includes(search.toLowerCase()) ||
-              item.description.toLowerCase().includes(search.toLowerCase())
-            )
+            item.name.toLowerCase().includes(search.toLowerCase()) ||
+            item.description.toLowerCase().includes(search.toLowerCase())
+          )
           : mockData;
 
         setDataList(filteredData);
         setTotal(filteredData.length);
-        handleTableChange(1, pageSize, filteredData);
+        handleTableChange(1, pageSize);
         setLoading(false);
       }, 500);
     } catch (error) {
@@ -83,7 +87,7 @@ const DataManagement: React.FC = () => {
     }
   };
 
-  const handleTableChange = (page: number, size?: number, listOverride?: DataItem[]) => {
+  const handleTableChange = (page: number, size?: number) => {
     const newPageSize = size || pageSize;
 
     setCurrentPage(page);
@@ -94,27 +98,26 @@ const DataManagement: React.FC = () => {
     setIsEditing(!!data);
     setSelectedData(data);
 
+    // 定义默认的权限规则
+    const defaultPermissionRule = {
+      workspace: { type: 'all', allPermissions: { view: true, operate: true }, specificData: [] },
+      agent: { type: 'all', allPermissions: { view: true, operate: true }, specificData: [] },
+      tool: { type: 'all', allPermissions: { view: true, operate: true }, specificData: [] },
+    };
+
     if (data) {
       dataForm.setFieldsValue({
         name: data.name,
         description: data.description,
         groupId: data.groupId,
-        // 如果后端有权限规则数据，可以在这里设置
-        permissionRule: data?.permissionRule || {
-          workspace: { type: 'all', allPermissions: { view: true, operate: true }, specificData: [] },
-          agent: { type: 'all', allPermissions: { view: true, operate: true }, specificData: [] },
-          tool: { type: 'all', allPermissions: { view: true, operate: true }, specificData: [] },
-        },
+        // 确保存在的权限规则被合并，而不是直接赋值
+        permissionRule: data.permissionRule || defaultPermissionRule,
       });
     } else {
       dataForm.resetFields();
-      // 设置权限规则的默认值
+      // 明确设置默认权限规则
       dataForm.setFieldsValue({
-        permissionRule: {
-          workspace: { type: 'all', allPermissions: { view: true, operate: true }, specificData: [] },
-          agent: { type: 'all', allPermissions: { view: true, operate: true }, specificData: [] },
-          tool: { type: 'all', allPermissions: { view: true, operate: true }, specificData: [] },
-        },
+        permissionRule: defaultPermissionRule,
       });
     }
 
@@ -280,7 +283,6 @@ const DataManagement: React.FC = () => {
 
       <OperateModal
         title={isEditing ? t('common.edit') : t('common.add')}
-        closable={false}
         okText={t('common.confirm')}
         cancelText={t('common.cancel')}
         okButtonProps={{ loading: modalLoading }}
