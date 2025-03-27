@@ -5,7 +5,7 @@ interface Field {
   name: string;
   type: string;
   label: string;
-  placeholder: string;
+  placeholder?: string;
   rules?: any[];
   options?: { value: string | number; label: string }[];
   component?: React.ReactNode;
@@ -33,6 +33,7 @@ const componentMap: { [key: string]: React.FC<any> } = {
     </Select>
   ),
   inputNumber: (props) => <InputNumber {...props} />,
+  custom: ({ component }) => component, // 添加对自定义组件的支持
 };
 
 const DynamicForm: React.FC<DynamicFormProps> = ({ form, fields, initialValues }) => {
@@ -50,7 +51,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ form, fields, initialValues }
             rules={rules}
             initialValue={initialValue}
           >
-            {/* 显式传递 value 和 onChange */}
             {Component ? (
               <Component {...rest} />
             ) : (
