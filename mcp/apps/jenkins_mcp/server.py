@@ -7,6 +7,8 @@ import jenkins
 from contextlib import asynccontextmanager
 import os
 
+load_dotenv()
+
 
 @dataclass
 class JenkinsContext:
@@ -15,8 +17,6 @@ class JenkinsContext:
 
 @asynccontextmanager
 async def jenkins_lifespan(server: FastMCP) -> AsyncIterator[JenkinsContext]:
-    load_dotenv()
-
     jenkins_url = os.environ["JENKINS_URL"]
     username = os.environ["JENKINS_USERNAME"]
     password = os.environ["JENKINS_PASSWORD"]
@@ -25,7 +25,7 @@ async def jenkins_lifespan(server: FastMCP) -> AsyncIterator[JenkinsContext]:
     yield JenkinsContext(client=client)
 
 
-mcp = FastMCP("Jenkins MCP", port=7000, lifespan=jenkins_lifespan)
+mcp = FastMCP("Jenkins MCP", port=os.getenv("APP_PORT", 7000), lifespan=jenkins_lifespan)
 
 
 @mcp.tool()

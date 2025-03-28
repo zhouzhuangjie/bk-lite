@@ -1,7 +1,11 @@
+import os
+
+from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 from datetime import datetime, timezone, timedelta
 
-mcp = FastMCP("Time MCP", port=7000)
+load_dotenv()
+mcp = FastMCP("Time MCP", port=os.getenv("APP_PORT", 7000))
 
 
 @mcp.tool()
