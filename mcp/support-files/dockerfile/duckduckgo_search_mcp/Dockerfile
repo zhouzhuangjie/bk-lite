@@ -23,4 +23,6 @@ RUN pip install -r ./requirements/requirements-duckduckgo_search_mcp.txt
 ADD ./apps/__init__.py ./apps/__init__.py
 ADD ./apps/duckduckgo_search_mcp ./apps/duckduckgo_search_mcp
 
+ADD ./support-files/supervisor/duckduckgo_search_mcp/mcp_server.conf /etc/supervisor/conf.d/mcp_server.conf
+
 CMD ["supervisord", "-n"]

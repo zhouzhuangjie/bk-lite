@@ -23,4 +23,6 @@ RUN pip install -r ./requirements/requirements-time_mcp.txt
 ADD ./apps/__init__.py ./apps/__init__.py
 ADD ./apps/time_mcp ./apps/time_mcp
 
+ADD ./support-files/supervisor/time_mcp/mcp_server.conf /etc/supervisor/conf.d/mcp_server.conf
+
 CMD ["supervisord", "-n"]
