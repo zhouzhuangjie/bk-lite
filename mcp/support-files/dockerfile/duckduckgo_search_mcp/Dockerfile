@@ -1,7 +1,5 @@
 FROM python:3.12
 
-ARG MCP_APP
-
 RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/;
 RUN rm -Rf /etc/apt/sources.list.d \
     && echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm main contrib non-free non-free-firmware" > /etc/apt/sources.list \
@@ -16,13 +14,13 @@ RUN apt-get update && \
 
 WORKDIR /app
 
-ADD ../requirements/requirements-core.txt ./requirements/requirements-core.txt
-ADD ./requirements/requirements-${MCP_APP}.txt ./requirements/requirements-${MCP_APP}.txt
+ADD ./requirements/requirements-core.txt ./requirements/requirements-core.txt
+ADD ./requirements/requirements-duckduckgo_search_mcp.txt ./requirements/requirements-duckduckgo_search_mcp.txt
 
 RUN pip install -r ./requirements/requirements-core.txt
-RUN pip install -r ./requirements/requirements-${MCP_APP}.txt
+RUN pip install -r ./requirements/requirements-duckduckgo_search_mcp.txt
 
+ADD ./apps/__init__.py ./apps/__init__.py
+ADD ./apps/duckduckgo_search_mcp ./apps/duckduckgo_search_mcp
 
-ADD ./${MCP_APP} ./${MCP_APP}
-
-CMD python ./${MCP_APP}/server.py
+CMD ["supervisord", "-n"]
