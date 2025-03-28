@@ -25,10 +25,4 @@ RUN pip install -r ./requirements/requirements-${MCP_APP}.txt
 
 ADD ./${MCP_APP} ./${MCP_APP}
 
-ADD ./support-files/release/chat_service/service.conf /etc/supervisor/conf.d/service.conf
-
-ADD ./support-files/release/chat_service/general_mcp.conf /etc/supervisor/conf.d/general_mcp.conf
-
-ADD ./support-files/release/chat_service/web_search_mcp.conf /etc/supervisor/conf.d/web_search_mcp.conf
-
 CMD python ./${MCP_APP}/server.py
