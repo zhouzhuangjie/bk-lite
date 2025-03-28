@@ -14,7 +14,7 @@ mcp = FastMCP("Kubernetes MCP", port=os.getenv("APP_PORT", 7000))
 if os.getenv('KUBE_CONFIG_FILE') == "":
     config.load_incluster_config()
 else:
-    config.load_kube_config(config_file=os.getenv('KUBE_CONFIG_FILE'))
+    config.load_kube_config(config_fzile=os.getenv('KUBE_CONFIG_FILE'))
 
 core_v1 = client.CoreV1Api()
 apps_v1 = client.AppsV1Api()
