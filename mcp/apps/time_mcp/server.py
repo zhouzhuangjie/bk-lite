@@ -1,6 +1,5 @@
-from datetime import datetime
-
 from mcp.server.fastmcp import FastMCP
+from datetime import datetime, timezone, timedelta
 
 mcp = FastMCP("Time MCP", port=7000)
 
@@ -12,7 +11,7 @@ def current_time() -> str:
     :return:
     """
     # 获取当前时区
-    tz = datetime.now().astimezone().tzinfo
+    tz = timezone(timedelta(hours=8))  # 中国标准时间 UTC+8
 
     return datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
 
