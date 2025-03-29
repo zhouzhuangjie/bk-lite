@@ -1,2 +1,0 @@
-class ToTAgent:
-    pass

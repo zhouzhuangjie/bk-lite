@@ -1,2 +1,0 @@
-class ToolsChatbot:
-    pass
