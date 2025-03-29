@@ -1,0 +1,2 @@
+class SelfRag:
+    pass

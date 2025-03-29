@@ -16,3 +16,5 @@ pyarmor.cli.core.darwin==7.6.4
 
 modelscope==1.23.2
 setuptools==76.0.0
+
+pytest==8.3.5
