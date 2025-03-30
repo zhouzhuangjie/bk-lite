@@ -1,0 +1,2 @@
+class SelfDiscoverAgent:
+    pass

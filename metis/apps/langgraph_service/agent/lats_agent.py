@@ -1,0 +1,2 @@
+class LatAgent:
+    pass
