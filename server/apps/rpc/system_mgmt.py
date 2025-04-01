@@ -94,3 +94,12 @@ class SystemMgmt(object):
             "init_user_default_attributes", user_id=user_id, group_name=group_name, default_group_id=default_group_id
         )
         return return_data
+
+    def get_user_rules(self, app, group_id, username):
+        """
+        :param app: 应用
+        :param group_id: 组ID
+        :param username: 用户名
+        """
+        return_data = self.client.run("get_user_rules", app=app, group_id=group_id, username=username)
+        return return_data
