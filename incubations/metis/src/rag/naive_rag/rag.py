@@ -4,19 +4,44 @@ from typing import List
 import requests
 from langchain_core.documents import Document
 from langchain_elasticsearch import ElasticsearchRetriever
+from langchain_openai import OpenAIEmbeddings
 
-from src.core.rag.naive_rag.entity import ElasticSearchRetrieverRequest
-from src.core.rag.naive_rag.query_builder import ElasticsearchQueryBuilder
+from src.rag.naive_rag.entity import ElasticSearchRetrieverRequest, ElasticSearchStoreRequest
+from src.rag.naive_rag.query_builder import ElasticsearchQueryBuilder
+from langchain_elasticsearch import ElasticsearchStore
+
+import elasticsearch
 
 
 class ElasticSearchRag:
+    def ingest(self, req: ElasticSearchStoreRequest):
+        es = elasticsearch.Elasticsearch(hosts=[os.getenv('ELASTICSEARCH_URL')],
+                                         basic_auth=("elastic", os.getenv('ELASTICSEARCH_PASSWORD')))
+        if req.index_mode == 'overwrite' and es.indices.exists(index=req.index_name):
+            es.indices.delete(index=req.index_name)
+
+        embedding = OpenAIEmbeddings(
+            model=req.embed_model_name,
+            api_key=req.embed_model_api_key,
+            base_url=req.embed_model_base_url,
+        )
+        db = ElasticsearchStore.from_documents(
+            req.docs, embedding=embedding,
+            es_connection=es, index_name=req.index_name,
+            bulk_kwargs={
+                "chunk_size": req.chunk_size,
+                "max_chunk_bytes": req.max_chunk_bytes
+            }
+        )
+        db.client.indices.refresh(index=req.index_name)
+
     def _process_search_result(self, docs: List[Document]) -> List[Document]:
         for doc in docs:
             if 'vector' in doc.metadata.get('_source', {}):
                 del doc.metadata['_source']['vector']
         return docs
 
-    def execute(self, req: ElasticSearchRetrieverRequest) -> List[Document]:
+    def search(self, req: ElasticSearchRetrieverRequest) -> List[Document]:
         # 构建检索器 (使用固定的size)
         documents_retriever = ElasticsearchRetriever.from_es_params(
             index_name=req.index_name,
@@ -37,14 +62,20 @@ class ElasticSearchRag:
                 "accept": "application/json", "Content-Type": "application/json",
                 "Authorization": f"Bearer {req.rerank_model_api_key}"
             }
+
+            rerank_content = []
+            for i in search_result:
+                rerank_content.append(i.page_content)
+
             data = {
                 "model": req.rerank_model_name,
                 "query": req.search_query,
-                "documents": req.documents,
+                "documents": rerank_content,
             }
             response = requests.post(req.rerank_model_base_url, headers=headers, json=data)
-            #TODO
-            rerank_result = response.json()
-            search_result = None
+            # TODO
+            rerank_result = response.json()['results']
+            for index, i in enumerate(rerank_result):
+                search_result[index].metadata['relevance_score'] = i['relevance_score']
 
         return search_result
