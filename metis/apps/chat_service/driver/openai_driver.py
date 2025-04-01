@@ -167,7 +167,7 @@ class OpenAIDriver(IOpenAIDriver):
                 tools=tools,
                 llm=self.client,
                 handle_parsing_errors=True,
-                agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,
+                agent=AgentType.OPENAI_MULTI_FUNCTIONS,
                 verbose=True,
                 max_iterations=5,
                 early_stopping_method="generate",

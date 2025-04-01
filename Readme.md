@@ -7,6 +7,8 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/TencentBlueKing/bk-cmdb/pulls)
 
 
+![logo](./docs/resource/img/logo.png)
+
 [(English Documents Available)](readme_en.md)
 
 Blueking Lite是一个AI First的轻量版运维产品，由以下模块共同组成： 
