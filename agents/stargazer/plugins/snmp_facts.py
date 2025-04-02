@@ -8,6 +8,7 @@ from pysnmp.entity.rfc3413.oneliner import cmdgen
 from pysnmp.hlapi import usmHMACSHAAuthProtocol, usmHMACMD5AuthProtocol, usmAesCfb128Protocol, usmDESPrivProtocol
 
 from plugins.base_utils import convert_to_prometheus_format
+from plugins.snmp_topo import SnmpTopoClient
 
 
 class DefineOid:
@@ -43,6 +44,7 @@ class SnmpFacts:
 
     def __init__(self, kwargs):
         # 初始化参数
+        self.kwargs = kwargs
         self.host = kwargs.get('host')
         self.version = kwargs.get('version')
         self.community = kwargs.get('community')
@@ -55,6 +57,7 @@ class SnmpFacts:
         self.timeout = int(kwargs.get('timeout', 5))
         self.retries = int(kwargs.get('retries', 3))
         self.snmp_port = int(kwargs.get('snmp_port', 161))  # 默认 SNMP 端口为 161
+        self.topo = kwargs.get('topo', False)
 
         # 校验参数
         self._validate_params()
@@ -232,5 +235,9 @@ class SnmpFacts:
             "network_system": [system_data],
             "network_interfaces": interfaces_data
         }
+        if self.topo:
+            topo_client = SnmpTopoClient(self.kwargs)
+            model_data['network_topo'] = topo_client.bulkCmd()
+
         result = convert_to_prometheus_format(model_data)
         return result
