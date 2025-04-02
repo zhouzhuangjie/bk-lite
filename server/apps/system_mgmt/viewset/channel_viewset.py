@@ -9,7 +9,7 @@ from apps.system_mgmt.serializers import ChannelSerializer
 
 
 class ChannelFilter(FilterSet):
-    name = filters.CharFilter(field_name="name", lookup_expr="lte")
+    name = filters.CharFilter(field_name="name", lookup_expr="icontains")
     channel_type = filters.CharFilter(field_name="channel_type", lookup_expr="exact")
 
 
