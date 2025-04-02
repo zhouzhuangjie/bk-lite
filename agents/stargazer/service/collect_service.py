@@ -17,7 +17,8 @@ class CollectService(object):
         self.plugin_name = self.params.pop("plugin_name")
         self.plugin_name_map = {
             "vmware_info": "VmwareManage",
-            "snmp_facts": "SnmpFacts"
+            "snmp_facts": "SnmpFacts",
+            "snmp_topo": "SnmpTopoClient",
         }
 
     def collect(self):
