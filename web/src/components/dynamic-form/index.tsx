@@ -5,7 +5,7 @@ interface Field {
   name: string;
   type: string;
   label: string;
-  placeholder: string;
+  placeholder?: string;
   rules?: any[];
   options?: { value: string | number; label: string }[];
   component?: React.ReactNode;

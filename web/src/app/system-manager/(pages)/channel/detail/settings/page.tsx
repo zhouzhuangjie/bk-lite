@@ -15,7 +15,7 @@ const ChannelSettingsPage: React.FC = () => {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
 
-  const channelType: ChannelType = (searchParams.get("id") || "email") as ChannelType;
+  const channelType: ChannelType = (searchParams?.get("id") || "email") as ChannelType;
 
   const [allTableData, setAllTableData] = useState<Array<{ key: string; name: string; description: string }>>([]);
   const [tableData, setTableData] = useState<

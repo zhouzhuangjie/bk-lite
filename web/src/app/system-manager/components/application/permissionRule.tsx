@@ -1,362 +1,618 @@
-import React, { useState, useEffect } from 'react';
-import { Tabs, Radio, Checkbox, Table, Form } from 'antd';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Tabs } from 'antd';
 import type { RadioChangeEvent } from 'antd';
 import type { CheckboxChangeEvent } from 'antd/es/checkbox';
+import { useSearchParams } from 'next/navigation';
+import { useRoleApi } from '@/app/system-manager/api/application';
+import { useTranslation } from '@/utils/i18n';
 
-interface PermissionRuleProps {
-  value?: any;
-  onChange?: (value: any) => void;
-}
+import {
+  PermissionRuleProps,
+  PermissionsState,
+  ModulePermissionConfig,
+  ProviderPermissionConfig,
+  PermissionConfig,
+  DataPermission,
+  PaginationInfo
+} from '@/app/system-manager/types/permission';
+import {
+  SUB_MODULE_MAP,
+  EDITABLE_MODULES
+} from '@/app/system-manager/constants/application';
+import ModuleContent from './permission/moduleContent';
+import SubModuleTabs from './permission/subModuleTabs';
 
-interface DataPermission {
-  id: string;
-  name: string;
-  view: boolean;
-  operate: boolean;
-}
+const PermissionRule: React.FC<PermissionRuleProps> = ({
+  value = {},
+  modules = [],
+  onChange,
+  formGroupId
+}) => {
+  const { t } = useTranslation();
+  const searchParams = useSearchParams();
+  const clientId = searchParams ? searchParams.get('clientId') : null;
+  const { getAppData } = useRoleApi();
+  const [initialized, setInitialized] = useState(false);
+  const renderCount = useRef(0);
+  const isInitialRender = useRef(true);
+  const prevFormGroupId = useRef<string | null>(null);
+  const prevActiveKey = useRef<string | null>(null);
+  const prevActiveSubModule = useRef<string | null>(null);
+  const effectRunCount = useRef<{ [key: string]: number }>({});
 
-// 权限配置接口
-interface PermissionConfig {
-  type: string;
-  allPermissions: {
-    view: boolean;
-    operate: boolean;
-  };
-  specificData: Array<DataPermission>;
-}
-
-// 带索引签名的权限状态接口
-interface PermissionsState {
-  [key: string]: PermissionConfig;
-}
-
-const PermissionRule: React.FC<PermissionRuleProps> = ({ value = {}, onChange }) => {
-  // 创建默认权限配置
-  const defaultPermissions: PermissionsState = {
-    workspace: { type: 'all', allPermissions: { view: true, operate: true }, specificData: [] },
-    agent: { type: 'all', allPermissions: { view: true, operate: true }, specificData: [] },
-    tool: { type: 'all', allPermissions: { view: true, operate: true }, specificData: [] },
-  };
-
-  // 确保初始值合并默认值
   const [permissions, setPermissions] = useState<PermissionsState>(() => {
-    return {
-      workspace: {
-        type: value?.workspace?.type || 'all',
-        allPermissions: {
-          view: value?.workspace?.allPermissions?.view ?? true,
-          operate: value?.workspace?.allPermissions?.operate ?? true
-        },
-        specificData: value?.workspace?.specificData || []
-      },
-      agent: {
-        type: value?.agent?.type || 'all',
-        allPermissions: {
-          view: value?.agent?.allPermissions?.view ?? true,
-          operate: value?.agent?.allPermissions?.operate ?? true
-        },
-        specificData: value?.agent?.specificData || []
-      },
-      tool: {
-        type: value?.tool?.type || 'all',
-        allPermissions: {
-          view: value?.tool?.allPermissions?.view ?? true,
-          operate: value?.tool?.allPermissions?.operate ?? true
-        },
-        specificData: value?.tool?.specificData || []
+    renderCount.current += 1;
+
+    const initialPermissions: PermissionsState = {};
+    const hasValue = value && Object.keys(value).length > 0;
+
+    modules.forEach(module => {
+      if (module === 'provider') {
+        const providerConfig: ProviderPermissionConfig = { __type: 'provider' };
+        SUB_MODULE_MAP[module].forEach(subModule => {
+          providerConfig[subModule] = {
+            type: hasValue && value[module]?.[subModule]?.type || 'all',
+            allPermissions: {
+              view: hasValue && value[module]?.[subModule]?.allPermissions?.view !== undefined
+                ? value[module]?.[subModule]?.allPermissions?.view
+                : true,
+              operate: hasValue && value[module]?.[subModule]?.allPermissions?.operate !== undefined
+                ? value[module]?.[subModule]?.allPermissions?.operate
+                : true
+            },
+            specificData: hasValue && value[module]?.[subModule]?.specificData
+              ? value[module]?.[subModule]?.specificData.map((item: DataPermission) => ({
+                ...item,
+                operate: item.operate === true
+              })) : []
+          };
+        });
+        initialPermissions[module] = providerConfig;
+      } else {
+        initialPermissions[module] = {
+          __type: 'module',
+          type: hasValue && value[module]?.type || 'all',
+          allPermissions: {
+            view: hasValue && value[module]?.allPermissions?.view !== undefined
+              ? value[module]?.allPermissions?.view
+              : true,
+            operate: hasValue && value[module]?.allPermissions?.operate !== undefined
+              ? value[module]?.allPermissions?.operate
+              : true
+          },
+          specificData: hasValue && value[module]?.specificData
+            ? value[module]?.specificData.map((item: DataPermission) => ({
+              ...item,
+              operate: item.operate === true
+            })) : []
+        };
       }
-    };
+    });
+
+    return initialPermissions;
   });
 
-  // 监听外部传入的value变化
+  const [loading, setLoading] = useState<{ [key: string]: boolean }>({});
+  const [moduleData, setModuleData] = useState<{ [key: string]: any[] }>({});
+  const [pagination, setPagination] = useState<{ [key: string]: { current: number, pageSize: number, total: number } }>({});
+  const [activeKey, setActiveKey] = useState<string>(modules.length > 0 ? modules[0] : '');
+  const [activeSubModule, setActiveSubModule] = useState<string>('');
+
   useEffect(() => {
-    if (value && Object.keys(value).length > 0) {
-      // 合并默认值和传入的value，确保结构完整
-      const newPermissions: PermissionsState = {
-        workspace: {
-          type: value?.workspace?.type || 'all',
+    if (!isInitialRender.current) return;
+
+    isInitialRender.current = false;
+
+    return () => {
+      // Cleanup on unmount
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!formGroupId || formGroupId === prevFormGroupId.current) return;
+
+    prevFormGroupId.current = formGroupId;
+
+    setModuleData({});
+    setPagination({});
+  }, [formGroupId]);
+
+  useEffect(() => {
+    if (!value || Object.keys(value).length === 0) {
+      if (initialized) {
+        const defaultPermissions: PermissionsState = {};
+        modules.forEach(module => {
+          if (module === 'provider') {
+            const providerConfig: ProviderPermissionConfig = { __type: 'provider' };
+            SUB_MODULE_MAP[module].forEach(subModule => {
+              providerConfig[subModule] = {
+                type: 'all',
+                allPermissions: { view: true, operate: true },
+                specificData: []
+              };
+            });
+            defaultPermissions[module] = providerConfig;
+          } else {
+            defaultPermissions[module] = {
+              __type: 'module',
+              type: 'all',
+              allPermissions: { view: true, operate: true },
+              specificData: []
+            };
+          }
+        });
+        setPermissions(defaultPermissions);
+      }
+      return;
+    }
+
+    setInitialized(true);
+
+    const newPermissions: PermissionsState = {};
+    modules.forEach(module => {
+      if (module === 'provider') {
+        const providerConfig: ProviderPermissionConfig = { __type: 'provider' };
+        SUB_MODULE_MAP[module].forEach(subModule => {
+          providerConfig[subModule] = {
+            type: value[module]?.[subModule]?.type || 'all',
+            allPermissions: {
+              view: value[module]?.[subModule]?.allPermissions?.view !== undefined
+                ? value[module]?.[subModule]?.allPermissions?.view
+                : true,
+              operate: value[module]?.[subModule]?.allPermissions?.operate !== undefined
+                ? value[module]?.[subModule]?.allPermissions?.operate
+                : true
+            },
+            specificData: value[module]?.[subModule]?.specificData || []
+          };
+        });
+        newPermissions[module] = providerConfig;
+      } else {
+        newPermissions[module] = {
+          __type: 'module',
+          type: value[module]?.type || 'all',
           allPermissions: {
-            view: value?.workspace?.allPermissions?.view ?? true,
-            operate: value?.workspace?.allPermissions?.operate ?? true
+            view: value[module]?.allPermissions?.view !== undefined
+              ? value[module]?.allPermissions?.view
+              : true,
+            operate: value[module]?.allPermissions?.operate !== undefined
+              ? value[module]?.allPermissions?.operate
+              : true
           },
-          specificData: value?.workspace?.specificData || []
-        },
-        agent: {
-          type: value?.agent?.type || 'all',
-          allPermissions: {
-            view: value?.agent?.allPermissions?.view ?? true,
-            operate: value?.agent?.allPermissions?.operate ?? true
-          },
-          specificData: value?.agent?.specificData || []
-        },
-        tool: {
-          type: value?.tool?.type || 'all',
-          allPermissions: {
-            view: value?.tool?.allPermissions?.view ?? true,
-            operate: value?.tool?.allPermissions?.operate ?? true
-          },
-          specificData: value?.tool?.specificData || []
+          specificData: value[module]?.specificData || []
+        };
+      }
+    });
+
+    const currentJSON = JSON.stringify(permissions);
+    const newJSON = JSON.stringify(newPermissions);
+
+    if (currentJSON !== newJSON) {
+      setPermissions(newPermissions);
+      setModuleData({});
+
+      if (activeKey) {
+        if (activeKey === 'provider' && activeSubModule) {
+          const config = newPermissions[activeKey] as ProviderPermissionConfig;
+          const subConfig = config[activeSubModule] as PermissionConfig;
+          if (subConfig?.type === 'specific') {
+            loadSpecificData(activeKey, activeSubModule);
+          }
+        } else {
+          const config = newPermissions[activeKey] as ModulePermissionConfig;
+          if (config?.type === 'specific') {
+            loadSpecificData(activeKey);
+          }
         }
+      }
+    }
+  }, [value, modules, initialized, activeKey, activeSubModule]);
+
+  const loadSpecificData = useCallback(async (module: string, subModule?: string) => {
+    const dataKey = subModule ? `${module}_${subModule}` : module;
+
+    if (loading[dataKey]) {
+      return;
+    }
+
+    try {
+      setLoading(prev => ({ ...prev, [dataKey]: true }));
+
+      const paginationInfo = pagination[dataKey] || { current: 1, pageSize: 10, total: 0 };
+
+      const params: Record<string, any> = {
+        app: clientId,
+        module,
+        child_module: '',
+        page: paginationInfo.current,
+        page_size: paginationInfo.pageSize,
+        group_id: formGroupId
       };
-      setPermissions(newPermissions);
-    }
-  }, [value]);
 
-  const [activeKey, setActiveKey] = useState('workspace');
-
-  // 模拟数据
-  const mockData: { [key: string]: DataPermission[] } = {
-    workspace: [
-      { id: '1', name: '工作台数据1', view: true, operate: false },
-      { id: '2', name: '工作台数据2', view: false, operate: false },
-    ],
-    agent: [
-      { id: '1', name: '智能体数据1', view: true, operate: false },
-      { id: '2', name: '智能体数据2', view: false, operate: false },
-    ],
-    tool: [
-      { id: '1', name: '工具数据1', view: true, operate: false },
-      { id: '2', name: '工具数据2', view: false, operate: false },
-    ],
-  };
-
-  const handleTypeChange = (e: RadioChangeEvent, tab: string) => {
-    const newPermissions = { ...permissions };
-    if (newPermissions[tab]) {
-      newPermissions[tab].type = e.target.value;
-      setPermissions(newPermissions);
-      if (onChange) {
-        onChange(newPermissions);
+      if (subModule) {
+        params.child_module = subModule;
       }
-    }
-  };
 
-  const handleAllPermissionChange = (e: CheckboxChangeEvent, tab: string, type: 'view' | 'operate') => {
-    const newPermissions = { ...permissions };
-    if (newPermissions[tab] && newPermissions[tab].allPermissions) {
-      newPermissions[tab].allPermissions[type] = e.target.checked;
-      setPermissions(newPermissions);
-      if (onChange) {
-        onChange(newPermissions);
-      }
-    }
-  };
+      const data = await getAppData({ params });
 
-  const handleSpecificDataChange = (record: DataPermission, tab: string, type: 'view' | 'operate') => {
-    const newPermissions = { ...permissions };
-    if (!newPermissions[tab]) {
-      newPermissions[tab] = defaultPermissions[tab];
-    }
-    if (!newPermissions[tab].specificData) {
-      newPermissions[tab].specificData = [];
-    }
+      const currentPermissions = permissions;
 
-    const dataIndex = newPermissions[tab].specificData.findIndex(item => item.id === record.id);
+      const formattedData = data.items.map((item: any) => {
+        let currentPermission;
+        if (subModule) {
+          const providerConfig = currentPermissions[module] as ProviderPermissionConfig;
+          const subModuleConfig = providerConfig[subModule] as PermissionConfig;
+          currentPermission = subModuleConfig.specificData?.find(p => p.id === item.id);
+        } else {
+          const moduleConfig = currentPermissions[module] as ModulePermissionConfig;
+          currentPermission = moduleConfig.specificData?.find(p => p.id === item.id);
+        }
 
-    if (dataIndex === -1) {
-      // 如果数据不存在，添加新数据
-      newPermissions[tab].specificData.push({
-        id: record.id,
-        name: record.name,
-        view: type === 'view' ? !record.view : record.view,
-        operate: type === 'operate' ? !record.operate : record.operate
+        return {
+          ...item,
+          view: currentPermission?.view ?? false,
+          operate: currentPermission?.operate ?? false
+        };
       });
+
+      setModuleData(prev => ({
+        ...prev,
+        [dataKey]: formattedData
+      }));
+
+      setPagination(prev => ({
+        ...prev,
+        [dataKey]: {
+          ...paginationInfo,
+          total: data.count
+        }
+      }));
+    } catch (error) {
+      console.error('Failed to load specific data:', error);
+    } finally {
+      setLoading(prev => ({ ...prev, [dataKey]: false }));
+    }
+  }, [clientId, formGroupId, pagination, getAppData, loading]);
+
+  useEffect(() => {
+    if (!initialized) return;
+
+    const effectKey = `${activeKey}-${activeSubModule}`;
+
+    if (
+      activeKey === prevActiveKey.current &&
+      activeSubModule === prevActiveSubModule.current &&
+      effectRunCount.current[effectKey] > 0
+    ) {
+      return;
+    }
+
+    prevActiveKey.current = activeKey;
+    prevActiveSubModule.current = activeSubModule;
+    effectRunCount.current[effectKey] = (effectRunCount.current[effectKey] || 0) + 1;
+
+    if (activeKey === 'provider' && activeSubModule) {
+      const providerConfig = permissions[activeKey] as ProviderPermissionConfig;
+      if (providerConfig && providerConfig[activeSubModule]) {
+        const subConfig = providerConfig[activeSubModule] as PermissionConfig;
+        if (subConfig?.type === 'specific') {
+          loadSpecificData(activeKey, activeSubModule);
+        }
+      }
+    } else if (activeKey !== 'provider') {
+      const moduleConfig = permissions[activeKey] as ModulePermissionConfig;
+      if (moduleConfig?.type === 'specific') {
+        loadSpecificData(activeKey);
+      }
+    }
+  }, [activeKey, activeSubModule, initialized, permissions]);
+
+  const handleTypeChange = useCallback((e: RadioChangeEvent, module: string, subModule?: string) => {
+    const newPermissions = { ...permissions };
+
+    if (subModule && module === 'provider') {
+      const providerConfig = newPermissions[module] as ProviderPermissionConfig;
+
+      if (!providerConfig[subModule]) {
+        providerConfig[subModule] = {
+          type: 'all',
+          allPermissions: { view: true, operate: true },
+          specificData: []
+        };
+      }
+
+      (providerConfig[subModule] as PermissionConfig).type = e.target.value;
+
+      if (e.target.value === 'specific') {
+        loadSpecificData(module, subModule);
+      }
     } else {
-      // 更新现有数据
-      newPermissions[tab].specificData[dataIndex][type] = !newPermissions[tab].specificData[dataIndex][type];
+      const moduleConfig = newPermissions[module] as ModulePermissionConfig;
+      moduleConfig.type = e.target.value;
+
+      if (e.target.value === 'specific') {
+        loadSpecificData(module);
+      }
     }
 
     setPermissions(newPermissions);
     if (onChange) {
       onChange(newPermissions);
     }
+  }, [permissions, onChange]);
+
+  const handleAllPermissionChange = useCallback((e: CheckboxChangeEvent, module: string, type: 'view' | 'operate', subModule?: string) => {
+    const newPermissions = { ...permissions };
+
+    if (subModule && module === 'provider') {
+      const providerConfig = newPermissions[module] as ProviderPermissionConfig;
+      if (!providerConfig[subModule]) return;
+
+      const subModuleConfig = providerConfig[subModule] as PermissionConfig;
+
+      if (type === 'view') {
+        subModuleConfig.allPermissions.view = e.target.checked;
+
+        if (!e.target.checked) {
+          subModuleConfig.allPermissions.operate = false;
+        }
+      } else if (type === 'operate') {
+        if (subModuleConfig.allPermissions.view) {
+          subModuleConfig.allPermissions.operate = e.target.checked;
+        }
+      }
+    } else {
+      const moduleConfig = newPermissions[module] as ModulePermissionConfig;
+
+      if (type === 'view') {
+        moduleConfig.allPermissions.view = e.target.checked;
+
+        if (!e.target.checked) {
+          moduleConfig.allPermissions.operate = false;
+        }
+      } else if (type === 'operate') {
+        if (moduleConfig.allPermissions.view) {
+          moduleConfig.allPermissions.operate = e.target.checked;
+        }
+      }
+    }
+
+    setPermissions(newPermissions);
+
+    if (onChange) {
+      onChange(newPermissions);
+    }
+  }, [permissions, onChange]);
+
+  const handleSpecificDataChange = useCallback((record: DataPermission, module: string, type: 'view' | 'operate', subModule?: string) => {
+    const newPermissions = { ...permissions };
+    const dataKey = subModule ? `${module}_${subModule}` : module;
+
+    setModuleData(prev => {
+      const newData = [...(prev[dataKey] || [])];
+      const itemIndex = newData.findIndex(item => item.id === record.id);
+
+      if (itemIndex > -1) {
+        if (type === 'view') {
+          newData[itemIndex] = {
+            ...newData[itemIndex],
+            view: record.view
+          };
+
+          if (!record.view) {
+            newData[itemIndex].operate = false;
+          }
+        } else if (type === 'operate') {
+          if (newData[itemIndex].view) {
+            newData[itemIndex] = {
+              ...newData[itemIndex],
+              operate: record.operate
+            };
+          }
+        }
+      }
+
+      return { ...prev, [dataKey]: newData };
+    });
+
+    if (subModule && module === 'provider') {
+      const providerConfig = newPermissions[module] as ProviderPermissionConfig;
+      if (!providerConfig[subModule]) return;
+
+      const subModuleConfig = providerConfig[subModule] as PermissionConfig;
+      if (!subModuleConfig.specificData) subModuleConfig.specificData = [];
+
+      const dataIndex = subModuleConfig.specificData.findIndex(item => item.id === record.id);
+
+      if (dataIndex === -1) {
+        subModuleConfig.specificData.push(record);
+      } else {
+        const item = { ...subModuleConfig.specificData[dataIndex] };
+        if (type === 'view') {
+          item.view = record.view;
+          if (!record.view) {
+            item.operate = false;
+          }
+        } else if (type === 'operate') {
+          if (item.view) {
+            item.operate = record.operate;
+          }
+        }
+
+        subModuleConfig.specificData[dataIndex] = item;
+      }
+    } else {
+      const moduleConfig = newPermissions[module] as ModulePermissionConfig;
+      if (!moduleConfig.specificData) moduleConfig.specificData = [];
+
+      const dataIndex = moduleConfig.specificData.findIndex(item => item.id === record.id);
+
+      if (dataIndex === -1) {
+        moduleConfig.specificData.push(record);
+      } else {
+        const item = { ...moduleConfig.specificData[dataIndex] };
+        if (type === 'view') {
+          item.view = record.view;
+          if (!record.view) {
+            item.operate = false;
+          }
+        } else if (type === 'operate') {
+          if (item.view) {
+            item.operate = record.operate;
+          }
+        }
+
+        moduleConfig.specificData[dataIndex] = item;
+      }
+    }
+
+    setPermissions(newPermissions);
+    if (onChange) {
+      onChange(newPermissions);
+    }
+  }, [permissions, onChange]);
+
+  const handleTableChange = async (pagination: PaginationInfo, filters: any, sorter: any, module?: string, subModule?: string) => {
+    if (!module) return;
+
+    const dataKey = subModule ? `${module}_${subModule}` : module;
+
+    setPagination(prev => ({
+      ...prev,
+      [dataKey]: {
+        current: pagination.current,
+        pageSize: pagination.pageSize,
+        total: prev[dataKey]?.total || 0
+      }
+    }));
+
+    try {
+      setLoading(prev => ({ ...prev, [dataKey]: true }));
+
+      const params: Record<string, any> = {
+        app: clientId,
+        module,
+        page: pagination.current,
+        page_size: pagination.pageSize,
+        group_id: formGroupId
+      };
+
+      if (subModule) {
+        params.child_module = subModule;
+      }
+
+      const data = await getAppData({ params });
+
+      const formattedData = data.items.map((item: any) => {
+        let currentPermission;
+        if (subModule) {
+          const providerConfig = permissions[module] as ProviderPermissionConfig;
+          const subModuleConfig = providerConfig[subModule] as PermissionConfig;
+          currentPermission = subModuleConfig.specificData?.find(p => p.id === item.id);
+        } else {
+          const moduleConfig = permissions[module] as ModulePermissionConfig;
+          currentPermission = moduleConfig.specificData?.find(p => p.id === item.id);
+        }
+
+        return {
+          ...item,
+          view: currentPermission?.view ?? false,
+          operate: currentPermission?.operate ?? false
+        };
+      });
+
+      setModuleData(prev => ({
+        ...prev,
+        [dataKey]: formattedData
+      }));
+    } catch (error) {
+      console.error('Failed to load specific data:', error);
+    } finally {
+      setLoading(prev => ({ ...prev, [dataKey]: false }));
+    }
   };
 
-  const columns = [
-    {
-      title: '数据',
-      dataIndex: 'name',
-      key: 'name',
-    },
-    {
-      title: '操作',
-      key: 'actions',
-      render: (_: any, record: DataPermission) => {
-        // 查找记录是否在当前选择的特定数据中
-        const specificData = permissions[activeKey].specificData;
-        const currentData = specificData.find(item => item.id === record.id);
-        const isViewChecked = currentData ? currentData.view : record.view;
-        const isOperateChecked = currentData ? currentData.operate : record.operate;
+  const items = modules.map(module => ({
+    key: module,
+    label: t(`system.modules.${module}`) || module,
+    children: module === 'provider'
+      ? (
+        <SubModuleTabs
+          module={module}
+          activeSubModule={activeSubModule}
+          setActiveSubModule={setActiveSubModule}
+          permissions={permissions}
+          moduleData={moduleData}
+          loadSpecificData={loadSpecificData}
+          loading={loading}
+          pagination={pagination}
+          activeKey={activeKey}
+          handleTypeChange={handleTypeChange}
+          handleAllPermissionChange={handleAllPermissionChange}
+          handleSpecificDataChange={handleSpecificDataChange}
+          handleTableChange={handleTableChange}
+        />
+      )
+      : (
+        <ModuleContent
+          module={module}
+          permissions={permissions}
+          loading={loading}
+          moduleData={moduleData}
+          pagination={pagination}
+          activeKey={activeKey}
+          activeSubModule={activeSubModule}
+          handleTypeChange={handleTypeChange}
+          handleAllPermissionChange={handleAllPermissionChange}
+          handleSpecificDataChange={handleSpecificDataChange}
+          handleTableChange={handleTableChange}
+        />
+      )
+  }));
 
-        return (
-          <div className="flex space-x-4">
-            <Checkbox
-              checked={isViewChecked}
-              onChange={() => handleSpecificDataChange(record, activeKey, 'view')}
-            >
-              查看
-            </Checkbox>
-            <Checkbox
-              checked={isOperateChecked}
-              onChange={() => handleSpecificDataChange(record, activeKey, 'operate')}
-            >
-              操作
-            </Checkbox>
-          </div>
-        );
-      },
-    },
-  ];
-
-  const items = [
-    {
-      key: 'workspace',
-      label: '工作台',
-      children: (
-        <div className="p-4">
-          <div className="mb-4">
-            <Form.Item label="类型" className="mb-2">
-              <Radio.Group
-                value={permissions.workspace.type}
-                onChange={(e) => handleTypeChange(e, 'workspace')}
-              >
-                <Radio value="all">全部数据</Radio>
-                <Radio value="specific">指定数据</Radio>
-              </Radio.Group>
-            </Form.Item>
-
-            {permissions.workspace.type === 'all' ? (
-              <Form.Item label="权限" className="mt-4">
-                <div className="flex space-x-4">
-                  <Checkbox
-                    checked={permissions.workspace.allPermissions.view}
-                    onChange={(e) => handleAllPermissionChange(e, 'workspace', 'view')}
-                  >
-                    查看
-                  </Checkbox>
-                  <Checkbox
-                    checked={permissions.workspace.allPermissions.operate}
-                    onChange={(e) => handleAllPermissionChange(e, 'workspace', 'operate')}
-                  >
-                    操作
-                  </Checkbox>
-                </div>
-              </Form.Item>
-            ) : (
-              <Table
-                rowKey="id"
-                columns={columns}
-                dataSource={mockData.workspace}
-                pagination={false}
-                className="mt-4"
-              />
-            )}
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'agent',
-      label: '智能体',
-      children: (
-        <div className="p-4">
-          <div className="mb-4">
-            <Form.Item label="类型" className="mb-2">
-              <Radio.Group
-                value={permissions.agent.type}
-                onChange={(e) => handleTypeChange(e, 'agent')}
-              >
-                <Radio value="all">全部数据</Radio>
-                <Radio value="specific">指定数据</Radio>
-              </Radio.Group>
-            </Form.Item>
-
-            {permissions.agent.type === 'all' ? (
-              <Form.Item label="权限" className="mt-4">
-                <div className="flex space-x-4">
-                  <Checkbox
-                    checked={permissions.agent.allPermissions.view}
-                    onChange={(e) => handleAllPermissionChange(e, 'agent', 'view')}
-                  >
-                    查看
-                  </Checkbox>
-                  <Checkbox
-                    checked={permissions.agent.allPermissions.operate}
-                    onChange={(e) => handleAllPermissionChange(e, 'agent', 'operate')}
-                  >
-                    操作
-                  </Checkbox>
-                </div>
-              </Form.Item>
-            ) : (
-              <Table
-                rowKey="id"
-                columns={columns}
-                dataSource={mockData.agent}
-                pagination={false}
-                className="mt-4"
-              />
-            )}
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'tool',
-      label: '工具',
-      children: (
-        <div className="p-4">
-          <div className="mb-4">
-            <Form.Item label="类型" className="mb-2">
-              <Radio.Group
-                value={permissions.tool.type}
-                onChange={(e) => handleTypeChange(e, 'tool')}
-              >
-                <Radio value="all">全部数据</Radio>
-                <Radio value="specific">指定数据</Radio>
-              </Radio.Group>
-            </Form.Item>
-
-            {permissions.tool.type === 'all' ? (
-              <Form.Item label="权限" className="mt-4">
-                <div className="flex space-x-4">
-                  <Checkbox
-                    checked={permissions.tool.allPermissions.view}
-                    onChange={(e) => handleAllPermissionChange(e, 'tool', 'view')}
-                  >
-                    查看
-                  </Checkbox>
-                  <Checkbox
-                    checked={permissions.tool.allPermissions.operate}
-                    onChange={(e) => handleAllPermissionChange(e, 'tool', 'operate')}
-                  >
-                    操作
-                  </Checkbox>
-                </div>
-              </Form.Item>
-            ) : (
-              <Table
-                rowKey="id"
-                columns={columns}
-                dataSource={mockData.tool}
-                pagination={false}
-                className="mt-4"
-              />
-            )}
-          </div>
-        </div>
-      ),
-    },
-  ];
+  if (modules.length === 0) {
+    return <div>{t('system.permission.noAvailableModules')}</div>;
+  }
 
   return (
     <Tabs
       activeKey={activeKey}
-      onChange={setActiveKey}
+      onChange={(key) => {
+        if (key === activeKey) return;
+
+        setActiveKey(key);
+
+        if (key === 'provider' && SUB_MODULE_MAP[key] && SUB_MODULE_MAP[key].length > 0) {
+          const firstSubModule = SUB_MODULE_MAP[key][0];
+          setActiveSubModule(firstSubModule);
+
+          if (!EDITABLE_MODULES.includes(firstSubModule)) {
+            return;
+          }
+
+          const providerConfig = permissions[key] as ProviderPermissionConfig;
+          const subModuleConfig = providerConfig[firstSubModule] as PermissionConfig;
+
+          if (subModuleConfig?.type === 'specific') {
+            loadSpecificData(key, firstSubModule);
+          }
+        } else if (key !== 'provider') {
+          if (!EDITABLE_MODULES.includes(key)) {
+            return;
+          }
+
+          const moduleConfig = permissions[key] as ModulePermissionConfig;
+
+          if (moduleConfig?.type === 'specific') {
+            loadSpecificData(key);
+          }
+        }
+      }}
       items={items}
       className="permission-rule-tabs"
     />
   );
 };
 
-export default PermissionRule;
+export default React.memo(PermissionRule);
+
