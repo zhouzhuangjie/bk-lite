@@ -2,8 +2,9 @@ import os
 
 from dotenv import load_dotenv
 
+from src.core.entity import ChatHistory
 from src.rag.naive_rag.entity import ElasticSearchRetrieverRequest
-from src.workflow.chatbot_workflow.entity import ChatBotWorkflowRequest, ChatHistory
+from src.workflow.chatbot_workflow.entity import ChatBotWorkflowRequest
 from src.workflow.chatbot_workflow.graph import ChatBotWorkflowGraph
 
 load_dotenv()
@@ -20,7 +21,8 @@ def test_chat():
         thread_id="2"
     )
     workflow = ChatBotWorkflowGraph(request)
-    result = workflow.invoke()
+    workflow.compile_graph()
+    result = workflow.execute()
     print(result)
 
 
@@ -53,7 +55,8 @@ def test_chat_with_naiverag():
         naive_rag_request=naive_rag_request
     )
     workflow = ChatBotWorkflowGraph(request)
-    result = workflow.invoke()
+    workflow.compile_graph()
+    result = workflow.execute()
     print(result)
 
 
@@ -72,5 +75,6 @@ def test_chat_with_manunal_chat_history():
         ]
     )
     workflow = ChatBotWorkflowGraph(request)
-    result = workflow.invoke()
+    workflow.compile_graph()
+    result = workflow.execute()
     print(result)

@@ -3,64 +3,33 @@ import os
 from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.constants import START, END
 from langgraph.graph import StateGraph
-from langgraph.prebuilt import ToolNode
 
-from src.agent.tools_agent.entity import ToolsAgentRequest, ToolsAgentResponse
-from src.agent.tools_agent.nodes import ToolsAgentNode
-from src.agent.tools_agent.state import ToolsAgentState
-from langchain_mcp_adapters.client import MultiServerMCPClient
+from src.agent.react_agent.entity import ReActAgentRequest, ReActAgentResponse
+from src.agent.react_agent.nodes import ReActAgentNode
+from src.agent.react_agent.state import ReActAgentState
+from src.core.graph import McpGraph
 
 
-class ToolsAgentGraph:
-
-    def __init__(self, request: ToolsAgentRequest):
-        self.request = request
+class ReActAgentGraph(McpGraph):
+    def __init__(self, request: ReActAgentRequest):
+        super().__init__(request)
+        self.node_builder = ReActAgentNode(self.request)
+        self.graph_builder = StateGraph(ReActAgentState)
 
     async def compile_graph(self):
-        mcp_config = {
-            server.name: {
-                "url": server.url,
-                "transport": 'sse'
-            } for server in self.request.mcp_servers
-        }
+        last_edge = self.prepare_graph()
 
-        async with MultiServerMCPClient(mcp_config) as mcp_server:
-            node_builder = ToolsAgentNode(self.request)
-            graph_builder = StateGraph(ToolsAgentState)
-            graph_builder.add_node("init_request_node", node_builder.init_request_node)
-            graph_builder.add_node("prompt_message_node", node_builder.prompt_message_node)
-            graph_builder.add_node("add_chat_history_node", node_builder.add_chat_history_node)
-            graph_builder.add_node("naive_rag_node", node_builder.naive_rag_node)
+        tools_node = await self.node_builder.build_tools_node()
+        self.graph_builder.add_node("tools", tools_node)
+        self.graph_builder.add_node("agent", self.node_builder.agent_node)
 
-            tools = mcp_server.get_tools()
-            tool_node = ToolNode(tools)
-            graph_builder.add_node("tools", tool_node)
-            graph_builder.add_edge(START, "init_request_node")
-            graph_builder.add_edge("init_request_node", "prompt_message_node")
-            graph_builder.add_edge("prompt_message_node", "add_chat_history_node")
-            graph_builder.add_edge("add_chat_history_node", "naive_rag_node")
-            graph_builder.add_edge("naive_rag_node", "chatbot_node")
-            graph_builder.add_edge("chatbot_node", END)
+        self.graph_builder.add_edge(last_edge, "agent")
+        self.graph_builder.add_conditional_edges("agent", self.should_continue, ["tools", END])
+        self.graph_builder.add_edge("tools", "agent")
 
-            graph = graph_builder.compile()
-            self.graph = graph
+        self.graph = self.graph_builder.compile()
 
-    def invoke(self) -> ToolsAgentResponse:
-        if self.request.thread_id:
-            config = {
-                "configurable":
-                    {
-                        "thread_id": self.request.thread_id,
-                        "user_id": self.request.user_id
-                    }
-            }
-            with PostgresSaver.from_conn_string(os.getenv('DB_URI')) as checkpoint:
-                self.graph.checkpoint = checkpoint
-                result = self.graph.invoke(self.request, config)
-        else:
-            result = self.graph.invoke(self.request)
-
-        response = ToolsAgentResponse(message=result["messages"][-1].content,
-                                      total_tokens=result["messages"][-1].response_metadata['token_usage'][
-                                          'total_tokens'])
+    async def execute(self) -> ReActAgentResponse:
+        result = await self.invoke()
+        response = self.parse_basic_response(result)
         return response

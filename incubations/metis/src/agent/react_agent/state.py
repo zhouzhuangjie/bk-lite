@@ -2,9 +2,10 @@ from typing import TypedDict, Annotated
 
 from langgraph.graph import add_messages
 
-from src.agent.tools_agent.entity import ToolsAgentRequest
+from src.agent.react_agent.entity import ReActAgentRequest
 
 
-class ToolsAgentState(TypedDict):
+class ReActAgentState(TypedDict):
     messages: Annotated[list, add_messages]
-    graph_request: ToolsAgentRequest
+    graph_request: ReActAgentRequest
+    agent_scratchpad: str

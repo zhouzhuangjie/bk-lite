@@ -1,10 +1,6 @@
-from typing import TypedDict, Annotated
-
-from langgraph.graph import add_messages
-
+from src.core.state import BasicState
 from src.workflow.chatbot_workflow.entity import ChatBotWorkflowRequest
 
 
-class ChatBotWorkflowState(TypedDict):
-    messages: Annotated[list, add_messages]
+class ChatBotWorkflowState(BasicState):
     graph_request: ChatBotWorkflowRequest
