@@ -1,6 +1,6 @@
 import useApiClient from '@/utils/request';
 export const useRoleApi = () => {
-  const { get, post } = useApiClient();
+  const { get, post, put, del } = useApiClient();
   const getRoles = async (params: any) => {
     return await post('/system_mgmt/role/search_role_list/', params);
   }
@@ -34,6 +34,21 @@ export const useRoleApi = () => {
   const deleteUser = async (params: any) => {
     return await post('/system_mgmt/role/delete_user/', params);
   }
+  const getGroupDataRule = async (params: any) => {
+    return await get('/system_mgmt/group_data_rule/', params);
+  }
+  const deleteGroupDataRule = async (params: any) => {
+    return await del(`/system_mgmt/group_data_rule/${params.id}/`);
+  }
+  const addGroupDataRule = async (params: any) => {
+    return await post('/system_mgmt/group_data_rule/', params);
+  }
+  const updateGroupDataRule = async (params: any) => {
+    return await put(`/system_mgmt/group_data_rule/${params.id}/`, params);
+  }
+  const getAppData = async (params: any) => {
+    return await get('/system_mgmt/group_data_rule/get_app_data/', params);
+  }
   return {
     getRoles,
     addRole,
@@ -45,6 +60,11 @@ export const useRoleApi = () => {
     getAllMenus,
     setRoleMenus,
     addUser,
-    deleteUser
+    deleteUser,
+    getGroupDataRule,
+    deleteGroupDataRule,
+    addGroupDataRule,
+    updateGroupDataRule,
+    getAppData
   };
 };

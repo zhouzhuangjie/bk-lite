@@ -40,6 +40,17 @@
       "PacificNoumea": "Pacific/Noumea (UTC+11:00)",
       "PacificAuckland": "Pacific/Auckland (UTC+12:00)"
     },
+    "modules": {
+      "bot": "Studio",
+      "skill": "Agent",
+      "knowledge": "Knowledge Base",
+      "tools": "Tools",
+      "provider": "Model",
+      "llm_model": "LLM Model",
+      "embed_model": "Embedding Model",
+      "rerank_model": "Reranking Model",
+      "ocr_model": "OCR Model"
+    },
     "user": {
       "title": "User",
       "desc": "Display all information.You can maintain user information and assign roles.",
@@ -152,7 +163,17 @@
       "readWrite": "Read Write",
       "manage": "Manage",
       "fullPermission": "Full Permission",
-      "dataPermissionRule": "Data Permission Rule"
+      "dataPermissionRule": "Data Permission Rule",
+      "type": "Type",
+      "allData": "All Data",
+      "specificData": "Specific Data",
+      "permissions": "Permissions",
+      "view": "View",
+      "operate": "Operate",
+      "data": "Data",
+      "actions": "Actions",
+      "noSpecificDataSupport": "This module does not support specific data editing",
+      "noAvailableModules": "No available permission modules"
     }
   }
 }
