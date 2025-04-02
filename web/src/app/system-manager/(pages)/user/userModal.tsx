@@ -37,6 +37,7 @@ const UserModal = forwardRef<ModalRef, ModalProps>(({ onSuccess, treeData }, ref
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [roleMaps, setRoleMaps] = useState<{ [key: string]: string }>({});
+  const [groupRules, setGroupRules] = useState<{ [key: string]: number[] }>({});
 
   const { addUser, editUser, getUserDetail, getRoleList } = useUserApi();
 
@@ -83,6 +84,12 @@ const UserModal = forwardRef<ModalRef, ModalProps>(({ onSuccess, treeData }, ref
         });
         setSelectedRoles(userDetail.roles?.map((role: { role_id: string }) => role.role_id) || []);
         setSelectedGroups(userDetail.groups?.map((group: { id: string }) => group.id) || []);
+
+        const groupRulesObj = userDetail.groups?.reduce((acc: { [key: string]: number[] }, group: { id: string; rules: { [key: string]: number } }) => {
+          acc[group.id] = Object.values(group.rules) || [];
+          return acc;
+        }, {});
+        setGroupRules(groupRulesObj || {});
       }
     } catch {
       message.error(t('common.fetchFailed'));
@@ -131,6 +138,7 @@ const UserModal = forwardRef<ModalRef, ModalProps>(({ onSuccess, treeData }, ref
       const payload = {
         ...restData,
         roles,
+        rules: Object.values(groupRules).flat(2),
         attributes: { zoneinfo: [zoneinfo], locale: [locale] }
       };
       if (type === 'add') {
@@ -147,7 +155,7 @@ const UserModal = forwardRef<ModalRef, ModalProps>(({ onSuccess, treeData }, ref
         const firstFieldErrorMessage = error.errorFields[0].errors[0];
         message.error(firstFieldErrorMessage || t('common.valFailed'));
       } else {
-        message.error(t('common.saveSuccess'));
+        message.error(t('common.saveFailed'));
       }
     } finally {
       setIsSubmitting(false);
@@ -164,6 +172,13 @@ const UserModal = forwardRef<ModalRef, ModalProps>(({ onSuccess, treeData }, ref
   };
 
   const filteredTreeData = treeData ? transformTreeData(treeData) : [];
+
+  const handleChangeRule = (newKey: string, newRules: number[]) => {
+    setGroupRules({
+      ...groupRules,
+      [newKey]: newRules
+    });
+  };
 
   return (
     <OperateModal
@@ -236,12 +251,14 @@ const UserModal = forwardRef<ModalRef, ModalProps>(({ onSuccess, treeData }, ref
           >
             <RoleTransfer
               mode="group"
+              groupRules={groupRules}
               treeData={filteredTreeData}
               selectedKeys={selectedGroups}
               onChange={newKeys => {
                 setSelectedGroups(newKeys);
                 formRef.current?.setFieldsValue({ groups: newKeys });
               }}
+              onChangeRule={handleChangeRule}
             />
           </Form.Item>
           <Form.Item
@@ -250,6 +267,7 @@ const UserModal = forwardRef<ModalRef, ModalProps>(({ onSuccess, treeData }, ref
             rules={[{ required: true, message: t('common.inputRequired') }]}
           >
             <RoleTransfer
+              groupRules={groupRules}
               treeData={roleTreeData}
               selectedKeys={selectedRoles}
               onChange={newKeys => {

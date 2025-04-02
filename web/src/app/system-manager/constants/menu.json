@@ -23,6 +23,12 @@
           "icon": "guanliyuan_jiaoseguanli",
           "name": "application_role",
           "url": "/system-manager/application/manage/role"
+        },
+        {
+          "title": "数据权限",
+          "icon": "line-DataPermissions",
+          "name": "data_permission",
+          "url": "/system-manager/application/manage/data"
         }
       ]
     },
@@ -65,6 +71,12 @@
           "icon": "guanliyuan_jiaoseguanli",
           "name": "application_role",
           "url": "/system-manager/application/manage/role"
+        },
+        {
+          "title": "Data Permission",
+          "icon": "line-DataPermissions",
+          "name": "data_permission",
+          "url": "/system-manager/application/manage/data"
         }
       ]
     },
