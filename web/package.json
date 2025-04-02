@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "preinstall": "npx -y only-allow pnpm",
+    "generate-workspace": "node scripts/generate-workspace.js",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -38,6 +39,7 @@
   "devDependencies": {
     "@chromatic-com/storybook": "3.2.2",
     "@next/bundle-analyzer": "^15.0.3",
+    "@storybook/addon-actions": "^8.6.9",
     "@storybook/addon-docs": "^8.4.6",
     "@storybook/addon-essentials": "8.4.6",
     "@storybook/addon-interactions": "8.4.6",

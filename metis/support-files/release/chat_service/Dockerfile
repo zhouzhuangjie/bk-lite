@@ -29,9 +29,5 @@ ADD ./apps/chat_service ./apps/chat_service
 
 ADD ./support-files/release/chat_service/service.conf /etc/supervisor/conf.d/service.conf
 
-ADD ./support-files/release/chat_service/general_mcp.conf /etc/supervisor/conf.d/general_mcp.conf
-
-ADD ./support-files/release/chat_service/web_search_mcp.conf /etc/supervisor/conf.d/web_search_mcp.conf
-
 ENV INSTALL_APPS="chat_service"
 CMD ["supervisord", "-n"]

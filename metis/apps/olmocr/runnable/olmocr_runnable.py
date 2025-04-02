@@ -16,8 +16,8 @@ from core.user_types.ocr_request import OcrRequest
 
 class OlmOcrRunnable():
     def __init__(self):
-        self.model = Qwen2VLForConditionalGeneration.from_pretrained("xhguo5/olmOCR", torch_dtype=torch.bfloat16).eval()
-        self.processor = AutoProcessor.from_pretrained("xhguo5/olmOCR")
+        self.model = Qwen2VLForConditionalGeneration.from_pretrained("allenai/olmOCR-7B-0225-preview", torch_dtype=torch.bfloat16).eval()
+        self.processor = AutoProcessor.from_pretrained("allenai/olmOCR-7B-0225-preview")
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
 
@@ -32,7 +32,7 @@ class OlmOcrRunnable():
                 "role": "user",
                 "content": [
                     {"type": "text", "text": prompt},
-                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{request.file}"}},
+                    {"type": "image_url", "image_url": {"url": f"{request.file}"}},
                 ],
             }
         ]
@@ -65,4 +65,4 @@ class OlmOcrRunnable():
     def register(self, app):
         add_routes(app,
                    RunnableLambda(self.predict).with_types(input_type=OcrRequest, output_type=List[Document]),
-                   path='/olmocr/predict')
+                   path='/olmocr')
