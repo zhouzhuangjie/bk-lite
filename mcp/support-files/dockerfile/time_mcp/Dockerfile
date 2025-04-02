@@ -15,19 +15,14 @@ RUN apt-get update && \
 WORKDIR /app
 
 ADD ./requirements/requirements-core.txt ./requirements/requirements-core.txt
-ADD ./requirements/requirements-chat_service.txt ./requirements/requirements-chat_service.txt
+ADD ./requirements/requirements-time_mcp.txt ./requirements/requirements-time_mcp.txt
 
 RUN pip install -r ./requirements/requirements-core.txt
-RUN pip install -r ./requirements/requirements-chat_service.txt
+RUN pip install -r ./requirements/requirements-time_mcp.txt
 
-#ADD ./dist .
-
-ADD ./server.py ./server.py
-ADD ./core ./core
 ADD ./apps/__init__.py ./apps/__init__.py
-ADD ./apps/chat_service ./apps/chat_service
+ADD ./apps/time_mcp ./apps/time_mcp
 
-ADD ./support-files/release/chat_service/service.conf /etc/supervisor/conf.d/service.conf
+ADD ./support-files/supervisor/time_mcp/mcp_server.conf /etc/supervisor/conf.d/mcp_server.conf
 
-ENV INSTALL_APPS="chat_service"
 CMD ["supervisord", "-n"]

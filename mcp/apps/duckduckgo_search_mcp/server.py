@@ -1,8 +1,12 @@
+import os
+
 from mcp.server.fastmcp import FastMCP
 from duckduckgo_search import DDGS
 from typing import Optional
+from dotenv import load_dotenv
 
-mcp = FastMCP("Web Search", port=8003)
+load_dotenv()
+mcp = FastMCP("DuckDuckGo Search", port=os.getenv("APP_PORT", 7000))
 
 
 @mcp.tool()
