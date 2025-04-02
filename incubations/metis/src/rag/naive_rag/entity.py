@@ -21,7 +21,7 @@ class ElasticSearchRetrieverRequest(BaseModel):
     search_query: str
     metadata_filter: dict = {}
     size: int = 100
-
+    threshold: float = 0.7
     enable_term_search: bool = True
 
     text_search_weight: float = 0.9

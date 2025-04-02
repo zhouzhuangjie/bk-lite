@@ -7,4 +7,4 @@ from src.workflow.chatbot_workflow.entity import ChatBotWorkflowRequest
 
 class ChatBotWorkflowState(TypedDict):
     messages: Annotated[list, add_messages]
-    workflow_request: ChatBotWorkflowRequest
+    graph_request: ChatBotWorkflowRequest

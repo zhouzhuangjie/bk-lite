@@ -17,6 +17,12 @@ def test_native_rag_ingest():
         docs=[
             Document(page_content='你好', metadata={'knowledge_title': '你好'}),
             Document(page_content='介绍一下你自己', metadata={'knowledge_title': '介绍一下你自己'}),
+            Document(page_content='你是谁', metadata={'knowledge_title': '你是谁'}),
+            Document(page_content='你会什么', metadata={'knowledge_title': '你会什么'}),
+            Document(page_content='你能做什么', metadata={'knowledge_title': '你能做什么'}),
+            Document(page_content='你能帮我做什么', metadata={'knowledge_title': '你能帮我做什么'}),
+            Document(page_content='你能给我讲个笑话吗', metadata={'knowledge_title': '你能给我讲个笑话吗'}),
+            Document(page_content='你能给我讲个故事吗', metadata={'knowledge_title': '你能给我讲个故事吗'}),
         ],
         embed_model_base_url=os.getenv('TEST_VLLM_BCE_EMBED_URL'),
         embed_model_api_key=os.getenv('TEST_VLLM_API_TOKEN'),
@@ -37,7 +43,7 @@ def test_native_rag():
         embed_model_name=os.getenv("TEST_VLLM_BCE_EMBED_MODEL_NAME"),
         enable_rerank=True,
         rerank_model_base_url=os.getenv('TEST_VLLM_BCE_RERANK_URL'),
-        rerank_top_k=1,
+        rerank_top_k=2,
         rerank_model_api_key=os.getenv('TEST_VLLM_API_TOKEN'),
         rerank_model_name=os.getenv("TEST_VLLM_BCE_RERANK_MODEL_NAME"),
     )

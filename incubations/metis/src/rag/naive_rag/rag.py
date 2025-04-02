@@ -73,9 +73,18 @@ class ElasticSearchRag:
                 "documents": rerank_content,
             }
             response = requests.post(req.rerank_model_base_url, headers=headers, json=data)
-            # TODO
             rerank_result = response.json()['results']
-            for index, i in enumerate(rerank_result):
-                search_result[index].metadata['relevance_score'] = i['relevance_score']
 
+            # 对rerank_result进行排序并获取topk
+            sorted_rerank_result = sorted(enumerate(rerank_result), key=lambda x: x[1]['relevance_score'], reverse=True)
+            top_k_indices = [i[0] for i in sorted_rerank_result[:req.rerank_top_k]]
+
+            top_k_search_result = []
+            for index in top_k_indices:
+                search_result[index].metadata['relevance_score'] = rerank_result[index]['relevance_score']
+                top_k_search_result.append(search_result[index])
+
+            search_result = top_k_search_result
+
+        search_result = [doc for doc in search_result if doc.metadata.get('_score', 0) >= req.threshold]
         return search_result
