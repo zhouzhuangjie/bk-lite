@@ -6,6 +6,7 @@ from langchain_core.documents import Document
 from langchain_elasticsearch import ElasticsearchRetriever
 from langchain_openai import OpenAIEmbeddings
 
+from src.rag.naive_rag.entity.elasticsearch_document_delete_request import ElasticSearchDocumentDeleteRequest
 from src.rag.naive_rag.entity.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
 from src.rag.naive_rag.entity.elasticsearch_store_request import ElasticSearchStoreRequest
 from src.rag.naive_rag.utils.elasticsearch_query_builder import ElasticsearchQueryBuilder
@@ -15,11 +16,32 @@ import elasticsearch
 
 
 class ElasticSearchRag:
+    def __init__(self):
+        self.es = elasticsearch.Elasticsearch(hosts=[os.getenv('ELASTICSEARCH_URL')],
+                                              basic_auth=("elastic", os.getenv('ELASTICSEARCH_PASSWORD')))
+
+    def delete_index(self, req: ElasticSearchDocumentDeleteRequest):
+        self.es.indices.delete(index=req.index_name)
+
+    def delete_document(self, req: ElasticSearchDocumentDeleteRequest):
+        metadata_filter = []
+        for key, value in req.metadata_filter.items():
+            metadata_filter.append({"term": {f"metadata.{key}.keyword": value}})
+
+        query = {
+            "query": {
+                "bool": {
+                    "filter": metadata_filter
+                }
+            }
+        }
+
+        self.es.delete_by_query(index=req.index_name, body=query)
+
     def ingest(self, req: ElasticSearchStoreRequest):
-        es = elasticsearch.Elasticsearch(hosts=[os.getenv('ELASTICSEARCH_URL')],
-                                         basic_auth=("elastic", os.getenv('ELASTICSEARCH_PASSWORD')))
-        if req.index_mode == 'overwrite' and es.indices.exists(index=req.index_name):
-            es.indices.delete(index=req.index_name)
+
+        if req.index_mode == 'overwrite' and self.es.indices.exists(index=req.index_name):
+            self.es.indices.delete(index=req.index_name)
 
         embedding = OpenAIEmbeddings(
             model=req.embed_model_name,
@@ -28,7 +50,7 @@ class ElasticSearchRag:
         )
         db = ElasticsearchStore.from_documents(
             req.docs, embedding=embedding,
-            es_connection=es, index_name=req.index_name,
+            es_connection=self.es, index_name=req.index_name,
             bulk_kwargs={
                 "chunk_size": req.chunk_size,
                 "max_chunk_bytes": req.max_chunk_bytes

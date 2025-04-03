@@ -10,7 +10,7 @@ app = Sanic("Stargazer", config=yml_config)
 
 @app.before_server_start
 async def show_banner(app, loop):
-    with open(f"asserts/banner.txt") as f:
+    with open(f"src/asserts/banner.txt") as f:
         print(f.read())
 
 

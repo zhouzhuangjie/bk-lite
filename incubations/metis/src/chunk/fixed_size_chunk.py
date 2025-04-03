@@ -1,0 +1,2 @@
+class FixedSizeChunk():
+    pass
