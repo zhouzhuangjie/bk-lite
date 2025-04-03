@@ -40,6 +40,17 @@
       "PacificNoumea": "太平洋/努美阿 (UTC+11:00)",
       "PacificAuckland": "太平洋/奥克兰 (UTC+12:00)"
     },
+    "modules": {
+      "bot": "工作台",
+      "skill": "智能体",
+      "knowledge": "知识库",
+      "tools": "工具",
+      "provider": "模型",
+      "llm_model": "LLM 模型",
+      "embed_model": "嵌入模型",
+      "rerank_model": "重排序模型",
+      "ocr_model": "OCR 模型"
+    },
     "user": {
       "title": "用户",
       "desc": "显示所有信息。您可以维护用户信息并分配角色。",
@@ -152,7 +163,17 @@
       "readWrite": "读写",
       "manage": "管理",
       "fullPermission": "全权限",
-      "dataPermissionRule": "数据权限规则"
+      "dataPermissionRule": "数据权限规则",
+      "type": "类型",
+      "allData": "所有数据",
+      "specificData": "指定数据",
+      "permissions": "权限",
+      "view": "查看",
+      "operate": "操作",
+      "data": "数据",
+      "actions": "操作",
+      "noSpecificDataSupport": "此模块不支持指定数据编辑",
+      "noAvailableModules": "没有可用的权限模块"
     }
   }
 }

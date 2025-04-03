@@ -55,6 +55,16 @@
             "Edit Permission",
             "Delete"
           ]
+        },
+        {
+          "id": "data_permission",
+          "name": "Data permission",
+          "operation": [
+            "View",
+            "Edit",
+            "Add",
+            "Delete"
+          ]
         }
       ]
     },

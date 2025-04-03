@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 
 import nats_client
 from apps.core.backends import cache, logger
-from apps.system_mgmt.models import Channel, ChannelChoices
+from apps.system_mgmt.models import Channel, ChannelChoices, UserRule
 from apps.system_mgmt.services.group_manage import GroupManage
 from apps.system_mgmt.services.role_manage import RoleManage
 from apps.system_mgmt.services.user_manage import UserManage
@@ -186,3 +186,11 @@ def send_msg_with_channel(channel_id, title, content, receivers):
     elif channel_obj.channel_type == ChannelChoices.ENTERPRISE_WECHAT_BOT:
         return send_by_bot(channel_obj, content)
     return send_wechat(channel_obj, content, receivers)
+
+
+@nats_client.register
+def get_user_rules(app, group_id, username):
+    rules = UserRule.objects.filter(username=username, group_rule__group_id=group_id, group_rule__app=app).first()
+    if not rules:
+        return {}
+    return rules.group_rule.rules

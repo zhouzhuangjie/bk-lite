@@ -7,7 +7,9 @@ import PermissionModal from './permissionModal';
 interface TreeTransferProps {
   treeData: TreeDataNode[];
   selectedKeys: string[];
+  groupRules?: { [key: string]: number[] },
   onChange: (newKeys: string[]) => void;
+  onChangeRule?: (newKey: string, newRules: number[]) => void;
   mode?: 'group' | 'role'; // 新增：选择模式，默认 'role'
 }
 
@@ -201,9 +203,10 @@ const getAllKeys = (nodes: TreeDataNode[]): string[] => {
   }, []);
 };
 
-const RoleTransfer: React.FC<TreeTransferProps> = ({ treeData, selectedKeys, onChange, mode = 'role' }) => {
+const RoleTransfer: React.FC<TreeTransferProps> = ({ treeData, selectedKeys, groupRules = {}, onChange, onChangeRule, mode = 'role' }) => {
   const [isPermissionModalVisible, setIsPermissionModalVisible] = useState<boolean>(false);
   const [currentNode, setCurrentNode] = useState<TreeDataNode | null>(null);
+  const [currentRules, setCurrentRules] = useState<number[]>([]);
 
   // 使用 useMemo 缓存计算，提高性能
   const flattenedRoleData = useMemo(() => flattenRoleData(treeData), [treeData]);
@@ -213,11 +216,21 @@ const RoleTransfer: React.FC<TreeTransferProps> = ({ treeData, selectedKeys, onC
   const handlePermissionSetting = (node: TreeDataNode, e: React.MouseEvent) => {
     e.stopPropagation();
     setCurrentNode(node);
+    const nodeKey = String(node.key);
+    const rules = groupRules[nodeKey] || [];
+    console.log('groupRules~~~~~', groupRules, rules);
+    setCurrentRules(rules);
     setIsPermissionModalVisible(true);
   };
 
   const handlePermissionOk = (values: any) => {
-    console.log('权限设置数据:', values, '当前节点:', currentNode);
+    if (!currentNode || !onChangeRule) return;
+
+    const filteredPermissions = values?.permissions?.filter((val: any) => val.permission !== 0).map((val: any) => val.permission);
+    const nodeKey = String(currentNode.key);
+
+    // 调用外部传入的修改规则的回调
+    onChangeRule(nodeKey, filteredPermissions);
     setIsPermissionModalVisible(false);
   };
 
@@ -228,9 +241,9 @@ const RoleTransfer: React.FC<TreeTransferProps> = ({ treeData, selectedKeys, onC
       treeData,
       selectedKeys,
       onChange,
-      handlePermissionSetting,
+      mode === 'group' && onChangeRule ? handlePermissionSetting : undefined,
       mode === 'group' ? 'group' : undefined
-    ), [filteredRightData, treeData, selectedKeys, onChange, mode]
+    ), [filteredRightData, treeData, selectedKeys, onChange, mode, onChangeRule]
   );
 
   const rightExpandedKeys = useMemo(() =>
@@ -303,13 +316,15 @@ const RoleTransfer: React.FC<TreeTransferProps> = ({ treeData, selectedKeys, onC
           }
         }}
       </Transfer>
-
-      <PermissionModal
-        visible={isPermissionModalVisible}
-        node={currentNode}
-        onOk={handlePermissionOk}
-        onCancel={() => setIsPermissionModalVisible(false)}
-      />
+      {currentNode && (
+        <PermissionModal
+          visible={isPermissionModalVisible}
+          rules={currentRules}
+          node={currentNode}
+          onOk={handlePermissionOk}
+          onCancel={() => setIsPermissionModalVisible(false)}
+        />
+      )}
     </>
   );
 };

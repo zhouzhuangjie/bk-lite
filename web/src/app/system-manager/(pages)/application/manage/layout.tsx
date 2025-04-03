@@ -16,11 +16,11 @@ const AppManageLayout = ({ children }: { children: React.ReactNode }) => {
   const [clientDescription, setClientDescription] = useState('');
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
 
-  const id = searchParams.get('id');
+  const id = searchParams ? searchParams.get('id') : null;
   const { getClientDetail } = useUserApi();
 
   const updateMenuItems = useMemo(() => {
-    const currentMenu = menus.find((menu: MenuItem) => menu?.url && pathname.startsWith(menu.url));
+    const currentMenu = menus.find((menu: MenuItem) => menu?.url && pathname?.startsWith(menu.url));
     return currentMenu?.children || [];
   }, [menus, pathname]);
 
