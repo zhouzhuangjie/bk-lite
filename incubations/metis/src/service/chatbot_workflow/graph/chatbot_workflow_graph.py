@@ -6,6 +6,7 @@ from src.service.chatbot_workflow.entity.chatbot_workflow_request import ChatBot
 from src.service.chatbot_workflow.entity.chatbot_workflow_response import ChatBotWorkflowResponse
 from src.service.chatbot_workflow.node.chatbot_workflow_node import ChatBotWorkflowNode
 from src.service.chatbot_workflow.state.chatbot_workflow_state import ChatBotWorkflowState
+from langgraph.pregel import RetryPolicy
 
 
 class ChatBotWorkflowGraph(BasicGraph):
@@ -15,7 +16,7 @@ class ChatBotWorkflowGraph(BasicGraph):
         node_builder = ChatBotWorkflowNode()
 
         last_edge = self.prepare_graph(graph_builder, node_builder)
-        graph_builder.add_node("chatbot_node", node_builder.chatbot_node)
+        graph_builder.add_node("chatbot_node", node_builder.chatbot_node, retry=RetryPolicy(max_attempts=5))
 
         graph_builder.add_edge(last_edge, "chatbot_node")
         graph_builder.add_edge("chatbot_node", END)

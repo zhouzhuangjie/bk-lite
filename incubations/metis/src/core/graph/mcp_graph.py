@@ -20,7 +20,8 @@ class McpGraph(BasicGraph):
 
     async def invoke(self, graph, request: BasicLLMReuqest):
         config = {
-            "graph_request": request
+            "graph_request": request,
+            "recursion_limit": 10,
         }
 
         try:

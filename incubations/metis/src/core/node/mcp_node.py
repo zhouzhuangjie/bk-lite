@@ -35,7 +35,7 @@ class McpNodes(BasicNode):
 
         # 检查最后一条消息，如果是工具消息并且有错误，记录日志
         if messages and isinstance(messages[-1], ToolMessage) and messages[-1].status == 'error':
-            logger.warning(f"Tool execution error: {messages[-1].content}")
+            print(f"Tool execution error: {messages[-1].content}")
 
         # 创建一个绑定了工具的LLM
         llm = self.get_llm_client(config["configurable"]["graph_request"])

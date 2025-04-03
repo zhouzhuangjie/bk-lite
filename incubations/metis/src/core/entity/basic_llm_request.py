@@ -23,3 +23,5 @@ class BasicLLMReuqest(BaseModel):
 
     enable_naive_rag: bool = False
     naive_rag_request: Optional[ElasticSearchRetrieverRequest] = None
+
+    rag_stage: str = 'naive-rag'

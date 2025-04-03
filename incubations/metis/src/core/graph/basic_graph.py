@@ -24,7 +24,8 @@ class BasicGraph:
 
     def invoke(self, graph, request: BasicLLMReuqest):
         config = {
-            "graph_request": request
+            "graph_request": request,
+            "recursion_limit": 10,
         }
 
         if request.thread_id:
