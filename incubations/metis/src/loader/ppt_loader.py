@@ -17,6 +17,7 @@ class PPTLoader():
                 if shape.has_text_frame:
                     for paragraph in shape.text_frame.paragraphs:
                         full_text += paragraph.text.strip() + "\n"
+
                 if shape.has_table:
                     table_content = ""
                     for row in shape.table.rows:
@@ -24,5 +25,6 @@ class PPTLoader():
                             for paragraph in cell.text_frame.paragraphs:
                                 table_content += paragraph.text.strip() + "\n"
                     docs.append(Document(table_content, metadata={"format": "table"}))
+
             docs.append(Document(full_text.strip()))
         return docs

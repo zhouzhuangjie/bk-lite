@@ -1,21 +1,18 @@
-import base64
 import re
 from io import BytesIO
 from typing import List
 
 import fitz
-from langchain_core.documents import Document
-from tqdm import tqdm
-from tabula.io import read_pdf
 import pandas as pd
+from langchain_core.documents import Document
+from tabula.io import read_pdf
+from tqdm import tqdm
 
 
 class PDFLoader:
 
-    def __init__(self, file_path, ocr_provider_address, enable_ocr_parse):
+    def __init__(self, file_path):
         self.file_path = file_path
-        self.ocr_provider_address = ocr_provider_address
-        self.enable_ocr_parse = enable_ocr_parse
 
     def remove_unicode_chars(self, text):
         return re.sub(r'\\u[fF]{1}[0-9a-fA-F]{3}', '', text)
@@ -44,11 +41,25 @@ class PDFLoader:
                         return True
             return False
         except Exception as e:
-            print(e)
             return False
 
-    def load(self) -> List[Document]:
+    def ocr_load(self) -> List[Document]:
+        with fitz.open(self.file_path) as pdf:
+            for page_number in tqdm(range(1, len(pdf) + 1), desc=f"解析PDF图片[{self.file_path}]"):
+                page = pdf[page_number - 1]
+                for image_number, image in enumerate(page.get_images(), start=1):
+                    xref_value = image[0]
+                    base_image = pdf.extract_image(xref_value)
+                    image_bytes = base_image["image"]
+                    file = BytesIO(image_bytes)
 
+                    # TODO: 接OCR服务
+                    # for doc in content:
+                    #     if doc.page_content:
+                    #         doc.metadata["format"] = "image"
+                    #         text_docs.append(doc)
+
+    def load(self) -> List[Document]:
         table_docs = []
         text_docs = []
 
@@ -76,7 +87,6 @@ class PDFLoader:
             if full_text:
                 text_docs.append(Document(full_text.strip()))
 
-        # 处理表格部分保持不变
         try:
             tables = read_pdf(self.file_path, pages='all')
             for table in tqdm(tables, desc=f"解析PDF表格[{self.file_path}]"):

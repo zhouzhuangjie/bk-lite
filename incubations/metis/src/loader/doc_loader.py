@@ -1,6 +1,4 @@
-import base64
 import re
-from io import BytesIO
 
 import docx
 from langchain_core.documents import Document
@@ -8,10 +6,8 @@ from tqdm import tqdm
 
 
 class DocLoader:
-    def __init__(self, file_path, ocr_provider_address, enable_ocr_parse):
+    def __init__(self, file_path):
         self.file_path = file_path
-        self.ocr_provider_address = ocr_provider_address
-        self.enable_ocr_parse = enable_ocr_parse
 
     def table_to_md(self, table):
         # Converts a docx table to markdown format
@@ -33,25 +29,10 @@ class DocLoader:
 
         paragraphs = document.paragraphs
 
-        # 段落解析：
-        # 1. 以标题开始的段落为一个文档
-        # 2. 以标题开始的段落之后的段落为该文档的内容
-        # 3. 表格为一个文档
-        current_doc = None
+        full_text = ""
         for paragraph in tqdm(paragraphs, desc=f"解析[{self.file_path}]的段落"):
-            if any(heading in paragraph.style.name for heading in ('Heading', '标题')):
-                if current_doc is not None:
-                    docs.append(Document(current_doc.strip()))
-                current_doc = paragraph.text.strip() + "\n"  # Start a new document segment with the title
-            else:
-                if current_doc is not None:
-                    current_doc += paragraph.text.strip() + "\n"
-                else:
-                    current_doc = paragraph.text.strip() + "\n"
-
-        # Ensure the last current_doc is added
-        if current_doc:
-            docs.append(Document(current_doc.strip()))
+            full_text += paragraph.text
+        docs.append(Document(full_text))
 
         # Process tables
         tables = document.tables

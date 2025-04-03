@@ -1,19 +1,14 @@
-import os
-
 from dotenv import load_dotenv
-from langchain_core.documents import Document
-from langchain_openai import OpenAIEmbeddings
 
-from src.chunk.recursive_chunk import RecursiveChunk
-from src.chunk.semantic_chunk import SemanticChunk
+from src.chunk.fixed_size_chunk import FixedSizeChunk
 from src.loader.text_loader import TextLoader
 
 load_dotenv()
 
 
-def test_recursive_chunk():
+def test_fixed_size_chunk():
 
-    chunk = RecursiveChunk()
+    chunk = FixedSizeChunk()
     loader = TextLoader(path='../assert/full_text_loader.txt')
     docs = loader.load()
     rs = chunk.chunk(docs)

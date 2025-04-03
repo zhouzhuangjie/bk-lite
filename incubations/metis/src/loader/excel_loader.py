@@ -14,7 +14,7 @@ class ExcelLoader():
         excel_format_str = ""
 
         # Step 2: Format and append column headers
-        column_headers = "\t".join(df.columns)  # Using tab as a separator
+        column_headers = "\t".join(str(df.columns))  # Using tab as a separator
         excel_format_str += column_headers + "\n"
 
         # Step 3 & 4: Iterate through rows and append their formatted string representation
@@ -26,6 +26,31 @@ class ExcelLoader():
         # Step 5: Return the accumulated string
         return excel_format_str
 
+    def title_row_struct_load(self):
+        sheets = pd.read_excel(self.path, sheet_name=None)
+
+        # 初始化一个空列表来存储结果
+        result = []
+
+        for sheet_name, df in sheets.items():
+            print(f"Excel文件[{self.path}]的Sheet[{sheet_name}]的首行将被解析为表头")
+
+            # 遍历每一行
+            for index, row in df.iterrows():
+                # 初始化一个空字符串来存储这一行的结果
+                row_result = ''
+
+                # 遍历这一行的每一列
+                for col_name, col_value in row.items():
+                    # 将列名和列值拼接成一个字符串，然后添加到结果中
+                    row_result += f'{sheet_name}  {col_name}: {col_value}  '
+
+                # 将这一行的结果添加到总结果中
+                result.append(Document(row_result.strip(), metadata={"format": "table", "sheet": sheet_name}))
+
+        # 返回结果
+        return result
+
     def load(self):
         # 使用pandas读取excel文件的所有sheet
         sheets = pd.read_excel(self.path, sheet_name=None)
@@ -34,29 +59,12 @@ class ExcelLoader():
         result = []
 
         for sheet_name, df in sheets.items():
-            if self.request.excel_header_row_parse:
-                print(f"Excel文件[{self.path}]的Sheet[{sheet_name}]的首行将被解析为表头")
+            print(f"Excel文件[{self.path}]的Sheet[{sheet_name}]的全内容将被解析")
 
-                # 遍历每一行
-                for index, row in df.iterrows():
-                    # 初始化一个空字符串来存储这一行的结果
-                    row_result = ''
-
-                    # 遍历这一行的每一列
-                    for col_name, col_value in row.items():
-                        # 将列名和列值拼接成一个字符串，然后添加到结果中
-                        row_result += f'{sheet_name}  {col_name}: {col_value}  '
-
-                    # 将这一行的结果添加到总结果中
-                    result.append(Document(row_result.strip(), metadata={"format": "table", "sheet": sheet_name}))
-
-            if self.request.excel_full_content_parse:
-                print(f"Excel文件[{self.path}]的Sheet[{sheet_name}]的全内容将被解析")
-
-                # 读取Excel 的全内容
-                full_content = self.dataframe_to_excel_format_string(df)
-                result.append(
-                    Document(f'{sheet_name} {full_content}', metadata={"format": "table", "sheet": sheet_name}))
+            # 读取Excel 的全内容
+            full_content = self.dataframe_to_excel_format_string(df)
+            result.append(
+                Document(f'{sheet_name} {full_content}', metadata={"format": "table", "sheet": sheet_name}))
 
         # 返回结果
         return result
