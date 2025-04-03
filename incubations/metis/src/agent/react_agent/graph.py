@@ -1,7 +1,4 @@
-import os
-
-from langgraph.checkpoint.postgres import PostgresSaver
-from langgraph.constants import START, END
+from langgraph.constants import END
 from langgraph.graph import StateGraph
 
 from src.agent.react_agent.entity import ReActAgentRequest, ReActAgentResponse
@@ -11,25 +8,29 @@ from src.core.graph import McpGraph
 
 
 class ReActAgentGraph(McpGraph):
-    def __init__(self, request: ReActAgentRequest):
-        super().__init__(request)
-        self.node_builder = ReActAgentNode(self.request)
-        self.graph_builder = StateGraph(ReActAgentState)
 
-    async def compile_graph(self):
-        last_edge = self.prepare_graph()
+    async def compile_graph(self, request: ReActAgentRequest):
+        node_builder = ReActAgentNode()
 
-        tools_node = await self.node_builder.build_tools_node()
-        self.graph_builder.add_node("tools", tools_node)
-        self.graph_builder.add_node("agent", self.node_builder.agent_node)
+        await node_builder.setup(request)
 
-        self.graph_builder.add_edge(last_edge, "agent")
-        self.graph_builder.add_conditional_edges("agent", self.should_continue, ["tools", END])
-        self.graph_builder.add_edge("tools", "agent")
+        graph_builder = StateGraph(ReActAgentState)
 
-        self.graph = self.graph_builder.compile()
+        last_edge = self.prepare_graph(graph_builder, node_builder)
 
-    async def execute(self) -> ReActAgentResponse:
-        result = await self.invoke()
+        tools_node = await node_builder.build_tools_node()
+        graph_builder.add_node("tools", tools_node)
+        graph_builder.add_node("agent", node_builder.agent_node)
+
+        graph_builder.add_edge(last_edge, "agent")
+        graph_builder.add_conditional_edges("agent", self.should_continue, ["tools", END])
+        graph_builder.add_edge("tools", "agent")
+
+        graph = graph_builder.compile()
+        return graph
+
+    async def execute(self, request: ReActAgentRequest) -> ReActAgentResponse:
+        graph = await self.compile_graph(request)
+        result = await self.invoke(graph, request)
         response = self.parse_basic_response(result)
         return response

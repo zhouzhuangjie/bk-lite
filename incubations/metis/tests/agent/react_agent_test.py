@@ -6,10 +6,7 @@ from dotenv import load_dotenv
 
 from src.agent.react_agent.entity import ReActAgentRequest
 from src.agent.react_agent.graph import ReActAgentGraph
-from src.core.entity import ChatHistory, MCPServer
-from src.rag.naive_rag.entity import ElasticSearchRetrieverRequest
-from src.workflow.chatbot_workflow.entity import ChatBotWorkflowRequest
-from src.workflow.chatbot_workflow.graph import ChatBotWorkflowGraph
+from src.core.entity import MCPServer
 
 load_dotenv()
 
@@ -29,7 +26,6 @@ async def test_react_agent_without_tools():
         thread_id="2",
         mcp_servers=mcp_servers
     )
-    graph = ReActAgentGraph(request)
-    await graph.compile_graph()
-    result = await graph.execute()
+    graph = ReActAgentGraph()
+    result = await graph.execute(request)
     print(result)

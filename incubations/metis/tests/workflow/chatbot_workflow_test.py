@@ -20,9 +20,8 @@ def test_chat():
         user_id="1",
         thread_id="2"
     )
-    workflow = ChatBotWorkflowGraph(request)
-    workflow.compile_graph()
-    result = workflow.execute()
+    workflow = ChatBotWorkflowGraph()
+    result = workflow.execute(request)
     print(result)
 
 
@@ -54,9 +53,8 @@ def test_chat_with_naiverag():
         enable_naive_rag=True,
         naive_rag_request=naive_rag_request
     )
-    workflow = ChatBotWorkflowGraph(request)
-    workflow.compile_graph()
-    result = workflow.execute()
+    workflow = ChatBotWorkflowGraph()
+    result = workflow.execute(request)
     print(result)
 
 
@@ -74,7 +72,6 @@ def test_chat_with_manunal_chat_history():
             ChatHistory(event='assistant', message='我能帮助你解决运维问题'),
         ]
     )
-    workflow = ChatBotWorkflowGraph(request)
-    workflow.compile_graph()
-    result = workflow.execute()
+    workflow = ChatBotWorkflowGraph()
+    result = workflow.execute(request)
     print(result)

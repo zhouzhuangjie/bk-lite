@@ -11,22 +11,22 @@ from src.workflow.chatbot_workflow.state import ChatBotWorkflowState
 
 
 class ChatBotWorkflowGraph(BasicGraph):
-    def __init__(self, request: ChatBotWorkflowRequest):
-        super().__init__(request)
-        self.node_builder = ChatBotWorkflowNode(self.request)
-        self.graph_builder = StateGraph(ChatBotWorkflowState)
 
-    def compile_graph(self):
-        last_edge = self.prepare_graph()
-        self.graph_builder.add_node("chatbot_node", self.node_builder.chatbot_node)
+    def compile_graph(self, request: ChatBotWorkflowRequest):
+        graph_builder = StateGraph(ChatBotWorkflowState)
+        node_builder = ChatBotWorkflowNode()
 
-        self.graph_builder.add_edge(last_edge, "chatbot_node")
-        self.graph_builder.add_edge("chatbot_node", END)
+        last_edge = self.prepare_graph(graph_builder,node_builder)
+        graph_builder.add_node("chatbot_node", node_builder.chatbot_node)
 
-        graph = self.graph_builder.compile()
-        self.graph = graph
+        graph_builder.add_edge(last_edge, "chatbot_node")
+        graph_builder.add_edge("chatbot_node", END)
 
-    def execute(self) -> ChatBotWorkflowResponse:
-        result = self.invoke()
+        graph = graph_builder.compile()
+        return graph
+
+    def execute(self, request: ChatBotWorkflowRequest) -> ChatBotWorkflowResponse:
+        graph = self.compile_graph(request)
+        result = self.invoke(graph, request)
         response = self.parse_basic_response(result)
         return response
