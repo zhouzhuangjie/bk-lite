@@ -10,7 +10,7 @@ class ElasticSearchStoreRequest(BaseModel):
     embed_model_name: str = ''
 
     index_name: str
-    index_mode: str
+    index_mode: str=''
     chunk_size: int = 50
     max_chunk_bytes: int = 200000000
     docs: List[Document]

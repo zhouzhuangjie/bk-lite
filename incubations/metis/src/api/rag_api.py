@@ -1,7 +1,16 @@
+import uuid
+
 from pydantic import BaseModel
 from sanic import Blueprint, json
 import tempfile
 import os
+
+from sanic_ext import validate
+
+from src.chunk.fixed_size_chunk import FixedSizeChunk
+from src.loader.text_loader import TextLoader
+from src.rag.naive_rag.entity.elasticsearch_store_request import ElasticSearchStoreRequest
+from src.rag.naive_rag.rag.elasticsearch_rag import ElasticSearchRag
 
 rag_api_router = Blueprint("rag", url_prefix="/rag")
 
@@ -10,31 +19,51 @@ rag_api_router = Blueprint("rag", url_prefix="/rag")
 async def ingest(request):
     # 获取文件和知识库索引名称
     file = request.files.get('file')
-    index_name = request.form.get('index_name')
-
-    if not file or not index_name:
-        return json({"status": "error", "message": "Missing required parameters: file or index_name"})
-
-    # 检查文件类型
     allowed_types = ['docx', 'pptx', 'ppt', 'doc', 'txt', 'jpg', 'png', 'jpeg']
     file_extension = file.name.split('.')[-1].lower() if '.' in file.name else ''
 
     if file_extension not in allowed_types:
         return json({"status": "error", "message": f"Unsupported file type. Allowed types: {', '.join(allowed_types)}"})
 
+    index_name = request.form.get('index_name')
+    knowledge_id = request.form.get('knowledge_id')
+    embed_model_base_url = request.form.get('embed_model_base_url')
+    embed_model_api_key = request.form.get('embed_model_api_key')
+    embed_model_name = request.form.get('embed_model_name')
+
     try:
-        # 使用临时目录保存文件
-        with tempfile.NamedTemporaryFile(delete=False, suffix=f'.{file_extension}') as temp_file:
+        with tempfile.NamedTemporaryFile(delete=True, suffix=f'.{file_extension}') as temp_file:
             temp_file.write(file.body)
             temp_file.flush()
             temp_path = temp_file.name
 
-        # 处理文件和知识库索引逻辑
-        # 使用完成后删除临时文件
-        os.unlink(temp_path)
-        # TODO: 实现文件处理和知识库写入逻辑
+            if file_extension == 'txt':
+                loader = TextLoader(temp_path)
 
-        return json({"status": "success", "message": temp_path})
+            docs = loader.load()
+            for doc in docs:
+                doc.metadata['knowledge_title'] = file.name
+                doc.metadata['knowledge_id'] = knowledge_id
+                doc.metadata['chunk_id'] = str(uuid.uuid4())
+
+            chunk_mode = request.form.get('chunk_mode')
+            if chunk_mode == 'fixed_size':
+                chunk_size = int(request.form.get('chunk_size'))
+                chunk = FixedSizeChunk(chunk_size=chunk_size)
+
+            docs = chunk.chunk(docs)
+
+            elasticsearch_store_request = ElasticSearchStoreRequest(
+                index_name=index_name,
+                docs=docs,
+                embed_model_base_url=embed_model_base_url,
+                embed_model_api_key=embed_model_api_key,
+                embed_model_name=embed_model_name
+            )
+            rag = ElasticSearchRag()
+            rag.ingest(elasticsearch_store_request)
+
+        return json({"status": "success", "message": ""})
     except Exception as e:
         return json({"status": "error", "message": str(e)})
 
