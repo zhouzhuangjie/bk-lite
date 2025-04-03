@@ -4,9 +4,9 @@ from typing import List
 import pytest
 from dotenv import load_dotenv
 
-from src.service.react_agent import ReActAgentRequest
-from src.service.react_agent import ReActAgentGraph
-from src.core.entity import MCPServer
+from src.core.entity.mcp_server import MCPServer
+from src.service.react_agent.entity.react_agent_request import ReActAgentRequest
+from src.service.react_agent.graph.react_agent_graph import ReActAgentGraph
 
 load_dotenv()
 

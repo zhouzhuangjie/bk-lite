@@ -2,9 +2,11 @@ import os
 
 from langchain_core.documents import Document
 
-from src.rag.naive_rag.entity import ElasticSearchRetrieverRequest, ElasticSearchStoreRequest
-from src.rag.naive_rag.rag import ElasticSearchRag
 from dotenv import load_dotenv
+
+from src.rag.naive_rag.entity.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
+from src.rag.naive_rag.entity.elasticsearch_store_request import ElasticSearchStoreRequest
+from src.rag.naive_rag.rag.elasticsearch_rag import ElasticSearchRag
 
 load_dotenv()
 

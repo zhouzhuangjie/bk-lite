@@ -2,10 +2,10 @@ import os
 
 from dotenv import load_dotenv
 
-from src.core.entity import ChatHistory
-from src.rag.naive_rag.entity import ElasticSearchRetrieverRequest
-from src.service.chatbot_workflow import ChatBotWorkflowRequest
-from src.service.chatbot_workflow import ChatBotWorkflowGraph
+from src.core.entity.chat_history import ChatHistory
+from src.rag.naive_rag.entity.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
+from src.service.chatbot_workflow.entity.chatbot_workflow_request import ChatBotWorkflowRequest
+from src.service.chatbot_workflow.graph.chatbot_workflow_graph import ChatBotWorkflowGraph
 
 load_dotenv()
 
