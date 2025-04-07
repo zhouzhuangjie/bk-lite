@@ -5,7 +5,7 @@ from langchain_core.runnables import RunnableConfig
 from langchain_openai import ChatOpenAI
 
 from src.core.entity.basic_llm_request import BasicLLMReuqest
-from src.rag.naive_rag.rag.elasticsearch_rag import ElasticSearchRag
+from src.rag.native_rag.rag.elasticsearch_rag import ElasticSearchRag
 
 
 class BasicNode:

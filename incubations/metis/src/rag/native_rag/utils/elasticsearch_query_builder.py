@@ -2,7 +2,7 @@ from typing import Dict, List, Any
 
 from langchain_openai import OpenAIEmbeddings
 
-from src.rag.naive_rag.entity.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
+from src.rag.native_rag.entity.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
 
 
 class ElasticsearchQueryBuilder:

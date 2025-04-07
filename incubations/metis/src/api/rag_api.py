@@ -9,8 +9,8 @@ from sanic_ext import validate
 
 from src.chunk.fixed_size_chunk import FixedSizeChunk
 from src.loader.text_loader import TextLoader
-from src.rag.naive_rag.entity.elasticsearch_store_request import ElasticSearchStoreRequest
-from src.rag.naive_rag.rag.elasticsearch_rag import ElasticSearchRag
+from src.rag.native_rag.entity.elasticsearch_store_request import ElasticSearchStoreRequest
+from src.rag.native_rag.rag.elasticsearch_rag import ElasticSearchRag
 
 rag_api_router = Blueprint("rag", url_prefix="/rag")
 

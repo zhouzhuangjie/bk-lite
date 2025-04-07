@@ -6,10 +6,10 @@ from langchain_core.documents import Document
 from langchain_elasticsearch import ElasticsearchRetriever
 from langchain_openai import OpenAIEmbeddings
 
-from src.rag.naive_rag.entity.elasticsearch_document_delete_request import ElasticSearchDocumentDeleteRequest
-from src.rag.naive_rag.entity.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
-from src.rag.naive_rag.entity.elasticsearch_store_request import ElasticSearchStoreRequest
-from src.rag.naive_rag.utils.elasticsearch_query_builder import ElasticsearchQueryBuilder
+from src.rag.native_rag.entity.elasticsearch_document_delete_request import ElasticSearchDocumentDeleteRequest
+from src.rag.native_rag.entity.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
+from src.rag.native_rag.entity.elasticsearch_store_request import ElasticSearchStoreRequest
+from src.rag.native_rag.utils.elasticsearch_query_builder import ElasticsearchQueryBuilder
 from langchain_elasticsearch import ElasticsearchStore
 
 import elasticsearch

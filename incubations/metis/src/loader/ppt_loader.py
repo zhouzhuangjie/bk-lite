@@ -1,13 +1,15 @@
+from typing import List
 from langchain_core.documents import Document
 from pptx import Presentation
 from tqdm import tqdm
+from langchain_core.document_loaders import BaseLoader
 
 
-class PPTLoader():
+class PPTLoader(BaseLoader):
     def __init__(self, file_path):
         self.file_path = file_path
 
-    def load(self):
+    def load(self) -> List[Document]:
         docs = []
         prs = Presentation(self.file_path)
         for slide_number, slide in tqdm(enumerate(prs.slides, start=1), desc=f"解析[{self.file_path}]的幻灯片"):
@@ -24,7 +26,8 @@ class PPTLoader():
                         for cell in row.cells:
                             for paragraph in cell.text_frame.paragraphs:
                                 table_content += paragraph.text.strip() + "\n"
-                    docs.append(Document(table_content, metadata={"format": "table"}))
+                    docs.append(
+                        Document(table_content, metadata={"format": "table"}))
 
             docs.append(Document(full_text.strip()))
         return docs
