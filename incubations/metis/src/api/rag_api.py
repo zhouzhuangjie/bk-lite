@@ -8,6 +8,7 @@ import os
 from sanic_ext import validate
 
 from src.chunk.fixed_size_chunk import FixedSizeChunk
+from src.core.web.api_auth import auth
 from src.loader.text_loader import TextLoader
 from src.rag.native_rag.entity.elasticsearch_store_request import ElasticSearchStoreRequest
 from src.rag.native_rag.rag.elasticsearch_rag import ElasticSearchRag
@@ -16,11 +17,13 @@ rag_api_router = Blueprint("rag", url_prefix="/rag")
 
 
 @rag_api_router.post("/ingest")
+@auth.login_required
 async def ingest(request):
     # 获取文件和知识库索引名称
     file = request.files.get('file')
     allowed_types = ['docx', 'pptx', 'ppt', 'doc', 'txt', 'jpg', 'png', 'jpeg']
-    file_extension = file.name.split('.')[-1].lower() if '.' in file.name else ''
+    file_extension = file.name.split(
+        '.')[-1].lower() if '.' in file.name else ''
 
     if file_extension not in allowed_types:
         return json({"status": "error", "message": f"Unsupported file type. Allowed types: {', '.join(allowed_types)}"})
@@ -69,6 +72,7 @@ async def ingest(request):
 
 
 @rag_api_router.get("/delete_index")
+@auth.login_required
 async def delete_index(request):
     """
     删除知识库
@@ -79,6 +83,7 @@ async def delete_index(request):
 
 
 @rag_api_router.post("/delete_doc")
+@auth.login_required
 async def delete_doc(request):
     """
     删除知识文档
@@ -89,6 +94,7 @@ async def delete_doc(request):
 
 
 @rag_api_router.post("/rag_test")
+@auth.login_required
 async def rag_test(request):
     """
     查询测试
