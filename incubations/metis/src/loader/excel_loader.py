@@ -3,8 +3,9 @@ from langchain_core.documents import Document
 
 
 class ExcelLoader():
-    def __init__(self, path):
+    def __init__(self, path, mode='full'):
         self.path = path
+        self.mode = mode
 
     def dataframe_to_excel_format_string(self, df):
         # Remove rows and columns where all values are NaN
@@ -19,7 +20,8 @@ class ExcelLoader():
 
         # Step 3 & 4: Iterate through rows and append their formatted string representation
         for index, row in df.iterrows():
-            row_str = "\t".join(row.astype(str))  # Convert all cell values to string to avoid any conversion issues
+            # Convert all cell values to string to avoid any conversion issues
+            row_str = "\t".join(row.astype(str))
             excel_format_str += row_str + "\n"
 
         excel_format_str = excel_format_str.replace('nan', '')
@@ -46,7 +48,8 @@ class ExcelLoader():
                     row_result += f'{sheet_name}  {col_name}: {col_value}  '
 
                 # 将这一行的结果添加到总结果中
-                result.append(Document(row_result.strip(), metadata={"format": "table", "sheet": sheet_name}))
+                result.append(Document(row_result.strip(), metadata={
+                              "format": "table", "sheet": sheet_name}))
 
         # 返回结果
         return result

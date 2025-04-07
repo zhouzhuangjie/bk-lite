@@ -13,19 +13,22 @@ class AzureOCR(BaseOCR):
         self.azure_ocr_key = azure_ocr_key
 
     def predict(self, file):
-        computervision_client = ComputerVisionClient(self.azure_ocr_endpoint,
-                                                     CognitiveServicesCredentials(self.azure_ocr_key))
-        read_response = computervision_client.read_in_stream(file, raw=True)
-        read_operation_location = read_response.headers["Operation-Location"]
-        operation_id = read_operation_location.split("/")[-1]
-        while True:
-            read_result = computervision_client.get_read_result(operation_id)
-            if read_result.status not in ['notStarted', 'running']:
-                break
-            time.sleep(1)
+        with open(file, "rb") as image:
+            computervision_client = ComputerVisionClient(self.azure_ocr_endpoint,
+                                                         CognitiveServicesCredentials(self.azure_ocr_key))
+            read_response = computervision_client.read_in_stream(
+                image, raw=True)
+            read_operation_location = read_response.headers["Operation-Location"]
+            operation_id = read_operation_location.split("/")[-1]
+            while True:
+                read_result = computervision_client.get_read_result(
+                    operation_id)
+                if read_result.status not in ['notStarted', 'running']:
+                    break
+                time.sleep(1)
 
-        content = ''
-        if read_result.status == OperationStatusCodes.succeeded:
-            for text_result in read_result.analyze_result.read_results:
-                for line in text_result.lines:
-                    content += line.text + ' '
+            content = ''
+            if read_result.status == OperationStatusCodes.succeeded:
+                for text_result in read_result.analyze_result.read_results:
+                    for line in text_result.lines:
+                        content += line.text + ' '

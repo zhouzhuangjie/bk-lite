@@ -26,7 +26,8 @@ class ElasticSearchRag:
     def delete_document(self, req: ElasticSearchDocumentDeleteRequest):
         metadata_filter = []
         for key, value in req.metadata_filter.items():
-            metadata_filter.append({"term": {f"metadata.{key}.keyword": value}})
+            metadata_filter.append(
+                {"term": {f"metadata.{key}.keyword": value}})
 
         query = {
             "query": {
@@ -95,12 +96,15 @@ class ElasticSearchRag:
                 "query": req.search_query,
                 "documents": rerank_content,
             }
-            response = requests.post(req.rerank_model_base_url, headers=headers, json=data)
+            response = requests.post(
+                req.rerank_model_base_url, headers=headers, json=data)
             rerank_result = response.json()['results']
 
             # 对rerank_result进行排序并获取topk
-            sorted_rerank_result = sorted(enumerate(rerank_result), key=lambda x: x[1]['relevance_score'], reverse=True)
-            top_k_indices = [i[0] for i in sorted_rerank_result[:req.rerank_top_k]]
+            sorted_rerank_result = sorted(
+                enumerate(rerank_result), key=lambda x: x[1]['relevance_score'], reverse=True)
+            top_k_indices = [i[0]
+                             for i in sorted_rerank_result[:req.rerank_top_k]]
 
             top_k_search_result = []
             for index in top_k_indices:
@@ -109,5 +113,6 @@ class ElasticSearchRag:
 
             search_result = top_k_search_result
 
-        search_result = [doc for doc in search_result if doc.metadata.get('_score', 0) >= req.threshold]
+        search_result = [doc for doc in search_result if doc.metadata.get(
+            '_score', 0) >= req.threshold]
         return search_result

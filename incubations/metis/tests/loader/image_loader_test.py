@@ -3,5 +3,5 @@ from src.ocr.pp_ocr import PPOcr
 
 
 def test_image_loader():
-    loader = ImageLoader('../assert/umr.jpeg', PPOcr())
+    loader = ImageLoader('tests/assert/umr.jpeg', PPOcr())
     print(loader.load())

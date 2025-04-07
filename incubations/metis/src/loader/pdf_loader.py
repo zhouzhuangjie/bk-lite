@@ -14,9 +14,10 @@ from src.ocr.base_ocr import BaseOCR
 
 class PDFLoader:
 
-    def __init__(self, file_path, ocr: BaseOCR):
+    def __init__(self, file_path, ocr: BaseOCR, mode: str = 'full'):
         self.file_path = file_path
         self.ocr = ocr
+        self.mode = mode
 
     def remove_unicode_chars(self, text):
         return re.sub(r'\\u[fF]{1}[0-9a-fA-F]{3}', '', text)
