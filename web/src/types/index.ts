@@ -94,6 +94,7 @@ export interface EntityListProps<T> {
   filter?: boolean;
   filterLoading?: boolean;
   operateSection?: React.ReactNode;
+  infoText?: string;
   menuActions?: (item: T) => React.ReactNode;
   singleAction?: (item: T) => { text: string, onClick: (item: T) => void };
   openModal?: (item?: T) => void;
