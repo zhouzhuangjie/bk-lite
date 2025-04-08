@@ -23,6 +23,7 @@ const EntityList = <T,>({
   onSearch,
   onCardClick,
   changeFilter,
+  infoText,
 }: EntityListProps<T>) => {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
@@ -92,15 +93,18 @@ const EntityList = <T,>({
           <p
             className={`text-xs mt-3 text-sm max-h-[66px] ${(isSingleButtonAction && hoveredCard === id) ? 'line-clamp-2' : 'line-clamp-3'} ${styles.desc}`}>{description}</p>
         </div>
-        {tagList && tagList.length > 0 && (
-          <div className="mt-2">
-            {tagList.map((t: any, idx: number) => (
-              <Tag key={idx} className="mr-1 mb-1 font-mini">
-                {t}
-              </Tag>
-            ))}
+        {(tagList && tagList.length > 0) || infoText ? (
+          <div className="mt-2 flex justify-between items-end">
+            <div>
+              {tagList && tagList.length > 0 && tagList.map((t: any, idx: number) => (
+                <Tag key={idx} className="mr-1 font-mini">
+                  {t}
+                </Tag>
+              ))}
+            </div>
+            {infoText && <span className='text-[var(--color-text-4)] font-mini'>{infoText}</span>}
           </div>
-        )}
+        ) : null}
         {isSingleButtonAction && (
           <Button
             size="small"

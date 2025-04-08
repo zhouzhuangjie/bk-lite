@@ -99,7 +99,7 @@ const EntityCard: React.FC<EntityCardProps> = ({
                     <Tag className="font-mini px-[2px] leading-inherit mr-2" color="blue">{modelName}</Tag>
                   )}
                 </div>
-                <div className="flex items-end justify-end text-[var(--color-text-3)] font-mini w-full text-right overflow-hidden">
+                <div className="flex items-end justify-end text-[var(--color-text-4)] font-mini w-full text-right overflow-hidden">
                   <EllipsisWithTooltip
                     text={`${t('skill.form.group')}: ${Array.isArray(team_name) ? team_name.join(',') : '--'} | ${t('skill.form.owner')}: ${created_by}`}
                     className="overflow-hidden whitespace-nowrap text-ellipsis"

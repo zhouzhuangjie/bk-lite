@@ -154,8 +154,7 @@ const KnowledgePage = () => {
               </div>
               <p className={`my-5 text-xs line-clamp-3 ${knowledgeStyle.desc}`}>{card.introduction}</p>
               <div className={`absolute bottom-4 right-4 font-mini ${knowledgeStyle.desc}`}>
-                <span className="mr-4">{t('knowledge.form.owner')}: {card.created_by}</span>
-                <span>{t('knowledge.form.group')}: {Array.isArray(card.team_name) ? card.team_name.join(',') : '--'}</span>
+                <span>{t('knowledge.form.owner')}: {card.created_by} ｜ {t('knowledge.form.group')}: {Array.isArray(card.team_name) ? card.team_name.join(',') : '--'}</span>
               </div>
             </div>
           ))}
