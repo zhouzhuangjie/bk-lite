@@ -218,7 +218,6 @@ const RoleTransfer: React.FC<TreeTransferProps> = ({ treeData, selectedKeys, gro
     setCurrentNode(node);
     const nodeKey = String(node.key);
     const rules = groupRules[nodeKey] || [];
-    console.log('groupRules~~~~~', groupRules, rules);
     setCurrentRules(rules);
     setIsPermissionModalVisible(true);
   };
