@@ -190,8 +190,8 @@ class SnmpTopoClient:
         self.privacy = kwargs.get('privacy')
         self.authkey = kwargs.get('authkey')
         self.privkey = kwargs.get('privkey')
-        self.timeout = int(kwargs.get('timeout', 5))
-        self.retries = int(kwargs.get('retries', 1))
+        self.timeout = int(kwargs.get('timeout', 10))
+        self.retries = int(kwargs.get('retries', 2))
         self.snmp_port = int(kwargs.get('snmp_port', 161))  # 默认 SNMP 端口为 161
         self.oids = list(DEFAULT_OID_MAP.keys())
         self.cmdGen = cmdgen.CommandGenerator()
@@ -258,118 +258,54 @@ class SnmpTopoClient:
         result = convert_to_prometheus_format(model_data)
         return result
 
-    @staticmethod
-    def find_topology_links(data_source):
+    def find_interface_relationships(self):
         """
-        通用方法：根据数据源找出接口之间的关联关系。
-        :param data_source: 数据源，包含SNMP采集的数据
-        :return: 接口关联关系列表
+        寻找网络设备接口之间的关联关系
         """
-        data = data_source
+        # Step 1: 获取 SNMP 数据
+        snmp_data = self.bulkCmd()
 
-        # 数据验证和分类
-        arp_table = {}  # 存储ARP表信息：IP地址与MAC地址的映射
-        if_table = {}  # 存储接口表信息：接口描述与MAC地址的映射
+        # Step 2: 数据分类
+        arp_ifindex = [entry for entry in snmp_data if entry[TAG] == "ARP-IfIndex"]
+        arp_physaddress = [entry for entry in snmp_data if entry[TAG] == "ARP-PhysAddress"]
+        iparr_table = [entry for entry in snmp_data if entry[TAG] == "IpAddr-IpAddr"]
+        iftable_descr = [entry for entry in snmp_data if entry[TAG] == "IFTable-IfDescr"]
+        iftable_alias = [entry for entry in snmp_data if entry[TAG] == "IFTable-IfAlias"]
 
-        for item in data:
-            root = item.get("root")
-            key = item.get("key")
-            tag = item.get("tag")
-            ifindex = item.get("ifindex")
-            val = item.get("val")
+        # Step 3: 构建接口名称映射表（优先使用接口别名）
+        interface_names = {}
+        for entry in iftable_descr:
+            interface_id = entry[IF_INDEX]
+            interface_names[interface_id] = entry[VAL]  # 默认使用接口描述
+        for entry in iftable_alias:
+            interface_id = entry[IF_INDEX]
+            interface_names[interface_id] = entry[VAL]  # 覆盖为接口别名（优先级更高）
 
-            # 跳过无效数据
-            if not root or not key or not tag or not ifindex or not val:
-                continue
+        # Step 4: 构建 MAC-IP 映射表（基于 ARP 表）
+        mac_ip_mapping = {}
+        for arp_index, arp_phys in zip(arp_ifindex, arp_physaddress):
+            if arp_index[IF_INDEX] == arp_phys[IF_INDEX]:  # 通过 IF_INDEX 关联
+                mac_ip_mapping[arp_phys[VAL]] = arp_index[VAL]  # MAC -> IP
 
-            # 分类整理数据
-            if root == "1.3.6.1.2.1.4.22.1.1":  # ARP-IfIndex
-                arp_table[ifindex] = {"ip": val, "ifindex": ifindex}
-            elif root == "1.3.6.1.2.1.4.22.1.2":  # ARP-PhysAddress
-                if ifindex in arp_table:
-                    arp_table[ifindex]["mac"] = val
-            elif root == "1.3.6.1.2.1.2.2.1.2":  # IFTable-IfDescr
-                if_table[ifindex] = {"descr": val, "ifindex": ifindex}
-            elif root == "1.3.6.1.2.1.2.2.1.6":  # IFTable-PhysAddress
-                if ifindex in if_table:
-                    if_table[ifindex]["mac"] = val
-            elif root == "1.3.6.1.2.1.31.1.1.1.18":  # IFTable-IfAlias
-                if ifindex in if_table:
-                    if_table[ifindex]["alias"] = val
-                else:
-                    if_table[ifindex] = {"ifindex": ifindex, "alias": val}
+        # Step 5: 构建 IP-接口映射表（基于 IPARR 表）
+        ip_interface_mapping = {}
+        for entry in iparr_table:
+            ip_address = entry[VAL]
+            interface_id = entry[IF_INDEX]
+            ip_interface_mapping[ip_address] = interface_id
 
-        # 建立关联关系
-        links = []
-        for ifindex_arp, arp_entry in arp_table.items():
-            mac = arp_entry.get("mac")
-            ip = arp_entry.get("ip")
+        # Step 6: 寻找接口关联关系
+        relationships = []
+        for mac, ip in mac_ip_mapping.items():
+            if ip in ip_interface_mapping:
+                interface_id = ip_interface_mapping[ip]
+                interface_name = interface_names.get(interface_id, f"Interface-{interface_id}")  # 默认值为接口 ID
+                relationships.append({
+                    "mac_address": mac,
+                    "ip_address": ip,
+                    "interface_id": interface_id,
+                    "interface_name": interface_name,
+                })
 
-            # 跳过无效的MAC地址
-            if not mac or mac == "0x000000000000":
-                continue
-
-            # 查找接口表中MAC地址匹配的项
-            for ifindex_if, if_entry in if_table.items():
-                if if_entry.get("mac") == mac:
-                    # 构建连接关系：source为本地接口，target为远程设备
-                    links.append({
-                        "source": {
-                            "interface": if_entry.get("descr"),
-                            "alias": if_entry.get("alias", ""),  # 添加接口别名
-                            "mac": if_entry.get("mac"),
-                            "ifindex": ifindex_if
-                        },
-                        "target": {
-                            "interface": "Remote Device",
-                            "mac": mac,
-                            "ip": ip,
-                            "ifindex": arp_entry.get("ifindex")
-                        },
-                        "link_type": "mac_match"
-                    })
-
-        # 从数据中寻找额外的关联
-        for interface in data:
-            ifindex = interface.get("ifindex")
-            ifindex_type = interface.get("ifindex_type")
-            val = interface.get("val")
-
-            # 跳过无效数据
-            if not ifindex or not ifindex_type or not val:
-                continue
-
-            # 获取当前接口的别名
-            interface_alias = ""
-            if ifindex in if_table and "alias" in if_table[ifindex]:
-                interface_alias = if_table[ifindex]["alias"]
-
-            for other_interface in data:
-                if other_interface == interface:
-                    continue
-
-                # 判断关联条件
-                if other_interface.get("ifindex") == val and other_interface.get("ifindex_type") == ifindex_type:
-                    # 获取目标接口的别名
-                    target_alias = ""
-                    target_ifindex = other_interface.get("ifindex")
-                    if target_ifindex in if_table and "alias" in if_table[target_ifindex]:
-                        target_alias = if_table[target_ifindex]["alias"]
-
-                    links.append({
-                        "source": {
-                            "key": interface.get("key"),
-                            "tag": interface.get("tag"),
-                            "ifindex": ifindex,
-                            "alias": interface_alias
-                        },
-                        "target": {
-                            "key": other_interface.get("key"),
-                            "tag": other_interface.get("tag"),
-                            "ifindex": other_interface.get("ifindex"),
-                            "alias": target_alias
-                        },
-                        "link_type": "index_match"
-                    })
-
-        return links
+        # Step 7: 返回结果
+        return relationships
