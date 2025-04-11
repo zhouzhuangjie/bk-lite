@@ -7,10 +7,11 @@ import LocalFileUpload from './localFileUpload';
 import WebLinkForm from './webLinkForm';
 import CustomTextForm from './customTextForm';
 import PreprocessStep from './preprocessStep';
+import ExtractionStep from './extractionStep';
 import Icon from '@/components/icon'
-import useSaveConfig from '@/app/opspilot/hooks/useSaveConfig';
 import { useTranslation } from '@/utils/i18n';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
+import { getDefaultExtractionMethod, getExtractionMethodMap } from '@/app/opspilot/utils/extractionUtils';
 
 const { Step } = Steps;
 
@@ -22,39 +23,71 @@ const KnowledgeModifyPage = () => {
   const id = searchParams ? searchParams.get('id') : null;
   const name = searchParams ? searchParams.get('name') : null;
   const desc = searchParams ? searchParams.get('desc') : null;
-  const { saveConfig } = useSaveConfig();
   const { 
     updateDocumentBaseInfo, 
     createWebPageKnowledge, 
     createFileKnowledge, 
     createManualKnowledge, 
-    getDocumentDetail 
+    getDocumentDetail,
+    parseContent,
+    updateChunkSettings,
+    getDocListConfig
   } = useKnowledgeApi();
+
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [isStepValid, setIsStepValid] = useState<boolean>(false);
   const [fileList, setFileList] = useState<File[]>([]);
   const [documentIds, setDocumentIds] = useState<number[]>([]);
+  const [extractionConfig, setExtractionConfig] = useState<any>(null);
   const [preprocessConfig, setPreprocessConfig] = useState<any>(null);
   const [webLinkData, setWebLinkData] = useState<{ name: string, link: string, deep: number }>({ name: '', link: '', deep: 1 });
   const [manualData, setManualData] = useState<{ name: string, content: string }>({ name: '', content: '' });
   const [pageLoading, setPageLoading] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
-  const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
-  const [config, setConfig] = useState(null);
+  const [config, setConfig] = useState<any>(null);
+  const [extractionInitConfig, setExtractionInitConfig] = useState<{
+    knowledge_source_type?: string;
+    knowledge_document_list?: {
+      id: number;
+      enable_ocr_parse: boolean;
+      ocr_model: string | null;
+      parse_type: string;
+    }[];
+  } | undefined>(undefined);
   const [isUpdate, setIsUpdate] = useState<boolean>(false);
 
   const formRef = useRef<any>(null);
 
   useEffect(() => {
-    const configParam = searchParams ? searchParams.get('config') : null;
-    const idParam = searchParams ? searchParams.get('documentId') : null;
-    if (idParam && configParam) {
+    const documentIds = searchParams ? searchParams.get('documentIds') : null;
+    if (documentIds) {
       setCurrentStep(1);
       setIsUpdate(true);
-      setDocumentIds([Number(idParam)]);
-      setConfig(JSON.parse(configParam));
+      setConfig({});
+      const fetchDocumentDetails = async () => {
+        try {
+          const documentDetails = await getDocListConfig({ doc_ids: documentIds.split(',').map(Number) });
+          setDocumentIds(documentIds.split(',').map(Number));
+          setExtractionInitConfig({
+            knowledge_source_type: type ?? undefined,
+            knowledge_document_list: documentDetails.map((doc: any) => ({
+              id: doc.id,
+              enable_ocr_parse: doc.enable_ocr_parse,
+              ocr_model: doc.ocr_model,
+              parse_type: doc.mode,
+            })),
+          });
+        } catch {
+          message.error(t('common.fetchFailed'));
+        } finally {
+          setPageLoading(false);
+        }
+      };
+
+      fetchDocumentDetails();
+    } else {
+      setPageLoading(false);
     }
-    setPageLoading(false);
   }, [searchParams]);
 
   const sourceTypeToDisplayText: { [key: string]: string } = {
@@ -121,8 +154,35 @@ const KnowledgeModifyPage = () => {
         }
       }
     } else if (currentStep === 1) {
-      const success = await saveConfig(preprocessConfig);
-      if (!success) {
+      // Compute the updated configuration based on the latest fileList and documentIds
+      const updatedConfig = {
+        knowledge_source_type: type || 'file',
+        knowledge_document_list: fileList.map((file, index) => {
+          const extension = file.name.split('.').pop()?.toLowerCase() || 'text';
+          const existingConfig = extractionConfig?.knowledge_document_list?.find((doc: any) => doc.id === documentIds[index]);
+          return {
+            id: documentIds[index] || index,
+            enable_ocr_parse: existingConfig?.enable_ocr_parse ?? false,
+            ocr_model: existingConfig?.ocr_model ?? null,
+            mode: existingConfig?.parse_type ?? getExtractionMethodMap(getDefaultExtractionMethod(extension)),
+          };
+        }),
+      };
+      setPreprocessConfig(updatedConfig);
+      try {
+        await parseContent(updatedConfig);
+        message.success(t('common.saveSuccess'));
+      } catch {
+        message.error(t('common.saveFailed'));
+        setLoading(false);
+        return;
+      }
+    } else if (currentStep === 2) {
+      try {
+        await updateChunkSettings(preprocessConfig);
+        message.success(t('knowledge.documents.chunkSuccess'));
+      } catch {
+        message.error(t('knowledge.documents.chunkFailed'));
         setLoading(false);
         return;
       }
@@ -130,16 +190,6 @@ const KnowledgeModifyPage = () => {
     setCurrentStep(currentStep + 1);
     setLoading(false);
   };
-
-  const handleConfirm = async () => {
-    setConfirmLoading(true);
-    await saveConfig({
-      ...(preprocessConfig as object),
-      is_save_only: true,
-    });
-    setCurrentStep(currentStep + 1);
-    setConfirmLoading(false);
-  }
 
   const handlePrevious = async () => {
     if (isUpdate && (type === 'web_page' || type === 'manual')) {
@@ -150,12 +200,18 @@ const KnowledgeModifyPage = () => {
           link: data.url,
           deep: data.max_depth,
         });
+        setIsStepValid(data.name.trim() !== '' && data.url.trim() !== '');
       } else if (type === 'manual') {
         setManualData({
           name: data.name,
           content: data.content,
         });
+        setIsStepValid(data.name.trim() !== '' && data.content.trim() !== '');
       }
+    } else if (currentStep === 2) {
+      setIsStepValid(preprocessConfig !== null);
+    } else if (currentStep === 1) {
+      setIsStepValid(fileList.length > 0);
     }
     setCurrentStep(currentStep - 1);
   };
@@ -171,6 +227,13 @@ const KnowledgeModifyPage = () => {
 
   const handlePreprocessConfigChange = useCallback((config: any) => {
     setPreprocessConfig(config);
+    console.log('Preprocess config updated:', config);
+    setIsStepValid(true);
+  }, []);
+
+  const handleExtractionConfigChange = useCallback((config: any) => {
+    setExtractionConfig(config);
+    console.log('Extraction config updated:', config);
     setIsStepValid(true);
   }, []);
 
@@ -209,12 +272,25 @@ const KnowledgeModifyPage = () => {
       content: renderStepContent(),
     },
     {
+      title: t('knowledge.extract'),
+      content: <ExtractionStep
+        knowledgeDocumentIds={documentIds}
+        fileList={fileList}
+        type={type}
+        webLinkData={type === 'web_page' ? webLinkData : null}
+        manualData={type === 'manual' ? manualData : null}
+        onConfigChange={handleExtractionConfigChange}
+        initialConfig={extractionInitConfig}
+      />,
+    },
+    {
       title: t('knowledge.preprocess'),
       content: <PreprocessStep
         knowledgeSourceType={type}
         knowledgeDocumentIds={documentIds}
         onConfigChange={handlePreprocessConfigChange}
-        initialConfig={config || {}} />,
+        initialConfig={config || {}}
+      />,
     },
     {
       title: t('knowledge.finish'),
@@ -246,32 +322,25 @@ const KnowledgeModifyPage = () => {
           </div>
         ) : (
           <div>
-            <Steps className="px-16 py-8" current={currentStep}>
+            <Steps className="py-8" current={currentStep}>
               {steps.map((step, index) => (
                 <Step key={index} title={step.title} />
               ))}
             </Steps>
-            <div className="steps-content" style={{ marginTop: 24 }}>
+            <div className="steps-content" style={{ height: 'calc(100vh - 380px', overflowY: 'auto' }}>
               {steps[currentStep].content}
             </div>
           </div>
         )}
         <div className="fixed bottom-10 right-20 z-50 flex space-x-2">
-          {currentStep > 0 && currentStep < steps.length - 1 && type !== 'file' && (
+          {currentStep > 0 && currentStep < steps.length && (
             <Button onClick={handlePrevious}>
               {t('common.pre')}
             </Button>
           )}
-          {
-            currentStep === 1  && isUpdate && (
-              <Button type="primary" onClick={handleConfirm} disabled={!isStepValid} loading={confirmLoading}>
-                {t('common.confirm')}
-              </Button>
-            )
-          }
           {currentStep < steps.length - 1 && (
             <Button type="primary" onClick={handleNext} disabled={!isStepValid} loading={loading}>
-              {currentStep === 1 ? t('knowledge.finish') : t('common.next')}
+              {currentStep === 2 ? t('knowledge.finish') : t('common.next')}
             </Button>
           )}
           {currentStep === steps.length - 1 && (
