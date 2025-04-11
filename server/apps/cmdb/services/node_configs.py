@@ -13,6 +13,7 @@ from apps.cmdb.constants import STARGAZER_URL
 class BaseNodeParams(metaclass=ABCMeta):
     PLUGIN_MAP = {}
     _registry = {}  # 自动收集支持的 model_id 对应的子类
+    BASE_INTERVAL_MAP = {"vmware_vc": 180, "network": 300, "network_topo": 300}  # 默认的采集间隔时间
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -130,7 +131,7 @@ class BaseNodeParams(metaclass=ABCMeta):
                     "url": _url,
                     "type": "http",
                     "instance_id": str((self.get_instance_id(host),)),
-                    "interval": 60,
+                    "interval": self.BASE_INTERVAL_MAP.get(self.model_id, 60),
                     "instance_type": self.get_instance_type
                     # "task_id": self.instance.id,
                 }]
