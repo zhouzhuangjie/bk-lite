@@ -16,7 +16,8 @@ class ChatBotWorkflowGraph(BasicGraph):
         node_builder = ChatBotWorkflowNode()
 
         last_edge = self.prepare_graph(graph_builder, node_builder)
-        graph_builder.add_node("chatbot_node", node_builder.chatbot_node, retry=RetryPolicy(max_attempts=5))
+        graph_builder.add_node(
+            "chatbot_node", node_builder.chatbot_node, retry=RetryPolicy(max_attempts=5))
 
         graph_builder.add_edge(last_edge, "chatbot_node")
         graph_builder.add_edge("chatbot_node", END)
