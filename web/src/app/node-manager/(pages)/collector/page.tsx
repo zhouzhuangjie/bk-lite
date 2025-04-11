@@ -171,7 +171,6 @@ const Collector = () => {
         menuActions={(value) => menuActions(value)}
         filter filterOptions={options} changeFilter={changeFilter}
         {...ifOpenAddModal()}
-        isPermission={false}
         onSearch={onSearch}
         onCardClick={(item: CardItem) => navigateToCollectorDetail(item)}></EntityList>
       <CollectorModal ref={modalRef} onSuccess={handleSubmit} />
