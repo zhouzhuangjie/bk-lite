@@ -21,4 +21,5 @@ def current_time() -> str:
 
 
 if __name__ == "__main__":
+    print("Starting Time MCP...")
     mcp.run(transport="sse")

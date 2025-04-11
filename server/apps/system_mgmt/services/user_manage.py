@@ -1,6 +1,7 @@
 import json
 
 from apps.core.backends import cache
+from apps.system_mgmt.models import UserRule
 from apps.system_mgmt.services.role_manage import RoleManage
 from apps.system_mgmt.utils.keycloak_client import KeyCloakClient
 
@@ -42,13 +43,24 @@ class UserManage(object):
         """获取用户信息"""
         user_info = self.keycloak_client.realm_client.get_user(user_id)
         roles = self.get_user_roles(client_ids, user_id)
+        rules = UserRule.objects.filter(username=user_info["username"]).values(
+            "group_rule__group_id", "group_rule_id", "group_rule__app"
+        )
+        group_rule_map = {}
+        for rule in rules:
+            group_rule_map.setdefault(rule["group_rule__group_id"], {}).setdefault(rule["group_rule__app"], []).append(
+                rule["group_rule_id"]
+            )
         try:
             groups = self.keycloak_client.realm_client.get_user_groups(user_id)
+            for i in groups:
+                i["rules"] = group_rule_map.get(i["id"], {})
         except Exception:
             groups = []
             # 用户补充用户组信息
         user_info.update(roles=roles)
         user_info.update(groups=groups)
+
         return user_info
 
     def get_user_roles(self, client_ids, user_id):
@@ -95,6 +107,10 @@ class UserManage(object):
         groups = data.pop("groups", [])
         data["enabled"] = True
         data["firstName"] = data["lastName"]
+        rules = data.pop("rules", [])
+        if rules:
+            add_rule = [UserRule(username=data["username"], group_rule_id=i) for i in rules]
+            UserRule.objects.bulk_create(add_rule, batch_size=100)
         user_id = self.keycloak_client.realm_client.create_user(data)
         self.keycloak_client.realm_client.assign_realm_roles(user_id, roles)
         for group_id in groups:
@@ -113,6 +129,8 @@ class UserManage(object):
         roles = data.pop("roles", [])
         groups = data.pop("groups", [])
         data["firstName"] = data["lastName"]
+        rules = data.pop("rules", [])
+        UserRule.objects.filter(username=data["username"]).delete()
         old_groups = self.keycloak_client.realm_client.get_user_groups(user_id)
         old_roles = self.keycloak_client.get_realm_roles_of_user(user_id)
         for i in old_groups:
@@ -126,6 +144,9 @@ class UserManage(object):
         for group_id in groups:
             self.keycloak_client.realm_client.group_user_add(user_id, group_id)
         self.delete_user_cache(user_id)
+        if rules:
+            add_rule = [UserRule(username=data["username"], group_rule_id=i) for i in rules]
+            UserRule.objects.bulk_create(add_rule, batch_size=100)
 
     def delete_user_cache(self, user_id):
         userinfo = self.keycloak_client.realm_client.get_user(user_id)

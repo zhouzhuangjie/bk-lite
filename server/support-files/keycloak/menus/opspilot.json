@@ -9,7 +9,7 @@
       "children": [
         {
           "id": "bot_list",
-          "name": "Bot-list",
+          "name": "APP list",
           "operation": [
             "View",
             "Add",
@@ -19,7 +19,7 @@
         },
         {
           "id": "bot_settings",
-          "name": "Bot-Setting",
+          "name": "APP Setting",
           "operation": [
             "View",
             "Edit",
@@ -30,7 +30,7 @@
         },
         {
           "id": "bot_channel",
-          "name": "Bot-Channel",
+          "name": "APP Channel",
           "operation": [
             "View",
             "Setting"
@@ -38,7 +38,7 @@
         },
         {
           "id": "bot_conversation_log",
-          "name": "Bot-Conversation-Log",
+          "name": "APP Conversation-Log",
           "operation": [
             "View",
             "Mark"
@@ -46,7 +46,7 @@
         },
         {
           "id": "bot_statistics",
-          "name": "Bot-Statistics",
+          "name": "APP Statistics",
           "operation": [
             "View"
           ]
@@ -54,11 +54,11 @@
       ]
     },
     {
-      "name": "Skill",
+      "name": "Agent",
       "children": [
         {
           "id": "skill_list",
-          "name": "Skill-list",
+          "name": "Agent list",
           "operation": [
             "View",
             "Add",
@@ -68,7 +68,7 @@
         },
         {
           "id": "skill_setting",
-          "name": "Skill-Setting",
+          "name": "Agent Setting",
           "operation": [
             "View",
             "Edit",
@@ -78,7 +78,7 @@
         },
         {
           "id": "skill_rule",
-          "name": "Skill-Rule",
+          "name": "Agent Rule",
           "operation": [
             "View",
             "Add",
@@ -88,14 +88,14 @@
         },
         {
           "id": "skill_invocation_logs",
-          "name": "Skill-Invocation-Logs",
+          "name": "Agent Invocation Logs",
           "operation": [
             "View"
           ]
         },
         {
           "id": "skill_api",
-          "name": "Skill-Api",
+          "name": "Agent Api",
           "operation": [
             "View"
           ]
@@ -107,7 +107,7 @@
       "children": [
         {
           "id": "knowledge_list",
-          "name": " Knowledge-list",
+          "name": " Knowledge list",
           "operation": [
             "View",
             "Add",
@@ -117,7 +117,7 @@
         },
         {
           "id": "knowledge_document",
-          "name": " Knowledge-Document",
+          "name": " Knowledge Document",
           "operation": [
             "View",
             "Add",
@@ -128,7 +128,7 @@
         },
         {
           "id": "knowledge_testing",
-          "name": " Knowledge-Testing",
+          "name": "Knowledge Testing",
           "operation": [
             "View",
             "Edit"
@@ -136,7 +136,7 @@
         },
         {
           "id": "knowledge_setting",
-          "name": " Knowledge-Setting",
+          "name": "Knowledge Setting",
           "operation": [
             "View",
             "Edit"
@@ -144,7 +144,7 @@
         },
         {
           "id": "knowledge_api",
-          "name": " Knowledge-API",
+          "name": "Knowledge API",
           "operation": [
             "View"
           ]
@@ -152,11 +152,11 @@
       ]
     },
     {
-      "name": "Provide",
+      "name": "Model",
       "children": [
         {
           "id": "provide_list",
-          "name": "Provide-list",
+          "name": "Model list",
           "operation": [
             "Add",
             "View",
@@ -167,11 +167,11 @@
       ]
     },
     {
-      "name": "Tools",
+      "name": "Tool",
       "children": [
         {
           "id": "tool_list",
-          "name": "Tool-list",
+          "name": "Tool list",
           "operation": [
             "View",
             "Edit",

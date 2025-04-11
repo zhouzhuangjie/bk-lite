@@ -1,7 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { Button, Input, Form, message, Spin, Popconfirm, Tabs, Select, Modal } from 'antd';
-import { DeleteOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import { useSearchParams } from 'next/navigation';
 import CustomTable from '@/components/custom-table';
@@ -19,8 +18,8 @@ const { confirm } = Modal;
 const RoleManagement: React.FC = () => {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
-  const id = searchParams.get('id');
-  const clientId = searchParams.get('clientId');
+  const id = searchParams?.get('id') || '';
+  const clientId = searchParams?.get('clientId') || '';
 
   const [roleForm] = Form.useForm();
   const [addUserForm] = Form.useForm();
@@ -221,7 +220,7 @@ const RoleManagement: React.FC = () => {
           cancelText={t('common.cancel')}
           onConfirm={() => handleDeleteUser(record)}
         >
-          <Button type="link"><DeleteOutlined />{t('common.delete')}</Button>
+          <Button type="link">{t('common.delete')}</Button>
         </Popconfirm>
       ),
     },
