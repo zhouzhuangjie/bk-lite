@@ -55,6 +55,15 @@ class ExcelLoader():
         return result
 
     def load(self):
+        if self.mode == 'full':
+            return self.load_full_content()
+        elif self.mode == 'title_row_struct':
+            return self.title_row_struct_load()
+        else:
+            raise ValueError(
+                f"Unsupported mode: {self.mode}. Supported modes are 'full' and 'title_row_struct'.")
+
+    def load_full_content(self):
         # 使用pandas读取excel文件的所有sheet
         sheets = pd.read_excel(self.path, sheet_name=None)
 

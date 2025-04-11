@@ -21,7 +21,7 @@ class DefineOid:
         # 系统信息 OIDs
         self.sysDescr = dp + "1.3.6.1.2.1.1.1.0"
         self.sysObjectId = dp + "1.3.6.1.2.1.1.2.0"
-        self.sysUpTime = dp + "1.3.6.1.2.1.1.3.0"
+        # self.sysUpTime = dp + "1.3.6.1.2.1.1.3.0"
         self.sysContact = dp + "1.3.6.1.2.1.1.4.0"
         self.sysName = dp + "1.3.6.1.2.1.1.5.0"
         self.sysLocation = dp + "1.3.6.1.2.1.1.6.0"
@@ -148,7 +148,7 @@ class SnmpFacts:
                 cmdgen.UdpTransportTarget((self.host, self.snmp_port), **transport_opts),
                 cmdgen.MibVariable(p.sysDescr),
                 cmdgen.MibVariable(p.sysObjectId),
-                cmdgen.MibVariable(p.sysUpTime),
+                # cmdgen.MibVariable(p.sysUpTime),
                 cmdgen.MibVariable(p.sysContact),
                 cmdgen.MibVariable(p.sysName),
                 cmdgen.MibVariable(p.sysLocation),
@@ -164,8 +164,8 @@ class SnmpFacts:
                     results['system']['sysdescr'] = str(current_val)
                 elif current_oid == v.sysObjectId:
                     results['system']['sysobjectid'] = current_val
-                elif current_oid == v.sysUpTime:
-                    results['system']['sysuptime'] = current_val
+                # elif current_oid == v.sysUpTime:
+                #     results['system']['sysuptime'] = current_val
                 elif current_oid == v.sysContact:
                     results['system']['syscontact'] = current_val
                 elif current_oid == v.sysName:
