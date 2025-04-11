@@ -6,12 +6,14 @@ from langchain_core.documents import Document
 from langchain_elasticsearch import ElasticsearchRetriever
 from langchain_openai import OpenAIEmbeddings
 
+from src.rag.native_rag.entity.elasticsearch_document_count_request import ElasticSearchDocumentCountRequest
 from src.rag.native_rag.entity.elasticsearch_document_delete_request import ElasticSearchDocumentDeleteRequest
+from src.rag.native_rag.entity.elasticsearch_document_list_request import ElasticSearchDocumentListRequest
+from src.rag.native_rag.entity.elasticsearch_index_delete_request import ElasticSearchIndexDeleteRequest
 from src.rag.native_rag.entity.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
 from src.rag.native_rag.entity.elasticsearch_store_request import ElasticSearchStoreRequest
 from src.rag.native_rag.utils.elasticsearch_query_builder import ElasticsearchQueryBuilder
 from langchain_elasticsearch import ElasticsearchStore
-
 import elasticsearch
 
 
@@ -20,8 +22,66 @@ class ElasticSearchRag:
         self.es = elasticsearch.Elasticsearch(hosts=[os.getenv('ELASTICSEARCH_URL')],
                                               basic_auth=("elastic", os.getenv('ELASTICSEARCH_PASSWORD')))
 
-    def delete_index(self, req: ElasticSearchDocumentDeleteRequest):
+    def count_index_document(self, req: ElasticSearchDocumentCountRequest):
+        if not req.metadata_filter:
+            # Count all documents in the index
+            count = self.es.count(index=req.index_name)
+            return count['count']
+
+        # Build filter query for specific metadata
+        metadata_filter = []
+        for key, value in req.metadata_filter.items():
+            metadata_filter.append(
+                {"term": {f"metadata.{key}.keyword": value}})
+
+        query = {
+            "query": {
+                "bool": {
+                    "filter": metadata_filter
+                }
+            }
+        }
+
+        count = self.es.count(index=req.index_name, body=query)
+        return count['count']
+
+    def delete_index(self, req: ElasticSearchIndexDeleteRequest):
         self.es.indices.delete(index=req.index_name)
+
+    def list_index_document(self, req: ElasticSearchDocumentListRequest):
+        # Build filter query for specific metadata
+        metadata_filter = []
+        for key, value in req.metadata_filter.items():
+            metadata_filter.append(
+                {"term": {f"metadata.{key}.keyword": value}}
+            )
+
+        # Calculate offset from page and size
+        offset = (req.page - 1) * req.size if req.page > 0 else 0
+
+        query = {
+            "query": {
+                "bool": {
+                    "filter": metadata_filter
+                }
+            },
+            "from": offset,
+            "size": req.size,
+            "_source": {"excludes": ["vector"]}  # Exclude the vector field
+        }
+
+        # Execute the search query
+        response = self.es.search(index=req.index_name, body=query)
+
+        # Process and return the results
+        documents = []
+        for hit in response['hits']['hits']:
+            source = hit['_source']
+            metadata = source.get('metadata', {})
+            documents.append(
+                Document(page_content=source['text'], metadata=metadata))
+
+        return documents
 
     def delete_document(self, req: ElasticSearchDocumentDeleteRequest):
         metadata_filter = []

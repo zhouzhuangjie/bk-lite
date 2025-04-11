@@ -1,7 +1,7 @@
 from typing import List
-from xml.dom.minidom import Document
 from langchain_community.document_loaders import RecursiveUrlLoader
 from langchain_community.document_transformers import BeautifulSoupTransformer
+from langchain_core.documents import Document
 
 
 class WebSiteLoader:
