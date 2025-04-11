@@ -86,8 +86,17 @@ class ElasticSearchRag:
     def delete_document(self, req: ElasticSearchDocumentDeleteRequest):
         metadata_filter = []
         for key, value in req.metadata_filter.items():
-            metadata_filter.append(
-                {"term": {f"metadata.{key}.keyword": value}})
+            # Check if the value is a comma-separated string
+            if isinstance(value, str) and ',' in value:
+                # Split the value by comma and strip whitespace
+                values = [v.strip() for v in value.split(',')]
+                metadata_filter.append(
+                    {"terms": {f"metadata.{key}.keyword": values}}
+                )
+            else:
+                metadata_filter.append(
+                    {"term": {f"metadata.{key}.keyword": value}}
+                )
 
         query = {
             "query": {
