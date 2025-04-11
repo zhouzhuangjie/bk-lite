@@ -6,7 +6,7 @@ import Icon from '@/components/icon';
 import sideMenuStyle from './index.module.scss';
 import useApiClient from '@/utils/request';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { MenuItem } from '@/types/index';
 import { useRelationships } from '@/app/cmdb/context/relationships';
@@ -18,7 +18,6 @@ interface SideMenuProps {
   showProgress?: boolean;
   taskProgressComponent?: React.ReactNode;
   onBackButtonClick?: () => void;
-  relationData?: SectionData[];
 }
 
 interface ListItem {
@@ -26,12 +25,6 @@ interface ListItem {
   value?: number;
   model_asst_id: string;
 }
-
-interface SectionData {
-  title: string;
-  children: ListItem[];
-}
-
 interface ModelAssociation {
   _id: number;
   _label: string;
@@ -57,6 +50,7 @@ const SideMenu: React.FC<SideMenuProps> = ({
   const { get } = useApiClient();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const modelId = searchParams.get('model_id');
   const { setSelectedAssoId, assoInstances, assoTypes, modelList } =
     useRelationships();
@@ -64,7 +58,11 @@ const SideMenu: React.FC<SideMenuProps> = ({
     []
   );
 
-  const handleItemClick = (modelAsstId: string) => {
+  const handleItemClick = (modelAsstId: string, item: MenuItem) => {
+    if (!isActive(item.url)) {
+      const newUrl = buildUrlWithParams(item.url);
+      router.push(newUrl);
+    }
     setSelectedAssoId(modelAsstId);
   };
 
@@ -132,7 +130,7 @@ const SideMenu: React.FC<SideMenuProps> = ({
       title,
       children,
     }));
-  }, [assoInstances]);
+  }, [assoInstances, assoTypes, allAssociations, modelList]);
 
   return (
     <aside
@@ -163,9 +161,7 @@ const SideMenu: React.FC<SideMenuProps> = ({
                   </a>
                 </Link>
               </li>
-              {item.name === ASSET_NAME &&
-                isActive(item.url) &&
-                !!relationData?.length && (
+              {item.name === ASSET_NAME && !!relationData?.length && (
                 <div
                   className={`ml-4 mt-2 mb-2 pb-1 border-b border-gray-200 ${sideMenuStyle.relationList}`}
                 >
@@ -176,20 +172,20 @@ const SideMenu: React.FC<SideMenuProps> = ({
                       </div>
                       <div className="ml-3">
                         {section.children.map(
-                          (item: ListItem, itemIndex: number) => (
+                          (subItem: ListItem, itemIndex: number) => (
                             <div
                               key={itemIndex}
                               className="flex justify-between items-center p-1 cursor-pointer hover:bg-gray-100 rounded-md"
                               onClick={() =>
-                                handleItemClick(item.model_asst_id)
+                                handleItemClick(subItem.model_asst_id, item)
                               }
                             >
                               <EllipsisWithTooltip
-                                text={item.text}
+                                text={subItem.text}
                                 className="w-[100px] overflow-hidden text-ellipsis whitespace-nowrap"
                               />
                               <span className="bg-gray-100 px-2 py-0.5 rounded text-xs text-gray-600">
-                                {item.value}
+                                {subItem.value}
                               </span>
                             </div>
                           )

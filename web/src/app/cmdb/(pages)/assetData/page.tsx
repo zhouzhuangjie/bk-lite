@@ -238,6 +238,7 @@ const AssetData = () => {
       setModelId(defaultModelId);
       setSelectedTreeKeys([defaultModelId]);
       getInitData(defaultModelId);
+      router.push(`/cmdb/assetData?modelId=${defaultModelId}&classificationId=${defaultGroupId}`);
     } catch {
       setLoading(false);
     }
@@ -544,6 +545,7 @@ const AssetData = () => {
         }));
         setModelList(newModelList);
         getInitData(firstModelKey);
+        router.push(`/cmdb/assetData?modelId=${firstModelKey}&classificationId=${groupIdSelected}`);
       }
     } else {
       setSelectedTreeKeys([key]);
@@ -557,6 +559,7 @@ const AssetData = () => {
             icn: item.icn,
           }));
           setModelList(newModelList);
+          router.push(`/cmdb/assetData?modelId=${key}&classificationId=${group.classification_id}`);
         }
       });
       getInitData(key);

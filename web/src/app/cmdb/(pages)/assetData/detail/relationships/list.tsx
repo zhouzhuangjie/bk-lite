@@ -46,16 +46,33 @@ const AssoList = forwardRef<AssoListRef, AssoListProps>(
     const instId: string = searchParams.get('inst_id') || '';
     const instanceRef = useRef<RelationInstanceRef>(null);
     const prevModelLenRef = useRef(0);
-    const { fetchAssoInstances, loading, selectedAssoId } = useRelationships();
+    const { assoInstances, loading, selectedAssoId, fetchAssoInstances, setSelectedAssoId } = useRelationships();
 
     useEffect(() => {
       const prevLength = prevModelLenRef.current;
       const currentLength = modelList.length;
       if (prevLength === 0 && currentLength > 0) {
-        getInitData();
+        getInitData(assoInstances);
       }
       prevModelLenRef.current = currentLength;
-    }, [modelList]);
+    }, [modelList, assoInstances]);
+
+    const getInitData = async (data: CrentialsAssoInstItem[]) => {
+      setPageLoading(true);
+      try {
+        processedData(data);
+        await updateInstAttrList(data);
+        if (!data?.length) {
+          setInstIds([]);
+          setAssoCredentials([]);
+        }
+        if (selectedAssoId) {
+          scrollToElement(`collapse-${selectedAssoId}`);
+        }
+      } finally {
+        setPageLoading(false);
+      }
+    };
 
     const processedData = (assoInstancesList: any) => {
       if (loading || !assoInstancesList?.length) return [];
@@ -119,15 +136,20 @@ const AssoList = forwardRef<AssoListRef, AssoListProps>(
       setAssoCredentials(updatedItems);
     };
 
+    const scrollToElement = (elementId: string) => {
+      setTimeout(() => {
+        const element = document.getElementById(elementId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        setSelectedAssoId('');
+      }, 100);
+    };
+
     useEffect(() => {
       if (selectedAssoId && assoCredentials.length) {
         setActiveKey([...activeKey, selectedAssoId]);
-        setTimeout(() => {
-          const element = document.getElementById(`collapse-${selectedAssoId}`);
-          if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }, 100);
+        scrollToElement(`collapse-${selectedAssoId}`);
       }
     }, [selectedAssoId]);
 
@@ -159,21 +181,6 @@ const AssoList = forwardRef<AssoListRef, AssoListProps>(
       const queryString = new URLSearchParams(params).toString();
       const url = `/cmdb/assetData/detail/baseInfo?${queryString}`;
       window.open(url, '_blank', 'noopener,noreferrer');
-    };
-
-    const getInitData = async () => {
-      setPageLoading(true);
-      try {
-        const data = await fetchAssoInstances(modelId, instId);
-        processedData(data);
-        await updateInstAttrList(data);
-        if (!data?.length) {
-          setInstIds([]);
-          setAssoCredentials([]);
-        }
-      } finally {
-        setPageLoading(false);
-      }
     };
 
     const getModelAttrList = async (item: any, config: any) => {
@@ -288,8 +295,9 @@ const AssoList = forwardRef<AssoListRef, AssoListProps>(
       setActiveKey(keys);
     };
 
-    const confirmRelate = () => {
-      getInitData();
+    const confirmRelate = async () => {
+      const data = await fetchAssoInstances(modelId, instId);
+      getInitData(data);
     };
 
     return (
