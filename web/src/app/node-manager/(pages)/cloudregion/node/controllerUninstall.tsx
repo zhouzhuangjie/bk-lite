@@ -243,10 +243,13 @@ const ControllerUninstall = forwardRef<ModalRef, ModalSuccess>(
     const uninstall = async (params = {}) => {
       setConfirmLoading(true);
       try {
-        await uninstallController(params);
-        message.success('common.operationSuccessful');
+        const data = await uninstallController(params);
+        message.success(t('common.operationSuccessful'));
         handleCancel();
-        onSuccess();
+        onSuccess({
+          taskId: data.task_id,
+          type: 'uninstallController',
+        });
       } finally {
         setConfirmLoading(false);
       }

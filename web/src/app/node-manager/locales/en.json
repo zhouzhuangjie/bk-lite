@@ -48,6 +48,7 @@
         "restartCollector": "Restart Collector",
         "uninstallCollector": "Uninstall Collector",
         "installCollector": "Install Collector",
+        "stopCollector": "Stop Collector",
         "config": "Configuration",
         "btntext1": "If you do not have the configuration file you need, please click",
         "btntext2": "here",
