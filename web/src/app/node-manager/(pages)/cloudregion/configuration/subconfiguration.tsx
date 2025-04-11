@@ -2,12 +2,11 @@ import { useEffect, useState, useImperativeHandle, forwardRef } from 'react';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import useApiClient from '@/utils/request';
 import { useTranslation } from '@/utils/i18n';
-import { Input, Button } from 'antd';
-import { TableDataItem } from '@/app/node-manager/types/index';
+import { Input } from 'antd';
+import { useSubConfigColumns } from '@/app/node-manager/hooks/configuration';
 import CustomTable from '@/components/custom-table';
 import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
 import type { SubRef, SubProps } from '@/app/node-manager/types/cloudregion'; 
-import type { TableColumnsType } from 'antd';
 import type { GetProps } from 'antd';
 type SearchProps = GetProps<typeof Input.Search>;
 const { Search } = Input;
@@ -19,50 +18,11 @@ const SubConfiguration = forwardRef<SubRef, SubProps>(({ cancel, edit, nodeData 
   const [tableLoading, setTableLoading] = useState<boolean>(false);
   const [tableData, setTableData] = useState<any[]>([]);
   const [searchText, setSearchText] = useState<string>('');
-  const columns: TableColumnsType<TableDataItem> = [
-    {
-      title: t('common.name'),
-      dataIndex: 'name',
-      fixed: 'left',
-      className: 'text-center',
-      align: 'center',
-      width: 300,
-      render: (_: any, record: any) => {
-        return (
-          <span>{record.name || '--'}</span>
-        )
-      }
-    },
-    {
-      title: t('common.actions'),
-      dataIndex: 'key',
-      fixed: 'right',
-      align: 'center',
-      width: 180,
-      render: (_: any, record: any) => (
-        <div className="flex justify-center">
-          <Button
-            color="primary"
-            variant="link"
-            onClick={() => {
-              edit({
-                id: record.id,
-                name: record.name,
-                nodes: nodeData.nodes || '--',
-                collector: nodeData.collector,
-                configinfo: record.content,
-                collect_type: record.collect_type,
-                config_type: record.config_type,
-                collector_config: record.collector_config
-              });
-            }}
-          >
-            {t('common.edit')}
-          </Button>
-        </div>
-      ),
-    },
-  ];
+  
+  const { columns } = useSubConfigColumns({
+    nodeData,
+    edit
+  })
 
   useImperativeHandle(ref, () => (
     {

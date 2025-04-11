@@ -38,7 +38,6 @@ const Collector = () => {
       label: `${t('node-manager.collector.controller')}(${controllerCount})`,
       value: 'controller',
     },
-    
   ];
 
   useEffect(() => {
@@ -56,11 +55,26 @@ const Collector = () => {
       /node-manager/collector/detail?id=${item.id}&name=${item.name}&introduction=${item.description}&system=${item.tagList[0]}`);
   };
 
+  const cardSetters: Record<string, React.Dispatch<React.SetStateAction<CardItem[]>>> = {
+    controller: setControllerCards,
+    collector: setCollectorCards,
+  };
+
+  const filterBySelected = (data: any[], selected: string[]) => {
+    if (!selected?.length) return data;
+    const selectedSet = new Set(selected);
+    return data.filter((item) =>
+      item.tagList.every((tag: string) => selectedSet.has(tag))
+    );
+  };
+
   const handleResult = (res: any, value: string, selected?: string[]) => {
+    const optionSet = new Set<string>();
     const _options: Option[] = [];
     let tempdata = res.map((item: any) => {
       const system = item.node_operating_system || item.os;
-      if (system && !_options.find((option) => option.value === system)) {
+      if (system && !optionSet.has(system)) {
+        optionSet.add(system);
         _options.push({ value: system, label: system });
       }
       return ({
@@ -71,19 +85,11 @@ const Collector = () => {
         execute_parameters: item.execute_parameters,
         description: item.introduction || '--',
         icon: 'caijiqizongshu',
-        tagList: [item.node_operating_system || item.os]
+        tagList: [system]
       })
     });
-    if (selected?.length) {
-      tempdata = tempdata.filter((item: any) => {
-        return item.tagList.every((tag: string) => selected?.includes(tag));
-      });
-    }
-    if (value === 'controller') {
-      setControllerCards(tempdata);
-    } else {
-      setCollectorCards(tempdata);
-    }
+    tempdata = filterBySelected(tempdata, selected || []);
+    cardSetters[value](tempdata);
     setOptions(_options);
   }
 
@@ -147,7 +153,6 @@ const Collector = () => {
         openModal: () => openModal({ title: 'addCollector', type: 'add', form: {} })
       }
     }
-    return {}
   };
 
   const onSearch = (search: string) => {

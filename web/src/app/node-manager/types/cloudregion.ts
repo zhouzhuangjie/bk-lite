@@ -4,6 +4,12 @@ import type { TableDataItem } from '@/app/node-manager/types/index';
 interface ConfigHookParams {
   configurationClick: (key: string) => void;
   openSub: (key: string, item?: any) => void;
+  filter: string[];
+}
+// 子配置页面table的列定义
+interface SubConfigHookParams {
+  edit: (item: IConfiglistprops) => void, 
+  nodeData: ConfigDate
 }
 interface VariableProps {
   openUerModal: (type: string, form: TableDataItem) => void;
@@ -83,8 +89,8 @@ interface SubRef {
 }
 
 interface SubProps { 
-  cancel: any, 
-  edit: any, 
+  cancel: () => void, 
+  edit: (item: IConfiglistprops) => void, 
   nodeData: ConfigDate 
 }
 
@@ -158,4 +164,5 @@ export type {
   ControllerInstallFields,
   ControllerInstallProps,
   NodeItem,
+  SubConfigHookParams
 };

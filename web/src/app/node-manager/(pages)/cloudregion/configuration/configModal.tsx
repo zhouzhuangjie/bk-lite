@@ -26,15 +26,15 @@ import CodeEditor from '@/app/node-manager/components/codeEditor';
 import { useConfigModalColumns } from '@/app/node-manager/hooks/configuration';
 
 const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
-  const configformRef = useRef<FormInstance>(null);
-  //设置弹窗状态
-  const [configVisible, setConfigVisible] = useState<boolean>(false);
-  const columns = useConfigModalColumns();
-  //设置表当的数据
-  const { t } = useTranslation();
+  const {
+    updatecollector,
+    getvariablelist,
+    updatechildconfig
+  } = useApiCloudRegion();
   const cloudid = useCloudId();
-  const { updatecollector, getvariablelist, updatechildconfig } =
-    useApiCloudRegion();
+  const { t } = useTranslation();
+  const columns = useConfigModalColumns(); const configformRef = useRef<FormInstance>(null);
+  const [configVisible, setConfigVisible] = useState<boolean>(false);
   const [configForm, setConfigForm] = useState<TableDataItem>();
   const [editeConfigId, setEditeConfigId] = useState<string>('');
   const [type, setType] = useState<string>('add');
@@ -43,7 +43,6 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
 
   useImperativeHandle(ref, () => ({
     showModal: ({ type, form }) => {
-      // 开启弹窗的交互
       setConfigVisible(true);
       setType(type);
       setEditeConfigId(form?.key);
@@ -54,7 +53,6 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
   //初始化表单的数据
   useEffect(() => {
     if (!configVisible) return;
-    //获取变量列表
     getvariablelist(Number(cloudid)).then((res) => {
       const tempdata: VarSourceItem[] = [];
       res.forEach((item: VarResItem) => {
@@ -66,14 +64,12 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
       });
       setVardataSource(tempdata);
     });
-    //add发起请求，设置表单的数据
     if (['edit', 'edit_child'].includes(type)) {
       configformRef.current?.resetFields();
       configformRef.current?.setFieldsValue(configForm);
     }
   }, [configForm, configVisible]);
 
-  //关闭用户的弹窗(取消和确定事件)
   const handleCancel = () => {
     setConfigVisible(false);
   };
@@ -96,8 +92,13 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
   };
 
   const handleChildUpdate = (configinfo: string) => {
-    const { id, collect_type, config_type, collector_config } =
-      configForm as TableDataItem;
+    const {
+      id,
+      collect_type,
+      config_type,
+      collector_config
+    } = configForm as TableDataItem;
+    
     updatechildconfig(id as string, {
       collect_type,
       config_type,
@@ -111,20 +112,17 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
     });
   };
 
-  //处理添加和编辑的确定事件
+  //处理配置编辑和子配置编辑的确定事件
   const handleConfirm = () => {
-    // 校验表单
     configformRef.current?.validateFields().then((values) => {
-      console.log(values);
       setConfirmLoading(true);
       if (type === 'edit') {
         const { name, collector, configinfo } = values;
-        console.log(values);
         handleUpdate(name, collector, configinfo);
-      } else if (type === 'edit_child') {
-        const { configinfo } = values;
-        handleChildUpdate(configinfo);
+        return;
       }
+      const { configinfo } = values;
+      handleChildUpdate(configinfo);
     });
   };
 
@@ -244,7 +242,6 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
             }
           </Form.Item>
         </>
-        {/* )} */}
       </Form>
     );
   };

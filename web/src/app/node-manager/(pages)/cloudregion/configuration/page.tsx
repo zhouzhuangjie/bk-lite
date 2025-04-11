@@ -23,12 +23,12 @@ type SearchProps = GetProps<typeof Input.Search>;
 const { Search } = Input;
 
 const Configration = () => {
-  const configurationRef = useRef<ModalRef>(null);
   const subConfiguration = useRef<SubRef>(null);
+  const configurationRef = useRef<ModalRef>(null);
   const modifydeleteconfigurationref = useRef<HTMLButtonElement>(null);
+  const cloudid = useCloudId();
   const { t } = useTranslation();
   const { isLoading } = useApiClient();
-  const cloudid = useCloudId();
   const searchParams = useSearchParams();
   const nodeId = searchParams.get('id') || '';
   const { getconfiglist } = useApiCloudRegion();
@@ -37,6 +37,7 @@ const Configration = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [configdata, setConfigdata] = useState<ConfigDate[]>([]);
   const [showSub, setShowSub] = useState<boolean>(false);
+  const [filters, setFilters] = useState<string[]>([]);
   const [nodeData, setNodeData] = useState<ConfigDate>({
     key: '',
     name: '',
@@ -68,19 +69,18 @@ const Configration = () => {
     setNodeData(item);
     setShowSub(true);
   };
-  // 表格的列
+
   const { columns } = useConfigColumns({
     configurationClick,
+    filter: filters as string[],
     openSub,
   });
 
-  //组件初始化渲染
   useEffect(() => {
     if (isLoading) return;
     getConfiglist(nodeId || '');
   }, [isLoading]);
 
-  //组价初始渲染
   useEffect(() => {
     //图标进行禁用
     const isDisabled = selectedconfigurationRowKeys?.length === 0;
@@ -113,17 +113,22 @@ const Configration = () => {
     setLoading(true);
     getconfiglist(Number(cloudid), search)
       .then((res) => {
+        const filters: string[] = [];
         const data = res.map((item: IConfiglistprops) => {
-          return {
+          const config = {
             key: item.id,
             name: item.name,
-            collector: item.collector,
+            collector: item.collector as string,
             operatingsystem: item.operating_system,
             nodecount: item.node_count,
             configinfo: item.config_template,
             nodes: item.nodes?.length ? item.nodes[0] : '--',
           };
+          if (!filters.includes(config.collector))
+            filters.push(config.collector);
+          return config;
         });
+        setFilters(filters);
         setConfigdata(data);
       })
       .finally(() => {
