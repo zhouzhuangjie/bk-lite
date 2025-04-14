@@ -240,6 +240,7 @@ async def website_ingest(request):
 @auth.login_required
 async def file_ingest(request):
     file = request.files.get('file')
+    logger.info(f"上传文件名: {file.name}, 文件大小: {len(file.body) / (1024 * 1024):.2f} MB")
     allowed_types = ['docx', 'pptx', 'ppt', 'doc', 'txt',
                      'jpg', 'png', 'jpeg', 'pdf', 'csv', 'xlsx', 'xls', 'md']
     file_extension = file.name.split(
