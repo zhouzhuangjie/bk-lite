@@ -6,8 +6,17 @@ import React, {
   useImperativeHandle,
   useEffect,
   useCallback,
+  useMemo,
 } from 'react';
-import { Form, Select, message, Button, Input, Popconfirm } from 'antd';
+import {
+  Form,
+  Select,
+  message,
+  Button,
+  Input,
+  Popconfirm,
+  InputNumber,
+} from 'antd';
 import { EditOutlined } from '@ant-design/icons';
 import OperateModal from '@/components/operate-modal';
 import type { FormInstance } from 'antd';
@@ -20,7 +29,7 @@ import { OPERATE_SYSTEMS } from '@/app/node-manager/constants/cloudregion';
 import { ControllerInstallFields } from '@/app/node-manager/types/cloudregion';
 import CustomTable from '@/components/custom-table';
 import BatchEditModal from './batchEditModal';
-import { cloneDeep } from 'lodash';
+import { cloneDeep, isNumber } from 'lodash';
 const { Option } = Select;
 
 const ControllerUninstall = forwardRef<ModalRef, ModalSuccess>(
@@ -29,9 +38,7 @@ const ControllerUninstall = forwardRef<ModalRef, ModalSuccess>(
     const { t } = useTranslation();
     const cloudid = useCloudId();
     const { getnodelist, uninstallController } = useApiCloudRegion();
-    const tableFormRef = useRef<FormInstance>(null);
     const instRef = useRef<ModalRef>(null);
-    const currentTableData = useRef<TableDataItem[]>([]);
     const [type, setType] = useState<string>('uninstallSidecar');
     const [collectorVisible, setCollectorVisible] = useState<boolean>(false);
     //需要二次弹窗确定的类型
@@ -40,101 +47,100 @@ const ControllerUninstall = forwardRef<ModalRef, ModalSuccess>(
     const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
     const [nodeList, setNodeList] = useState<TableDataItem[]>([]);
     const [tableData, setTableData] = useState<TableDataItem[]>([]);
-    const tableColumns: any = [
-      {
-        title: t('node-manager.cloudregion.node.ipAdrress'),
-        dataIndex: 'ip',
-        width: 100,
-        key: 'ip',
-      },
-      {
-        title: (
-          <>
-            {t('node-manager.cloudregion.node.loginPort')}
-            <EditOutlined
-              className="cursor-pointer ml-[10px] text-[var(--color-primary)]"
-              onClick={() => batchEditModal('port')}
-            />
-          </>
-        ),
-        dataIndex: 'port',
-        width: 100,
-        key: 'port',
-        render: (value: string, row: TableDataItem) => {
-          return (
-            <>
-              <Form.Item name={`port-${row.id}`}>
-                <Input onBlur={(e) => handleInputBlur(e, row, 'port')}></Input>
-              </Form.Item>
-            </>
-          );
+
+    const tableColumns = useMemo(
+      () => [
+        {
+          title: t('node-manager.cloudregion.node.ipAdrress'),
+          dataIndex: 'ip',
+          width: 100,
+          key: 'ip',
         },
-      },
-      {
-        title: (
-          <>
-            {t('node-manager.cloudregion.node.loginAccount')}
-            <EditOutlined
-              className="cursor-pointer ml-[10px] text-[var(--color-primary)]"
-              onClick={() => batchEditModal('username')}
-            />
-          </>
-        ),
-        dataIndex: 'username',
-        width: 100,
-        key: 'username',
-        render: (value: string, row: TableDataItem) => {
-          return (
+        {
+          title: (
             <>
-              <Form.Item name={`username-${row.id}`}>
-                <Input
-                  onBlur={(e) => handleInputBlur(e, row, 'username')}
-                ></Input>
-              </Form.Item>
+              {t('node-manager.cloudregion.node.loginPort')}
+              <EditOutlined
+                className="cursor-pointer ml-[10px] text-[var(--color-primary)]"
+                onClick={() => batchEditModal('port')}
+              />
             </>
-          );
+          ),
+          dataIndex: 'port',
+          width: 100,
+          key: 'port',
+          render: (value: string, row: TableDataItem) => {
+            return (
+              <InputNumber
+                className="w-full"
+                min={1}
+                precision={0}
+                value={row.port}
+                defaultValue={row.port}
+                onChange={(e) => handlePortChange(e, row, 'port')}
+              />
+            );
+          },
         },
-      },
-      {
-        title: (
-          <>
-            {t('node-manager.cloudregion.node.loginPassword')}
-            <EditOutlined
-              className="cursor-pointer ml-[10px] text-[var(--color-primary)]"
-              onClick={() => batchEditModal('password')}
-            />
-          </>
-        ),
-        dataIndex: 'password',
-        width: 100,
-        key: 'password',
-        render: (value: string, row: TableDataItem) => {
-          return (
+        {
+          title: (
             <>
-              <Form.Item name={`password-${row.id}`}>
-                <Input.Password
-                  onBlur={(e) => handleInputBlur(e, row, 'password')}
-                ></Input.Password>
-              </Form.Item>
+              {t('node-manager.cloudregion.node.loginAccount')}
+              <EditOutlined
+                className="cursor-pointer ml-[10px] text-[var(--color-primary)]"
+                onClick={() => batchEditModal('username')}
+              />
             </>
-          );
+          ),
+          dataIndex: 'username',
+          width: 100,
+          key: 'username',
+          render: (value: string, row: TableDataItem) => {
+            return (
+              <Input
+                defaultValue={row.username}
+                value={row.username}
+                onChange={(e) => handleInputBlur(e, row, 'username')}
+              />
+            );
+          },
         },
-      },
-    ];
+        {
+          title: (
+            <>
+              {t('node-manager.cloudregion.node.loginPassword')}
+              <EditOutlined
+                className="cursor-pointer ml-[10px] text-[var(--color-primary)]"
+                onClick={() => batchEditModal('password')}
+              />
+            </>
+          ),
+          dataIndex: 'password',
+          width: 100,
+          key: 'password',
+          render: (value: string, row: TableDataItem) => {
+            return (
+              <Input.Password
+                defaultValue={row.usepasswordrname}
+                value={row.password}
+                onChange={(e) => handleInputBlur(e, row, 'password')}
+              />
+            );
+          },
+        },
+      ],
+      [tableData]
+    );
 
     const handleBatchEdit = useCallback(
       (row: TableDataItem) => {
-        const data = cloneDeep(currentTableData.current);
-        const obj: any = {};
+        const data = cloneDeep(tableData);
         data.forEach((item) => {
           item[row.field] = row.value;
-          obj[`${row.field}-${item.id}`] = row.value;
         });
-        tableFormRef.current?.setFieldsValue(obj);
-        currentTableData.current = data;
         setTableData(data);
       },
-      [currentTableData]
+      [tableData]
     );
 
     useImperativeHandle(ref, () => ({
@@ -149,20 +155,10 @@ const ControllerUninstall = forwardRef<ModalRef, ModalSuccess>(
           username: null,
           password: null,
         }));
-        currentTableData.current = list;
         setTableData(list);
         initPage();
       },
     }));
-
-    useEffect(() => {
-      if (tableData?.length && tableFormRef.current) {
-        const obj = tableFormRef.current.getFieldsValue() || {};
-        setTimeout(() => {
-          tableFormRef.current?.setFieldsValue(cloneDeep(obj));
-        });
-      }
-    }, [tableData]);
 
     useEffect(() => {
       collectorformRef.current?.resetFields();
@@ -181,11 +177,24 @@ const ControllerUninstall = forwardRef<ModalRef, ModalSuccess>(
       row: TableDataItem,
       key: string
     ) => {
-      const data = cloneDeep(currentTableData.current);
+      const data = cloneDeep(tableData);
       const index = data.findIndex((item) => item.id === row.id);
       if (index !== -1) {
         data[index][key] = e.target.value;
-        currentTableData.current = data;
+        setTableData(data);
+      }
+    };
+
+    const handlePortChange = (
+      value: number,
+      row: TableDataItem,
+      key: string
+    ) => {
+      const data = cloneDeep(tableData);
+      const index = data.findIndex((item) => item.id === row.id);
+      if (index !== -1) {
+        data[index][key] = value;
+        setTableData(data);
       }
     };
 
@@ -209,12 +218,16 @@ const ControllerUninstall = forwardRef<ModalRef, ModalSuccess>(
     };
 
     const validateTableData = async () => {
-      const data = cloneDeep(currentTableData.current);
+      const data = cloneDeep(tableData);
       if (!data.length) {
         return Promise.reject(new Error(t('common.required')));
       }
       if (
-        data.every((item) => Object.values(item).every((tex) => !!tex?.length))
+        tableData.every((item) =>
+          Object.values(item).every((tex) =>
+            isNumber(tex) ? !!tex : !!tex?.length
+          )
+        )
       ) {
         return Promise.resolve();
       }
@@ -224,16 +237,13 @@ const ControllerUninstall = forwardRef<ModalRef, ModalSuccess>(
     //点击确定按钮的相关逻辑处理
     const handleConfirm = () => {
       collectorformRef.current?.validateFields().then((values) => {
-        const data = cloneDeep(currentTableData.current);
+        const data = cloneDeep(tableData);
         const params = {
           cloud_region_id: +cloudid,
           work_node: values.work_node,
           nodes: data.map((item) => {
             delete item.id;
-            return {
-              ...item,
-              port: +item.port,
-            };
+            return item;
           }),
         };
         uninstall(params);
@@ -259,7 +269,7 @@ const ControllerUninstall = forwardRef<ModalRef, ModalSuccess>(
       <OperateModal
         title={t(`node-manager.cloudregion.node.${type}`)}
         open={collectorVisible}
-        width={600}
+        width={650}
         destroyOnClose
         okText={t('common.confirm')}
         cancelText={t('common.cancel')}
@@ -328,13 +338,11 @@ const ControllerUninstall = forwardRef<ModalRef, ModalSuccess>(
             label={t('node-manager.cloudregion.node.controllerInfo')}
             rules={[{ required: true, validator: validateTableData }]}
           >
-            <Form ref={tableFormRef} component={false}>
-              <CustomTable
-                rowKey="id"
-                columns={tableColumns}
-                dataSource={tableData}
-              />
-            </Form>
+            <CustomTable
+              rowKey="id"
+              columns={tableColumns}
+              dataSource={tableData}
+            />
           </Form.Item>
         </Form>
         <BatchEditModal
