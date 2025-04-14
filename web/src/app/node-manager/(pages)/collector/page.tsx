@@ -42,13 +42,9 @@ const Collector = () => {
 
   useEffect(() => {
     if (!isLoading) {
-      fetchCollectorlist();
+      fetchCollectorlist(search, selected);
     }
-  }, [isLoading])
-
-  useEffect(() => {
-    fetchCollectorlist(search, selected);
-  }, [value])
+  }, [isLoading, value])
 
   const navigateToCollectorDetail = (item: CardItem) => {
     router.push(`
