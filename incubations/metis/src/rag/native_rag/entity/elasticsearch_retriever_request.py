@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 class ElasticSearchRetrieverRequest(BaseModel):
     index_name: str
-    search_query: str
+    search_query: str = ''
     metadata_filter: dict = {}
     size: int = 100
     threshold: float = 0.7

@@ -29,7 +29,20 @@ const Groups: React.FC = () => {
   const { getTeamData, addTeamData, updateGroup, deleteTeam } = useGroupApi();
 
   const columns: ColumnsType<ConvertedGroup> = [
-    { title: t('system.group.form.name'), dataIndex: 'name', width: 450 },
+    { 
+      title: t('system.group.form.name'), 
+      dataIndex: 'name', 
+      width: 450,
+      render: (text: string, data: ConvertedGroup) => (
+        <>
+          {data.children && data.children.length > 0 ? (
+            <span>{text}</span>
+          ) : (
+            text
+          )}
+        </>
+      ),
+    },
     {
       title: t('common.actions'),
       dataIndex: 'actions',
