@@ -74,3 +74,5 @@ pytest-instafail==0.5.0
 pytest-xdist==3.5.0
 
 flower==2.0.1
+
+neo4j==5.23.1
