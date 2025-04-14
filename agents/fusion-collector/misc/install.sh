@@ -24,7 +24,6 @@ mkdir -p /opt/fusion-collectors/log
 mkdir -p /opt/fusion-collectors/generated
 
 # 复制并修改配置文件
-cp -f "./sidecar.yml" /opt/fusion-collectors/sidecar.yml
 sed -i "s|__SERVER__URL__|$SERVER_URL|g" /opt/fusion-collectors/sidecar.yml
 sed -i "s|__SERVER__API__TOKEN__|$SERVER_API_TOKEN|g" /opt/fusion-collectors/sidecar.yml
 
