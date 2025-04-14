@@ -1,34 +1,34 @@
 #!/usr/bin/env node
-const { execSync } = require('child_process')
+const fs = require('fs');
+const path = require('path');
 
-// Simple argument parsing function, no external dependencies
-function parseArgs() {
-  const args = {}
-  process.argv.slice(2).forEach(arg => {
-    if (arg.startsWith('--')) {
-      const [key, value] = arg.substring(2).split('=')
-      args[key] = value || true
-    } else if (arg.startsWith('-')) {
-      const key = arg.substring(1)
-      args[key] = true
-    }
-  })
-  return args
+// Log for debugging
+console.log('=== Generating pnpm-workspace.yaml ===');
+
+// Load environment variables
+require('dotenv').config({ path: path.join(__dirname, '../.env.local') });
+const activeApps = process.env.NEXTAPI_INSTALL_APP?.split(',')
+  .map(app => app.trim().replace(/[()]/g, '')) || ['*'];
+console.log('Active applications:', activeApps);
+
+// Generate workspace configuration
+const workspaceConfig = [
+  '# Auto-generated at ' + new Date().toISOString(),
+  'packages:',
+];
+
+if (activeApps.includes('*')) {
+  // Include all applications if wildcard is present
+  workspaceConfig.push("  - 'src/app/*'");
+} else {
+  // Include specific applications
+  activeApps.forEach(app => {
+    workspaceConfig.push(`  - 'src/app/${app}'`);
+  });
 }
 
-// Parse arguments with native approach
-const cliArgs = parseArgs()
-
-// npm automatically converts --app=value to npm_config_app=value environment variable
-const npmConfigApp = process.env.npm_config_app
-
-// Parameter priority: command line > npm config env > environment variable > default value
-const apps = cliArgs.app || npmConfigApp || process.env.NEXTAPI_INSTALL_APP || '*'
-
-// Add log for debugging
-console.log(`Generating workspace configuration, app scope: ${apps}`)
-
-// Call the original shell script (ensure correct path)
-execSync(`bash scripts/generate-workspace.sh "${apps}"`, {
-  stdio: 'inherit'
-})
+// Write to pnpm-workspace.yaml
+const outputPath = path.join(__dirname, '../pnpm-workspace.yaml');
+fs.writeFileSync(outputPath, workspaceConfig.join('\n'));
+console.log('✅ Generated workspace configuration at:', outputPath);
+console.log('Workspace content:\n', workspaceConfig.join('\n'));

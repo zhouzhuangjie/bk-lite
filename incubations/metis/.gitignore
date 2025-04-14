@@ -1,7 +1,6 @@
 requirements.txt
 .venv/
 .idea/
-.vscode/
 __pycache__/
 *.pyc
 *.pyo

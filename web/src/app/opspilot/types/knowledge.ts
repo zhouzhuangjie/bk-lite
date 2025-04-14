@@ -37,13 +37,6 @@ export interface ModelOption {
   enabled: boolean;
 }
 
-export interface PreprocessStepProps {
-  onConfigChange: (config: any) => void;
-  knowledgeSourceType: string | null;
-  knowledgeDocumentIds: number[];
-  initialConfig: any;
-}
-
 export interface ConfigDataProps {
   selectedSearchTypes: string[];
   rerankModel: boolean;
