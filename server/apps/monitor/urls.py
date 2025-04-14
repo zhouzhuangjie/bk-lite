@@ -12,9 +12,9 @@ from apps.monitor.views.system_mgmt import SystemMgmtView
 
 router = routers.DefaultRouter()
 router.register(r"api/monitor_object", MonitorObjectVieSet, basename="MonitorObject")
-router.register(r"api/metrics_group", MetricGroupVieSet, basename="MetricsInstance")
-router.register(r"api/metrics", MetricVieSet, basename="MetricsInstance")
-router.register(r"api/metrics_instance", MetricsInstanceVieSet, basename="MetricsInstance")
+router.register(r"api/metrics_group", MetricGroupVieSet, basename="MetricGroupVieSet")
+router.register(r"api/metrics", MetricVieSet, basename="MetricVieSet")
+router.register(r"api/metrics_instance", MetricsInstanceVieSet, basename="MetricsInstanceVieSet")
 router.register(r"api/monitor_instance_group_rule", MonitorInstanceGroupingRuleVieSet, basename="MonitorInstanceGroupingRule")
 router.register(r"api/monitor_instance", MonitorInstanceVieSet, basename="MonitorInstanceVieSet")
 router.register(r"api/monitor_policy", MonitorPolicyVieSet, basename="MonitorPolicyVieSet")
