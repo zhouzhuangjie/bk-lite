@@ -6,6 +6,8 @@ from src.api import api
 from src.core.web.api_auth import auth
 from src.core.web.config import YamlConfig
 from src.core.web.crypto import PasswordCrypto
+from sanic.log import logger
+from langgraph.checkpoint.postgres import PostgresSaver
 
 # 加载环境变量和配置
 load_dotenv()
@@ -43,6 +45,15 @@ async def show_banner(app, loop):
 app.blueprint(api)
 
 if __name__ == "__main__":
+
+    logger.info("setup langgraph checkpoint")
+    try:
+        with PostgresSaver.from_conn_string(os.getenv('DB_URI')) as checkpointer:
+            checkpointer.setup()
+    except Exception as e:
+        pass
+
+    logger.info("start server")
     app.run(
         host="0.0.0.0",
         port=int(os.getenv('APP_PORT', 18083)),
