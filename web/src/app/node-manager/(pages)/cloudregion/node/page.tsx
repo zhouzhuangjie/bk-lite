@@ -54,6 +54,7 @@ const Node = () => {
   const [showNodeTable, setShowNodeTable] = useState<boolean>(true);
   const [searchText, setSearchText] = useState<string>('');
   const [taskId, setTaskId] = useState<string>('');
+  const [tableType, setTableType] = useState<string>('');
   const [showInstallController, setShowInstallController] =
     useState<boolean>(false);
   const [showInstallCollectorTable, setShowInstallCollectorTable] =
@@ -288,8 +289,11 @@ const Node = () => {
 
   const handleCollector = (config = { type: '', taskId: '' }) => {
     getNodes();
-    if (config.type === 'installCollector') {
+    if (['installCollector', 'uninstallController'].includes(config.type)) {
       setTaskId(config.taskId);
+      setTableType(
+        config.type.includes('Collector') ? 'collector' : 'controller'
+      );
       setShowNodeTable(false);
       setShowInstallCollectorTable(true);
     }
@@ -370,8 +374,8 @@ const Node = () => {
             <ControllerUninstall
               ref={controllerRef}
               config={{ os: system }}
-              onSuccess={() => {
-                getNodes();
+              onSuccess={(config) => {
+                handleCollector(config);
               }}
             />
           </div>
@@ -382,7 +386,7 @@ const Node = () => {
       )}
       {showInstallCollectorTable && (
         <CollectorInstallTable
-          config={{ taskId, type: 'collector' }}
+          config={{ taskId, type: tableType }}
           cancel={cancelWait}
         />
       )}
