@@ -8,6 +8,6 @@ RUN apt-get update && \
 ADD ./scripts scripts
 ADD ./startup.sh startup.sh
 
-ADD ./support-files/mibs /usr/share/snmp/mibs
+ADD ./mibs /usr/share/snmp/mibs
 ADD ./telegraf.conf /etc/telegraf/telegraf.conf
 
