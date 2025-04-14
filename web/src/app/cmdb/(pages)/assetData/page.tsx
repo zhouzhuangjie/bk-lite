@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { KeepAlive } from 'react-activation';
 import {
   Button,
   Space,
@@ -69,7 +70,7 @@ interface FieldConfig {
   list: Array<any>;
 }
 
-const AssetData = () => {
+const AssetDataContent = () => {
   const { t } = useTranslation();
   const { get, del, post, isLoading } = useApiClient();
   const router = useRouter();
@@ -761,6 +762,14 @@ const AssetData = () => {
         </div>
       </div>
     </Spin>
+  );
+};
+
+const AssetData = () => {
+  return (
+    <KeepAlive id="assetData" name="assetData">
+      <AssetDataContent />
+    </KeepAlive>
   );
 };
 
