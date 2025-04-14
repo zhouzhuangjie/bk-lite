@@ -114,27 +114,25 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) =
 
   const handleUpload = async (values: any) => {
     const file = fileList.length ? fileList[0] : '';
-    if (file) {
-      const fd = new FormData();
-      fd.append('file', file.originFileObj);
-      const params = {
-        name: file.name,
-        os: formData.system,
-        type: key,
-        version: values.version,
-        object: formData.name,
-        file: file.originFileObj
-      };
-      Object.entries(params).forEach(([k, v]) => {
-        fd.append(k, v);
-      });
-      uploadPackage(params).then(() => {
-        setConfirmLoading(false);
-        message.success(t('node-manager.collector.uploadSuccess'));
-        setVisible(false);
-      });
-    }
-  }
+    if (!file) return;
+    const fd = new FormData();
+    const params = {
+      name: file.name,
+      os: formData.system,
+      type: key,
+      version: values.version,
+      object: formData.name,
+      file: file.originFileObj
+    };
+    Object.entries(params).forEach(([k, v]) => {
+      fd.append(k, v);
+    });
+    uploadPackage(params).then(() => {
+      setConfirmLoading(false);
+      message.success(t('node-manager.collector.uploadSuccess'));
+      setVisible(false);
+    });
+  };
 
   const props: UploadProps = {
     name: 'file',
