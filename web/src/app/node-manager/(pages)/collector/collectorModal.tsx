@@ -37,7 +37,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) =
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [formData, setFormData] = useState<TableDataItem>(initData);
   const [fileList, setFileList] = useState<any>([]);
-  const Popconfirmarr = ["delete"];
+  const Popconfirmarr = ['delete'];
 
   useImperativeHandle(ref, () => ({
     showModal: ({ type, form, title, key }) => {
@@ -49,9 +49,9 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) =
       setType(type);
       setTitle(title as string);
       setVisible(true);
-      info.name = !isAdd ? name || "" : "";
+      info.name = !isAdd ? name || '' : '';
       info.system = !isAdd && tagList?.length ? tagList[0] : 'windows';
-      info.description = !isAdd ? description || '--' : "--";
+      info.description = !isAdd ? description || '--' : '--';
       setFormData(info);
     }
   }));
