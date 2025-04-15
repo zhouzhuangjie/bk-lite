@@ -22,6 +22,11 @@ export const useColumns = ({
         key: 'ip',
       },
       {
+        title: t('common.name'),
+        dataIndex: 'name',
+        key: 'name',
+      },
+      {
         title: 'Sidecar',
         dataIndex: 'sidecar',
         render: (key: string, item) => {

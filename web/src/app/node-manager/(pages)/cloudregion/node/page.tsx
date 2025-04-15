@@ -162,7 +162,7 @@ const Node = () => {
         return pre.concat(cur.status?.collectors || []);
       }, [])
     );
-    activeColumns.splice(2, 0, ...collectors);
+    activeColumns.splice(3, 0, ...collectors);
     return activeColumns;
   }, [columns, nodelist, statusMap]);
 
