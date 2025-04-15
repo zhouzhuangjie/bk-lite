@@ -25,7 +25,6 @@ const { Search } = Input;
 const Configration = () => {
   const subConfiguration = useRef<SubRef>(null);
   const configurationRef = useRef<ModalRef>(null);
-  const modifydeleteconfigurationref = useRef<HTMLButtonElement>(null);
   const cloudid = useCloudId();
   const { t } = useTranslation();
   const { isLoading } = useApiClient();
@@ -47,7 +46,6 @@ const Configration = () => {
     configinfo: '',
     nodes: [],
   });
-  const isDisabled = selectedconfigurationRowKeys?.length === 0;
 
   const showConfigurationModal = (type:string, form: any) => {
     configurationRef.current?.showModal({
@@ -83,17 +81,10 @@ const Configration = () => {
     getConfiglist(nodeId || '');
   }, [isLoading]);
 
-  useEffect(() => {
-    //图标进行禁用
-    if (modifydeleteconfigurationref.current) {
-      modifydeleteconfigurationref.current.disabled = isDisabled;
-      return;
-    }
-  }, [isDisabled]);
-
   //处理多选触发的事件逻辑
   const rowSelection: TableProps<TableProps>['rowSelection'] = {
     onChange: (selectedRowKeys: React.Key[]) => {
+      console.log(selectedconfigurationRowKeys);
       setSelectedconfigurationRowKeys(selectedRowKeys);
     },
     //禁止选中
