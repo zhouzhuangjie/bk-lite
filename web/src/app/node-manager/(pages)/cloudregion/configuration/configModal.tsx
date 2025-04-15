@@ -54,7 +54,8 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
   //初始化表单的数据
   useEffect(() => {
     if (!configVisible) return;
-    const initializeForm = async () => {
+    // 初始化变量列表
+    const initializeVarForm = async () => {
       const res = await getvariablelist(Number(cloudid));
       const tempdata = res.map((item: VarResItem) => ({
         key: item.id,
@@ -69,7 +70,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
       configformRef.current?.setFieldsValue(configForm);
     }
 
-    initializeForm();
+    initializeVarForm();
   }, [configForm, configVisible]);
 
   const handleCancel = () => {
