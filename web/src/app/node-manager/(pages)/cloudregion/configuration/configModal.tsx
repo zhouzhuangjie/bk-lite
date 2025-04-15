@@ -64,10 +64,9 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
       setVardataSource(tempdata)
     };
 
-    if (['edit', 'edit_child'].includes(type)) {
+    configformRef.current?.resetFields();
+    if (['edit', 'edit_child'].includes(type)) { 
       configformRef.current?.setFieldsValue(configForm);
-    } else {
-      configformRef.current?.resetFields();
     }
 
     initializeForm();

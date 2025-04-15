@@ -102,7 +102,6 @@ const Collectordetail = () => {
   }
 
   const handleTableChange = (pagination: any) => {
-    console.log(pagination);
     setPagination((prev: Pagination) => ({
       total: prev.total,
       ...pagination

@@ -42,9 +42,14 @@ const Collector = () => {
 
   useEffect(() => {
     if (!isLoading) {
-      fetchCollectorlist(search, selected);
+      firstFetchList(search, selected);
     }
-  }, [isLoading, value])
+  }, [isLoading])
+
+  useEffect(() => {
+    if (isLoading) return;
+    fetchCollectorlist(search, selected);
+  }, [value])
 
   const navigateToCollectorDetail = (item: CardItem) => {
     router.push(`
@@ -87,14 +92,15 @@ const Collector = () => {
     tempdata = filterBySelected(tempdata, selected || []);
     cardSetters[value](tempdata);
     setOptions(_options);
-  }
+  };
 
-  const fetchCollectorlist = async (search?: string, selected?: string[]) => {
+  // 首次加载执行
+  const firstFetchList = async (search?: string, selected?: string[]) => {
+    setLoading(true);
     const params = {
       name: search
-    }
+    };
     try {
-      setLoading(true);
       const res = await Promise.all([getControllerList(params), getCollectorlist(params)]);
       const controllerList = res[0];
       const collectorList = res[1];
@@ -102,9 +108,30 @@ const Collector = () => {
       setCollectorCount(collectorList.length);
       handleResult(controllerList, 'controller', selected);
       handleResult(collectorList, 'collector', selected);
-      setLoading(false);
     } catch (error) {
       console.log(error)
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCollectorlist = async (search?: string, selected?: string[]) => {
+    let res = null;
+    const params = { name: search };
+    try {
+      setLoading(true);
+      if (value === 'collector') {
+        res = await getCollectorlist(params);
+        setCollectorCount(res.length);
+      } else {
+        res = await getControllerList(params);
+        setControllerCount(res.length);
+      }
+      handleResult(res, value as string, selected);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -153,7 +180,11 @@ const Collector = () => {
 
   const onSearch = (search: string) => {
     setSearch(search);
-    fetchCollectorlist(search, selected);
+    if (search) {
+      fetchCollectorlist(search, selected);
+      return;
+    }
+    firstFetchList();
   };
 
   return (
