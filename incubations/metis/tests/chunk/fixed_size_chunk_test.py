@@ -7,7 +7,6 @@ load_dotenv()
 
 
 def test_fixed_size_chunk():
-
     chunk = FixedSizeChunk()
     loader = TextLoader(path='../assert/full_text_loader.txt')
     docs = loader.load()

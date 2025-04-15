@@ -7,7 +7,6 @@ import Icon from '@/components/icon';
 import { KnowledgeValues, Card } from '@/app/opspilot/types/knowledge';
 import ModifyKnowledgeModal from './modifyKnowledge';
 import PermissionWrapper from '@/components/permission';
-import knowledgeStyle from './index.module.scss';
 import styles from '@/app/opspilot/styles/common.module.scss';
 import { useTranslation } from '@/utils/i18n';
 import { getIconTypeByIndex } from '@/app/opspilot/utils/knowledgeBaseUtils';
@@ -118,10 +117,10 @@ const KnowledgePage = () => {
         />
       </div>
       <Spin spinning={loading}>
-        <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4 ${knowledgeStyle.knowledge}`}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
           <PermissionWrapper
             requiredPermissions={['Add']}
-            className={`p-4 rounded-xl flex items-center justify-center shadow-md cursor-pointer ${knowledgeStyle.add}`}
+            className="p-4 rounded-xl flex items-center justify-center shadow-md cursor-pointer bg-[var(--color-bg)]"
           >
             <div
               className="w-full h-full flex items-center justify-center"
@@ -134,7 +133,7 @@ const KnowledgePage = () => {
           {filteredCards.map((card, index) => (
             <div
               key={card.id}
-              className={`p-4 rounded-xl relative shadow-md cursor-pointer ${knowledgeStyle.card}`}
+              className="p-4 rounded-xl relative shadow-md cursor-pointer bg-[var(--color-bg)]"
               onClick={() => router.push(`/opspilot/knowledge/detail?id=${card.id}&name=${card.name}&desc=${card.introduction}`)}
             >
               <div className="absolute top-6 right-2" onClick={(e) => e.stopPropagation()}>
@@ -148,12 +147,12 @@ const KnowledgePage = () => {
                 <div className="rounded-full">
                   <Icon type={getIconTypeByIndex(index)} className="text-4xl" />
                 </div>
-                <h3 className="ml-2 text-sm font-semibold truncate" title={card.name}>
+                <h3 className="ml-2 text-sm font-semibold truncate text-[var(--color-text-1)]" title={card.name}>
                   {card.name}
                 </h3>
               </div>
-              <p className={`my-5 text-xs line-clamp-3 ${knowledgeStyle.desc}`}>{card.introduction}</p>
-              <div className={`absolute bottom-4 right-4 font-mini ${knowledgeStyle.desc}`}>
+              <p className="mt-3 mb-2 text-xs line-clamp-3 h-[50px] text-[var(--color-text-3)]">{card.introduction}</p>
+              <div className="flex items-end justify-end text-[var(--color-text-4)] font-mini w-full text-right">
                 <span>{t('knowledge.form.owner')}: {card.created_by} ｜ {t('knowledge.form.group')}: {Array.isArray(card.team_name) ? card.team_name.join(',') : '--'}</span>
               </div>
             </div>

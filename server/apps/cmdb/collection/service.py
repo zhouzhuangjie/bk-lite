@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Type
 
@@ -731,7 +732,7 @@ class CollectNetworkMetrics(CollectBase):
         self.collect_inst = self.get_collect_inst()
         self.is_topo = self.collect_inst.is_network_topo
         self.set_metrics()
-        self.interfaces_data = []
+        self.interfaces_data = {}
 
     def set_metrics(self):
         if self.is_topo:
@@ -877,99 +878,108 @@ class CollectNetworkMetrics(CollectBase):
                         data[field] = index_data.get(key_or_func, "")
 
                 self.result.setdefault(model_id, []).append(data)
+                if model_id == "interface":
+                    self.interfaces_data[data["inst_name"]] = data
 
         if self.is_topo:
             relationships = self.find_interface_relationships(topo_data)
+            self.add_interface_assos(relationships)
             # 把接口的关联补充接口的关联关系中
 
-    def find_interface_relationships(self, snmp_data):
-        """
-        寻找网络设备接口之间的关联关系
-        """
+    def add_interface_assos(self, relationships):
+        for relationship in relationships:
+            source_inst_name = relationship["source_inst_name"]
+            if not self.interfaces_data.get(source_inst_name):
+                continue
+            data = {'asst_id': 'connect',
+                    'inst_name': relationship["target_inst_name"],
+                    'model_asst_id': 'interface_connect_interface',
+                    'model_id': 'interface'
+                    }
+            self.interfaces_data.get(source_inst_name)["assos"].append(data)
 
-        # Step 1: 数据分类
-        arp_ifindex = [entry for entry in snmp_data if entry[self.TAG] == "ARP-IfIndex"]
-        arp_physaddress = [entry for entry in snmp_data if entry[self.TAG] == "ARP-PhysAddress"]
-        iparr_table = [entry for entry in snmp_data if entry[self.TAG] == "IpAddr-IpAddr"]
-        iftable_descr = [entry for entry in snmp_data if entry[self.TAG] == "IFTable-IfDescr"]
-        iftable_alias = [entry for entry in snmp_data if entry[self.TAG] == "IFTable-IfAlias"]
+    def find_interface_relationships(self, data):
+        # 数据结构
+        device_interfaces = defaultdict(dict)  # {instance_id: {ifindex: {"ifdescr": ..., "mac": ..., "ifalias": ...}}}
+        ip_to_mac = defaultdict(dict)  # {instance_id: {ip: mac}}
+        arp_table = defaultdict(dict)  # {instance_id: {ip: {"ifindex": ..., "mac": ...}}}
 
-        # Step 2: 构建接口名称映射表（优先使用接口别名）
-        interface_names = {}
-        for entry in iftable_descr:
-            instance_id = entry["instance_id"]
-            interface_id = entry[self.IF_INDEX]
-            key = f"{instance_id}_{interface_id}"
-            interface_names[key] = entry[self.VAL]  # 默认使用接口描述
-        for entry in iftable_alias:
-            if entry.get(self.VAL):
-                instance_id = entry["instance_id"]
-                interface_id = entry[self.IF_INDEX]
-                key = f"{instance_id}_{interface_id}"
-                interface_names[key] = entry[self.VAL]  # 覆盖为接口别名（优先级更高）
+        # 预处理数据
+        for entry in data:
+            instance_id = entry['instance_id']
+            tag = entry['tag']
+            ifindex = entry.get('ifindex')
+            value = entry.get('val')
 
-        # Step 3: 构建 MAC-IP 映射表（基于 ARP 表）
-        mac_ip_mapping = {}
-        for arp_index, arp_phys in zip(arp_ifindex, arp_physaddress):
-            # 从 ARP 表中找到对应的 IP 地址
-            ip_entry = next(
-                (entry for entry in iparr_table if entry[self.IF_INDEX] == arp_index[self.IF_INDEX]),
-                None
-            )
-            if ip_entry:
-                mac_ip_mapping[arp_phys[self.VAL]] = ip_entry[self.VAL]  # MAC -> IP
+            if tag == 'IFTable-IfDescr':  # 接口描述
+                device_interfaces[instance_id].setdefault(ifindex, {})['ifdescr'] = value
+            elif tag == 'IFTable-PhysAddress':  # 接口MAC地址
+                device_interfaces[instance_id].setdefault(ifindex, {})['mac'] = self.normalize_mac(value)
+            elif tag == 'IFTable-IfAlias':  # 接口别名
+                device_interfaces[instance_id].setdefault(ifindex, {})['ifalias'] = value
+            elif tag == 'IpAddr-IpAddr':  # IP地址与MAC地址的映射
+                mac = device_interfaces[instance_id].get(ifindex, {}).get('mac')
+                if mac:
+                    ip_to_mac[instance_id][value] = mac
+            elif tag == 'ARP-IfIndex':  # ARP表中的接口索引
+                arp_table[instance_id].setdefault(ifindex, {})['ifindex'] = value
+            elif tag == 'ARP-PhysAddress':  # ARP表中的MAC地址
+                arp_table[instance_id].setdefault(ifindex, {})['mac'] = self.normalize_mac(value)
 
-        # Step 4: 构建 IP-接口映射表（基于 IPARR 表）
-        ip_interface_mapping = {}
-        for entry in iparr_table:
-            key = entry[self.VAL]  # IP
-            ip_interface_mapping[key] = (
-                entry["instance_id"], entry[self.IF_INDEX])  # IP -> (instance_id, interface_id)
+        # 构建 MAC 到设备和接口的索引
+        mac_to_device = {}
+        for instance_id, interfaces in device_interfaces.items():
+            for ifindex, details in interfaces.items():
+                mac = details.get('mac')
+                if mac:
+                    mac_to_device[mac] = (instance_id, ifindex)
 
-        # Step 5: 寻找接口关联关系
-        relationships = []
-        for mac, ip in mac_ip_mapping.items():
-            if ip in ip_interface_mapping:
-                target_instance_id, target_interface_id = ip_interface_mapping[ip]
-                target_interface_key = f"{target_instance_id}_{target_interface_id}"
-                target_interface_name = interface_names.get(target_interface_key,
-                                                            f"Interface-{target_interface_id}")  # 默认值为接口 ID
+        # 构建连接关系
+        relations = []
+        for src_instance, src_arp in arp_table.items():
+            for ip, arp_info in src_arp.items():
+                dst_mac = arp_info.get('mac')
+                if not dst_mac:
+                    continue
 
-                # 格式化目标模型实例名
-                target_inst_name = self.set_interface_inst_name({
-                    "instance_id": target_instance_id,
-                    "alias": target_interface_name,
-                    "description": target_interface_name
-                })
+                # 使用索引快速查找目标设备和接口
+                if dst_mac in mac_to_device:
+                    dst_instance, dst_ifindex = mac_to_device[dst_mac]
+                    if dst_instance == src_instance:
+                        continue  # 跳过同一设备
 
-                # 获取原模型实例名
-                source_instance = next(
-                    (entry for entry in snmp_data if
-                     entry[self.TAG] == "IFTable-PhysAddress" and entry[self.VAL] == mac),
-                    None
-                )
-                if source_instance:
-                    source_instance_id = source_instance["instance_id"]
-                    source_interface_id = source_instance[self.IF_INDEX]
-                    source_interface_key = f"{source_instance_id}_{source_interface_id}"
-                    source_interface_name = interface_names.get(source_interface_key,
-                                                                f"Interface-{source_interface_id}")
+                    src_ifindex = arp_info.get('ifindex')
+                    src_interface = device_interfaces[src_instance].get(src_ifindex, {})
+                    dst_interface = device_interfaces[dst_instance].get(dst_ifindex, {})
 
-                    source_inst_name = self.set_interface_inst_name({
-                        "instance_id": source_instance_id,
-                        "alias": source_interface_name,
-                        "description": source_interface_name
-                    })
-
-                    # 构建关联关系
-                    relationships.append({
-                        "model_id": "network_interface",
-                        "inst_name": target_inst_name,
+                    relations.append({
+                        "source_device": src_instance,
+                        # "source_interface": src_interface.get('ifalias') or src_interface.get('ifdescr'),
+                        "source_inst_name": self.set_interface_inst_name(
+                            data={"instance_id": src_instance, **self.set_alias_descr(src_interface)}),
+                        "target_device": dst_instance,
+                        # "target_interface": dst_interface.get('ifalias') or dst_interface.get('ifdescr'),
+                        "target_inst_name": self.set_interface_inst_name(
+                            data={"instance_id": dst_instance, **self.set_alias_descr(dst_interface)}),
+                        "model_id": "interface",
                         "asst_id": "connect",
                         "model_asst_id": "interface_connect_interface",
-                        "source_inst_name": source_inst_name,  # 原模型实例名
-                        "target_inst_name": target_inst_name,  # 目标模型实例名
                     })
 
-        # Step 6: 返回结果
-        return relationships
+        return relations
+
+    @staticmethod
+    def set_alias_descr(data):
+        """设置别名"""
+        result = {"description": data["ifdescr"]}
+        if data.get("ifalias", ""):
+            result["alias"] = data["ifalias"]
+
+        return result
+
+    @staticmethod
+    def normalize_mac(mac):
+        """将 MAC 地址标准化为统一格式"""
+        if mac.startswith("0x"):
+            mac = mac[2:]  # 去掉 "0x"
+        return ":".join(mac[i:i + 2] for i in range(0, len(mac), 2)).lower()

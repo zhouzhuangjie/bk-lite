@@ -159,3 +159,18 @@
     }
   }
 }
+
+.batchOperationMenu {
+  :global {
+    .ant-dropdown-menu-item {
+      padding: 0 !important;
+      div {
+        width: 100%;
+      }
+      >span {
+        width: 100%;
+        display: flex;
+      }
+    }
+  }
+}

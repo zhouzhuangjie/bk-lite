@@ -14,7 +14,7 @@ load_dotenv()
 @pytest.mark.asyncio
 async def test_react_agent_without_tools():
     mcp_servers: List[MCPServer] = [
-        MCPServer(name="time mcp", url="http://127.0.0.1:17000/sse"),
+        # MCPServer(name="time mcp", url="http://127.0.0.1:17000/sse"),
     ]
 
     request = ReActAgentRequest(
