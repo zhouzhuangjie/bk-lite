@@ -20,6 +20,7 @@ import { useColumns } from '@/app/node-manager/hooks/node';
 import Mainlayout from '../mainlayout/layout';
 import useApiClient from '@/utils/request';
 import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
+import useApiCollector from '@/app/node-manager/api/collector';
 import useCloudId from '@/app/node-manager/hooks/useCloudid';
 import { useTelegrafMap } from '@/app/node-manager/constants/cloudregion';
 import ControllerInstall from './controllerInstall';
@@ -32,6 +33,7 @@ import {
   useCollectoritems,
 } from '@/app/node-manager/constants/cloudregion';
 import { cloneDeep } from 'lodash';
+import { ColumnItem } from '@/types';
 const { confirm } = Modal;
 const { Search } = Input;
 
@@ -48,6 +50,7 @@ const Node = () => {
   const name = searchParams.get('name') || '';
   const { isLoading, del } = useApiClient();
   const { getnodelist } = useApiCloudRegion();
+  const { getCollectorlist } = useApiCollector();
   const [nodelist, setNodelist] = useState<TableDataItem[]>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -60,6 +63,7 @@ const Node = () => {
   const [showInstallCollectorTable, setShowInstallCollectorTable] =
     useState<boolean>(false);
   const [system, setSystem] = useState<string>('linux');
+  const [activeColumns, setActiveColumns] = useState<ColumnItem[]>([]);
   const router = useRouter();
   const checkConfig = (row: TableDataItem) => {
     const data = {
@@ -86,66 +90,6 @@ const Node = () => {
     setShowInstallCollectorTable(false);
   }, []);
 
-  const getCollectors = (collectors: TableDataItem) => {
-    const seenIds = new Set(); // 用于存储已经出现过的 id
-    const data = collectors.filter((item: TableDataItem) => {
-      if (!seenIds.has(item.id)) {
-        seenIds.add(item.id); // 如果 id 没有出现过，添加到集合中
-        return true; // 保留这个元素
-      }
-      return false; // 如果 id 已经出现过，过滤掉这个元素
-    });
-    return data.map((tex: TableDataItem) => {
-      if (tex.configuration_name === 'Nats Executor') {
-        return {
-          title: tex.configuration_name,
-          dataIndex: tex.configuration_name,
-          render: (key: string, item: TableDataItem) => {
-            const target = (item.status.collectors || []).find(
-              (item: TableDataItem) =>
-                item.configuration_name === tex.configuration_name
-            );
-            return (
-              <Tooltip title={`${target?.message}`}>
-                <Tag
-                  bordered={false}
-                  color={!target?.status ? 'success' : 'error'}
-                >
-                  {!item.status?.status ? 'Running' : 'Error'}
-                </Tag>
-              </Tooltip>
-            );
-          },
-        };
-      }
-      return {
-        title: tex.collector_name,
-        dataIndex: tex.collector_id,
-        render: (key: string, item: TableDataItem) => {
-          const target = (item.status.collectors || []).find(
-            (item: TableDataItem) => item.collector_id === tex.collector_id
-          );
-          return (
-            <div>
-              <span
-                className="recordStatus"
-                style={{
-                  backgroundColor:
-                    statusMap[target?.status]?.color || '#b2b5bd',
-                }}
-              ></span>
-              <span
-                style={{ color: statusMap[target?.status]?.color || '#b2b5bd' }}
-              >
-                {target?.message || '--'}
-              </span>
-            </div>
-          );
-        },
-      };
-    });
-  };
-
   const enableOperateSideCar = useMemo(() => {
     if (!selectedRowKeys.length) return true;
     const list = (nodelist || []).filter((item) =>
@@ -155,16 +99,11 @@ const Node = () => {
   }, [selectedRowKeys, nodelist]);
 
   const tableColumns = useMemo(() => {
-    if (!nodelist?.length) return columns;
-    const activeColumns = cloneDeep(columns);
-    const collectors = getCollectors(
-      nodelist.reduce((pre, cur) => {
-        return pre.concat(cur.status?.collectors || []);
-      }, [])
-    );
-    activeColumns.splice(2, 0, ...collectors);
-    return activeColumns;
-  }, [columns, nodelist, statusMap]);
+    if (!activeColumns?.length) return columns;
+    const _columns = cloneDeep(columns);
+    _columns.splice(3, 0, ...activeColumns);
+    return _columns;
+  }, [columns, nodelist, statusMap, activeColumns]);
 
   const enableOperateCollecter = useMemo(() => {
     if (!selectedRowKeys.length) return true;
@@ -176,9 +115,20 @@ const Node = () => {
 
   useEffect(() => {
     if (!isLoading) {
-      getNodes();
+      initData();
     }
   }, [isLoading]);
+
+  const initData = (params?: any) => {
+    setLoading(true);
+    const getNodeData = params ? getNodes('init', params) : getNodes('init');
+    Promise.all([
+      getNodeData,
+      getCollectors(params?.operating_system || system),
+    ]).finally(() => {
+      setLoading(false);
+    });
+  };
 
   const handleSidecarMenuClick: MenuProps['onClick'] = (e) => {
     if (e.key === 'uninstallSidecar') {
@@ -201,7 +151,7 @@ const Node = () => {
           try {
             await del(`/monitor/api/monitor_policy/${params}/`);
             message.success(t('common.operationSuccessful'));
-            getNodes();
+            getNodes('refresh');
           } finally {
             resolve(true);
           }
@@ -249,7 +199,7 @@ const Node = () => {
     setSearchText(value);
     const params = getParams();
     params.name = value;
-    getNodes(params);
+    getNodes('refresh', params);
   };
 
   const getParams = () => {
@@ -260,19 +210,25 @@ const Node = () => {
     };
   };
 
-  const getNodes = async (params?: {
-    name?: string;
-    operating_system?: string;
-    cloud_region_id?: number;
-  }) => {
+  const getNodes = async (
+    type: string,
+    params?: {
+      name?: string;
+      operating_system?: string;
+      cloud_region_id?: number;
+    }
+  ) => {
     setLoading(true);
-    const res = await getnodelist(params || getParams());
-    const data = res.map((item: TableDataItem) => ({
-      ...item,
-      key: item.id,
-    }));
-    setLoading(false);
-    setNodelist(data);
+    try {
+      const res = await getnodelist(params || getParams());
+      const data = res.map((item: TableDataItem) => ({
+        ...item,
+        key: item.id,
+      }));
+      setNodelist(data);
+    } finally {
+      setLoading(type === 'init');
+    }
   };
 
   const handleInstallController = () => {
@@ -282,13 +238,78 @@ const Node = () => {
 
   const onSystemChange = (id: string) => {
     setSystem(id);
+    setActiveColumns([]);
+    setNodelist([]);
     const params = getParams();
     params.operating_system = id;
-    getNodes(params);
+    initData(params);
+  };
+
+  const getCollectors = async (selectedsystem: string) => {
+    const data = await getCollectorlist({
+      node_operating_system: selectedsystem,
+    });
+    const columnItems = data.map((tex: TableDataItem) => {
+      if (
+        ['natsexecutor_windows', 'natsexecutor_linux'].includes(
+          tex.id as string
+        )
+      ) {
+        return {
+          title: tex.name,
+          dataIndex: tex.id,
+          render: (key: string, item: TableDataItem) => {
+            const target = (item.status.collectors || []).find(
+              (item: TableDataItem) => item.collector_id === tex.id
+            );
+            return target ? (
+              <Tooltip title={`${target?.message}`}>
+                <Tag
+                  bordered={false}
+                  color={!target?.status ? 'success' : 'error'}
+                >
+                  {!item.status?.status ? 'Running' : 'Error'}
+                </Tag>
+              </Tooltip>
+            ) : (
+              '--'
+            );
+          },
+        };
+      }
+      return {
+        title: tex.name,
+        dataIndex: tex.id,
+        render: (key: string, item: TableDataItem) => {
+          const target = (item.status.collectors || []).find(
+            (item: TableDataItem) => item.collector_id === tex.id
+          );
+          return target ? (
+            <div>
+              <span
+                className="recordStatus"
+                style={{
+                  backgroundColor:
+                    statusMap[target?.status]?.color || '#b2b5bd',
+                }}
+              ></span>
+              <span
+                style={{ color: statusMap[target?.status]?.color || '#b2b5bd' }}
+              >
+                {target?.message || '--'}
+              </span>
+            </div>
+          ) : (
+            '--'
+          );
+        },
+      };
+    });
+    setActiveColumns(columnItems);
   };
 
   const handleCollector = (config = { type: '', taskId: '' }) => {
-    getNodes();
+    getNodes('refresh');
     if (['installCollector', 'uninstallController'].includes(config.type)) {
       setTaskId(config.taskId);
       setTableType(
@@ -321,7 +342,7 @@ const Node = () => {
                 />
                 <ReloadOutlined
                   className="mr-[8px]"
-                  onClick={() => getNodes()}
+                  onClick={() => getNodes('refresh')}
                 />
                 <Button
                   type="primary"
