@@ -10,7 +10,7 @@ load_dotenv()
 def test_vllm_reranker():
     headers = {
         "accept": "application/json", "Content-Type": "application/json",
-        "Authorization": f"Bearer {os.getenv('TEST_VLLM_API_TOKEN')}"
+        "Authorization": f"Bearer {os.getenv('TEST_INFERENCE_TOKEN')}"
     }
     data = {
         "model": "bce-reranker-base_v1",
@@ -21,5 +21,5 @@ def test_vllm_reranker():
         ]
     }
     response = requests.post(
-        os.getenv('TEST_VLLM_BCE_RERANK_URL'), headers=headers, json=data)
+        f"{os.getenv('TEST_INFERENCE_BASE_URL')}/rerank", headers=headers, json=data)
     print(json.dumps(response.json(), indent=2))
