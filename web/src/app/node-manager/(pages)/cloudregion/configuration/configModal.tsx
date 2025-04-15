@@ -33,7 +33,8 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
   } = useApiCloudRegion();
   const cloudid = useCloudId();
   const { t } = useTranslation();
-  const columns = useConfigModalColumns(); const configformRef = useRef<FormInstance>(null);
+  const columns = useConfigModalColumns();
+  const configformRef = useRef<FormInstance>(null);
   const [configVisible, setConfigVisible] = useState<boolean>(false);
   const [configForm, setConfigForm] = useState<TableDataItem>();
   const [editeConfigId, setEditeConfigId] = useState<string>('');
@@ -53,26 +54,34 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
   //初始化表单的数据
   useEffect(() => {
     if (!configVisible) return;
-    getvariablelist(Number(cloudid)).then((res) => {
-      const tempdata: VarSourceItem[] = [];
-      res.forEach((item: VarResItem) => {
-        tempdata.push({
-          key: item.id,
-          name: item.key,
-          description: item.description || '--',
-        });
-      });
-      setVardataSource(tempdata);
-    });
+    const initializeForm = async () => {
+      const res = await getvariablelist(Number(cloudid));
+      const tempdata = res.map((item: VarResItem) => ({
+        key: item.id,
+        name: item.key,
+        description: item.description || '--',
+      }));
+      setVardataSource(tempdata)
+    };
+
     if (['edit', 'edit_child'].includes(type)) {
-      configformRef.current?.resetFields();
       configformRef.current?.setFieldsValue(configForm);
+    } else {
+      configformRef.current?.resetFields();
     }
+
+    initializeForm();
   }, [configForm, configVisible]);
 
   const handleCancel = () => {
     setConfigVisible(false);
   };
+
+  const handleSuccess = () => {
+    onSuccess();
+    setConfirmLoading(false);
+    setConfigVisible(false);
+  }
 
   const handleUpdate = (
     name: string,
@@ -84,9 +93,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
       config_template: configinfo,
       collector_id: collector,
     }).then(() => {
-      onSuccess();
-      setConfirmLoading(false);
-      setConfigVisible(false);
+      handleSuccess();
       message.success(t('common.updateSuccess'));
     });
   };
@@ -98,16 +105,14 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
       config_type,
       collector_config
     } = configForm as TableDataItem;
-    
+
     updatechildconfig(id as string, {
       collect_type,
       config_type,
       collector_config,
       content: configinfo,
     }).then(() => {
-      onSuccess();
-      setConfirmLoading(false);
-      setConfigVisible(false);
+      handleSuccess();
       message.success(t('common.updateSuccess'));
     });
   };
@@ -115,13 +120,12 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
   //处理配置编辑和子配置编辑的确定事件
   const handleConfirm = () => {
     configformRef.current?.validateFields().then((values) => {
+      const { name, collector, configinfo } = values;
       setConfirmLoading(true);
       if (type === 'edit') {
-        const { name, collector, configinfo } = values;
         handleUpdate(name, collector, configinfo);
         return;
       }
-      const { configinfo } = values;
       handleChildUpdate(configinfo);
     });
   };

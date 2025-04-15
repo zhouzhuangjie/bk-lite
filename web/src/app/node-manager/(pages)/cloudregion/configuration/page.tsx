@@ -47,22 +47,24 @@ const Configration = () => {
     configinfo: '',
     nodes: [],
   });
+  const isDisabled = selectedconfigurationRowKeys?.length === 0;
+
+  const showConfigurationModal = (type:string, form: any) => {
+    configurationRef.current?.showModal({
+      type,
+      form,
+    })
+  }
 
   //点击编辑配置文件的触发事件
   const configurationClick = (key: string) => {
     const configurationformdata = configdata.find((item) => item.key === key);
-    configurationRef.current?.showModal({
-      type: 'edit',
-      form: configurationformdata,
-    });
+    showConfigurationModal('edit', configurationformdata);
   };
 
   // 子配置编辑触发弹窗事件
   const hanldeSubEditClick = (item: any) => {
-    configurationRef.current?.showModal({
-      type: 'edit_child',
-      form: item,
-    });
+    showConfigurationModal('edit_child', item);
   };
 
   const openSub = (key: string, item?: any) => {
@@ -83,16 +85,11 @@ const Configration = () => {
 
   useEffect(() => {
     //图标进行禁用
-    const isDisabled = selectedconfigurationRowKeys?.length === 0;
-    if (isDisabled) {
-      modifydeleteconfigurationref.current?.setAttribute(
-        'disabled',
-        isDisabled.toString()
-      );
+    if (modifydeleteconfigurationref.current) {
+      modifydeleteconfigurationref.current.disabled = isDisabled;
       return;
     }
-    modifydeleteconfigurationref.current?.removeAttribute('disabled');
-  }, [selectedconfigurationRowKeys]);
+  }, [isDisabled]);
 
   //处理多选触发的事件逻辑
   const rowSelection: TableProps<TableProps>['rowSelection'] = {
@@ -113,7 +110,7 @@ const Configration = () => {
     setLoading(true);
     getconfiglist(Number(cloudid), search)
       .then((res) => {
-        const filters: string[] = [];
+        const filterSet = new Set<string>();
         const data = res.map((item: IConfiglistprops) => {
           const config = {
             key: item.id,
@@ -124,8 +121,7 @@ const Configration = () => {
             configinfo: item.config_template,
             nodes: item.nodes?.length ? item.nodes[0] : '--',
           };
-          if (!filters.includes(config.collector))
-            filters.push(config.collector);
+          filterSet.add(item.collector as string);
           return config;
         });
         setFilters(filters);
