@@ -124,7 +124,7 @@ const Configration = () => {
           filterSet.add(item.collector as string);
           return config;
         });
-        setFilters(filters);
+        setFilters(Array.from(filterSet));
         setConfigdata(data);
       })
       .finally(() => {

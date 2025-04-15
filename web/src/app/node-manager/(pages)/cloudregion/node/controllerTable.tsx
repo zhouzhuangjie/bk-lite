@@ -69,7 +69,9 @@ const ControllerTable: React.FC<ControllerInstallProps> = ({
       },
       {
         title: t(
-          `node-manager.cloudregion.node.${config.type === 'collector' ? 'collector' : 'sidecar'}`
+          `node-manager.cloudregion.node.${
+            config.type === 'collector' ? 'collector' : 'sidecar'
+          }`
         ),
         dataIndex: 'result',
         width: 100,
@@ -112,7 +114,7 @@ const ControllerTable: React.FC<ControllerInstallProps> = ({
   useEffect(() => {
     if (isLoading) return;
     clearTimer();
-    if (config.taskId) {
+    if (config.taskId && config.type) {
       getNodeList('refresh');
       timerRef.current = setInterval(() => {
         getNodeList('timer');

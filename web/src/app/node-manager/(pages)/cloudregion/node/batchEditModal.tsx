@@ -8,7 +8,7 @@ import React, {
   useEffect,
   useCallback,
 } from 'react';
-import { Input, Button, Form, Select } from 'antd';
+import { Input, Button, Form, Select, InputNumber } from 'antd';
 import OperateModal from '@/components/operate-modal';
 import type { FormInstance } from 'antd';
 import {
@@ -58,28 +58,34 @@ const BatchEditModal = forwardRef<ModalRef, ModalProps>(
     }, [groupVisible, groupForm]);
 
     const renderFormItem = useCallback(() => {
-      if (field === 'password') return <Input.Password />;
-      if (field === 'os')
-        return (
-          <Select>
-            {systemList.map((item: SegmentedItem) => (
-              <Option key={item.value} value={item.value}>
-                {item.label}
-              </Option>
-            ))}
-          </Select>
-        );
-      if (field === 'organizations')
-        return (
-          <Select mode="multiple" maxTagCount="responsive">
-            {groupList.map((item: SegmentedItem) => (
-              <Option key={item.value} value={item.value}>
-                {item.label}
-              </Option>
-            ))}
-          </Select>
-        );
-      return <Input />;
+      switch (field) {
+        case 'password':
+          return <Input.Password />;
+        case 'os':
+          return (
+            <Select>
+              {systemList.map((item: SegmentedItem) => (
+                <Option key={item.value} value={item.value}>
+                  {item.label}
+                </Option>
+              ))}
+            </Select>
+          );
+        case 'organizations':
+          return (
+            <Select mode="multiple" maxTagCount="responsive">
+              {groupList.map((item: SegmentedItem) => (
+                <Option key={item.value} value={item.value}>
+                  {item.label}
+                </Option>
+              ))}
+            </Select>
+          );
+        case 'port':
+          return <InputNumber min={1} precision={0} className="w-full" />;
+        default:
+          return <Input />;
+      }
     }, [field]);
 
     const handleSubmit = () => {

@@ -47,6 +47,7 @@
         "startCollector": "开启采集器",
         "restartCollector": "重启采集器",
         "uninstallCollector": "卸载采集器",
+        "stopCollector": "停止采集器",
         "installCollector": "安装采集器",
         "config": "配置",
         "btntext1": "如果您没有所需的配置文件，请单击",

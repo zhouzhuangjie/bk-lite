@@ -82,6 +82,10 @@ const useCollectoritems = (): MenuProps['items'] => {
         label: t('node-manager.cloudregion.node.restartCollector'),
         key: 'restartCollector',
       },
+      {
+        label: t('node-manager.cloudregion.node.stopCollector'),
+        key: 'stopCollector',
+      },
       //   {
       //     label: t('node-manager.cloudregion.node.uninstallCollector'),
       //     key: 'uninstallCollector',
