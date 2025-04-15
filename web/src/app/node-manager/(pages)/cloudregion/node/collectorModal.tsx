@@ -155,7 +155,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
         onCancel={handleCancel}
         footer={
           <>
-            <Button key="back" loading={confirmLoading} onClick={handleCancel}>
+            <Button key="back" onClick={handleCancel}>
               {t('common.cancel')}
             </Button>
             {Popconfirmarr.includes(type) ? (
