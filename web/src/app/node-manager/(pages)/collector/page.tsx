@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
 import collectorstyle from "./index.module.scss";
-import { Segmented, Menu } from "antd";
+import { Segmented, Menu, Input, Space, Select } from "antd";
 import useApiClient from '@/utils/request';
 import useApiCollector from "@/app/node-manager/api/collector/index";
 import EntityList from "@/components/entity-list/index";
@@ -12,6 +12,7 @@ import CollectorModal from "./collectorModal";
 import { ModalRef } from "@/app/node-manager/types";
 import { useMenuItem } from "@/app/node-manager/constants/collector";
 import { Option } from "@/types";
+const { Search } = Input;
 
 const Collector = () => {
   const router = useRouter();
@@ -47,8 +48,11 @@ const Collector = () => {
   }, [isLoading])
 
   useEffect(() => {
-    if (isLoading) return;
-    fetchCollectorlist(search, selected);
+    if (search && !isLoading) {
+      fetchCollectorlist(search, selected);
+    } else {
+      firstFetchList(search, selected);
+    }
   }, [value])
 
   const navigateToCollectorDetail = (item: CardItem) => {
@@ -109,7 +113,7 @@ const Collector = () => {
       handleResult(controllerList, 'controller', selected);
       handleResult(collectorList, 'collector', selected);
     } catch (error) {
-      console.log(error)
+      console.log(error);
     } finally {
       setLoading(false);
     }
@@ -184,7 +188,13 @@ const Collector = () => {
       fetchCollectorlist(search, selected);
       return;
     }
-    firstFetchList();
+    firstFetchList(search, selected);
+  };
+
+  const handleValueChange = (value: string) => {
+    setSelected([]);
+    setSearch('');
+    setValue(value);
   };
 
   return (
@@ -194,16 +204,40 @@ const Collector = () => {
         className="custom-tabs"
         options={titleItem}
         defaultValue='collector'
-        onChange={(value) => setValue(value)}
+        onChange={(value) => handleValueChange(value)}
       />
       {/* 卡片的渲染 */}
       <EntityList
         data={value === 'controller' ? controllerCards : collectorCards}
         loading={loading}
         menuActions={(value) => menuActions(value)}
-        filter filterOptions={options} changeFilter={changeFilter}
+        filter={false}
+        operateSection={(
+          <Space.Compact>
+            <Select
+              size='middle'
+              allowClear={true}
+              placeholder={`${t('common.select')}...`}
+              mode="multiple"
+              maxTagCount="responsive"
+              className="w-[170px]"
+              options={options}
+              value={selected}
+              onChange={changeFilter}
+            />
+            <Search
+              size='middle'
+              allowClear
+              enterButton
+              placeholder={`${t('common.search')}...`}
+              className="w-60"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onSearch={onSearch}
+            />
+          </Space.Compact>
+        )}
         {...ifOpenAddModal()}
-        onSearch={onSearch}
         onCardClick={(item: CardItem) => navigateToCollectorDetail(item)}></EntityList>
       <CollectorModal ref={modalRef} onSuccess={handleSubmit} />
     </div>

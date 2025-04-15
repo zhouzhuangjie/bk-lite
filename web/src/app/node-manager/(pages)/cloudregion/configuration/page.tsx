@@ -141,7 +141,7 @@ const Configration = () => {
       return;
     }
     subConfiguration.current?.getChildConfig();
-  }
+  };
 
   return (
     <Mainlayout>
