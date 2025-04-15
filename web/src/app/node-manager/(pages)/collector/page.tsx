@@ -45,15 +45,7 @@ const Collector = () => {
     if (!isLoading) {
       firstFetchList(search, selected);
     }
-  }, [isLoading])
-
-  useEffect(() => {
-    if (search && !isLoading) {
-      fetchCollectorlist(search, selected);
-    } else {
-      firstFetchList(search, selected);
-    }
-  }, [value])
+  }, [isLoading, value])
 
   const navigateToCollectorDetail = (item: CardItem) => {
     router.push(`
@@ -184,11 +176,7 @@ const Collector = () => {
 
   const onSearch = (search: string) => {
     setSearch(search);
-    if (search) {
-      fetchCollectorlist(search, selected);
-      return;
-    }
-    firstFetchList(search, selected);
+    fetchCollectorlist(search, selected);
   };
 
   const handleValueChange = (value: string) => {
