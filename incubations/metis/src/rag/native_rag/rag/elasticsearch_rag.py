@@ -59,6 +59,7 @@ class ElasticSearchRag:
         # Calculate offset from page and size
         offset = (req.page - 1) * req.size if req.page > 0 else 0
 
+        # Build the query
         query = {
             "query": {
                 "bool": {
@@ -69,6 +70,16 @@ class ElasticSearchRag:
             "size": req.size,
             "_source": {"excludes": ["vector"]}  # Exclude the vector field
         }
+
+        # Add match_phrase query if req.query is not empty
+        if req.query:
+            if not query["query"]["bool"].get("must"):
+                query["query"]["bool"]["must"] = []
+                query["query"]["bool"]["must"].append({
+                    "match_phrase": {
+                        "text": req.query
+                    }
+                })
 
         # Execute the search query
         response = self.es.search(index=req.index_name, body=query)
