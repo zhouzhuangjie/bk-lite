@@ -32,11 +32,23 @@ const useInstallMap = (): Record<string, Record<string, string>> => {
         color: 'var(--color-primary)',
         text: t('node-manager.cloudregion.node.installing'),
       },
+      waitingUninstall: {
+        color: 'var(--color-primary)',
+        text: t('node-manager.cloudregion.node.uninstalling'),
+      },
       running: {
         color: 'var(--color-text-2)',
         text: t('node-manager.cloudregion.node.running'),
       },
+      runningUninstall: {
+        color: 'var(--color-text-2)',
+        text: t('node-manager.cloudregion.node.running'),
+      },
       finished: {
+        color: '#2dcb56',
+        text: t('node-manager.cloudregion.node.successInstall'),
+      },
+      finishedUninstall: {
         color: '#2dcb56',
         text: t('node-manager.cloudregion.node.successInstall'),
       },
