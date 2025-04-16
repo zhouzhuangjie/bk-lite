@@ -42,7 +42,7 @@ const CommonContextProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    if(!pathname.startsWith('/cmdb/assetData')) {
+    if(drop && !pathname.startsWith('/cmdb/assetData')) {
       drop('assetData');
     }
   }, [pathname]);

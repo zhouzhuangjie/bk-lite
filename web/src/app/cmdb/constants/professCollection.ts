@@ -117,6 +117,16 @@ export const SNMP_FORM_INITIAL_VALUES = {
   privacy: 'aes',
 };
 
+export const SQL_FORM_INITIAL_VALUES = {
+  instId: undefined,
+  cycle: CYCLE_OPTIONS.ONCE,
+  enterType: ENTER_TYPE.AUTOMATIC,
+  name: '',
+  password: '',
+  port: '3306',
+  timeout: 60,
+};
+
 export const validateCycleTime = (
   type: string,
   value: any,
