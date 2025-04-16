@@ -11,6 +11,7 @@
     "@antv/x6": "^2.18.1",
     "@antv/x6-react-shape": "^2.2.3",
     "@antv/xflow": "^2.2.4",
+    "react-activation": "^0.13.0",
     "react-beautiful-dnd": "^13.1.1",
     "react-masonry-css": "latest"
   },

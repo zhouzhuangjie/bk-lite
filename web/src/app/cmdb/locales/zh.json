@@ -87,6 +87,7 @@
         "save": "保存",
         "publish": "发布",
         "saveOnly": "仅保存",
+        "execute": "执行",
         "next": "下一步",
         "pre": "上一步",
         "train": "训练",
@@ -294,5 +295,15 @@
         "soidTitle": "SOID库",
         "soidMessage": "您可以通过管理设备sysObjectID的映射关系，扩充网络设备自动发现的能力",
         "scanFeatureMessage": "您可以通过设置识别规则，判断扫描的资产类型。"
+    },
+    "OperationLog": {
+        "title": "操作日志",
+        "description": "展示所有增删改等历史记录，您可以根据操作者/操作类型/时间等条件进行查询",
+        "timeRange": "时间范围",
+        "operator": "操作者",
+        "operationType": "操作类型",
+        "summary": "概述",
+        "operationObject": "操作对象",
+        "operationTime": "操作时间"
     }
 }

@@ -5,7 +5,8 @@ import useApiClient from '@/utils/request';
 import { UserItem, Organization } from '@/app/cmdb/types/assetManage';
 import { convertArray, filterNodesWithAllParents } from '@/app/cmdb/utils/common';
 import Spin from '@/components/spin';
-
+import { usePathname } from 'next/navigation';
+import { useAliveController } from 'react-activation';
 interface CommonContextType {
   permissionGroupsInfo: PermissionGroupsInfo;
   userList: UserItem[];
@@ -33,10 +34,19 @@ const CommonContextProvider = ({ children }: { children: React.ReactNode }) => {
   );
   const [pageLoading, setPageLoading] = useState(false);
   const { get } = useApiClient();
+  const { drop } = useAliveController();
+  const pathname = usePathname();
 
   useEffect(() => {
     getPermissionGroups();
   }, []);
+
+  useEffect(() => {
+    if(drop && !pathname.startsWith('/cmdb/assetData')) {
+      drop('assetData');
+    }
+  }, [pathname]);
+    
 
   const getPermissionGroups = async () => {
     setPageLoading(true);
@@ -76,7 +86,7 @@ const CommonContextProvider = ({ children }: { children: React.ReactNode }) => {
         permissionGroupsInfo,
         userList,
         authOrganizations,
-        organizations,
+        organizations
       }}
     >
       {children}
