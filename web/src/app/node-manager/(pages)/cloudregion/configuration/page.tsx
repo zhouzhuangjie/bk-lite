@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Input } from 'antd';
 import type { GetProps } from 'antd';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import CustomTable from '@/components/custom-table';
 import { ModalRef } from '@/app/node-manager/types/index';
 import { useTranslation } from '@/utils/i18n';
@@ -27,10 +27,13 @@ const Configration = () => {
   const subConfiguration = useRef<SubRef>(null);
   const configurationRef = useRef<ModalRef>(null);
   const cloudid = useCloudId();
+  const router = useRouter();
   const { t } = useTranslation();
   const { isLoading } = useApiClient();
   const searchParams = useSearchParams();
   const nodeId = searchParams.get('id') || '';
+  const cloudregionId = searchParams.get('cloud_region_id') || '';
+  const name = searchParams.get('name') || '';
   const { getconfiglist, getnodelist } = useApiCloudRegion();
   const { getCollectorlist } = useApiCollector();
   const [loading, setLoading] = useState<boolean>(true);
@@ -69,14 +72,16 @@ const Configration = () => {
     setNodeData(item);
     setShowSub(true);
   };
+  
+  const nodeClick = () => {
+    router.push(`/node-manager/cloudregion/node?cloudregion_id=${cloudregionId}&name=${name}&id=${nodeId}`);
+  };
 
   const { columns } = useConfigColumns({
     configurationClick,
     filter: filters as string[],
     openSub,
-    nodeClick: (key: string) => {
-      console.log(key)
-    }
+    nodeClick,
   });
 
   useEffect(() => {
@@ -103,7 +108,7 @@ const Configration = () => {
         operatingsystem: item.operating_system,
         nodecount: item.node_count,
         configinfo: item.config_template,
-        nodes: nodes?.length ? [...nodes,'1.1.1.1'] : '--',
+        nodes: nodes?.length ? nodes : '--',
       };
       return config;
     });

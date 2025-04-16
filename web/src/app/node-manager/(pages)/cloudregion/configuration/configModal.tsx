@@ -6,7 +6,7 @@ import React, {
   useImperativeHandle,
   useEffect,
 } from 'react';
-import { Input, Form, Button, message } from 'antd';
+import { Input, Form, Select, Button, message } from 'antd';
 import CustomTable from '@/components/custom-table';
 import OperateModal from '@/components/operate-modal';
 import type { FormInstance } from 'antd';
@@ -24,6 +24,7 @@ import {
 import useCloudId from '@/app/node-manager/hooks/useCloudid';
 import CodeEditor from '@/app/node-manager/components/codeEditor';
 import { useConfigModalColumns } from '@/app/node-manager/hooks/configuration';
+import { cloneDeep } from 'lodash';
 
 const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
   const {
@@ -41,13 +42,21 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
   const [type, setType] = useState<string>('add');
   const [vardataSource, setVardataSource] = useState<VarSourceItem[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
+  const [options, setOptions] = useState<any[]>([]);
 
   useImperativeHandle(ref, () => ({
     showModal: ({ type, form }) => {
+      const dataForm: TableDataItem = cloneDeep(form) as TableDataItem;
+      const options = dataForm?.nodes.map((item: any) => ({
+        label: item,
+        value: item,
+      }));
+      dataForm.nodes = options.length ? options[0].value : '--';
       setConfigVisible(true);
       setType(type);
       setEditeConfigId(form?.key);
-      setConfigForm(form);
+      setOptions(options);
+      setConfigForm(dataForm);
     },
   }));
 
@@ -66,7 +75,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
     };
 
     configformRef.current?.resetFields();
-    if (['edit', 'edit_child'].includes(type)) { 
+    if (['edit', 'edit_child'].includes(type)) {
       configformRef.current?.setFieldsValue(configForm);
     }
 
@@ -186,7 +195,6 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
       <Form
         ref={configformRef}
         layout="vertical"
-        initialValues={{ operatingsystem: 'linux' }}
         colon={false}
       >
         <>
@@ -212,7 +220,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
               },
             ]}
           >
-            <Input disabled />
+            <Select disabled options={options} />
           </Form.Item>
           <Form.Item
             name="collector"

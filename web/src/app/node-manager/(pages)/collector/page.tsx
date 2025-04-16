@@ -23,8 +23,8 @@ const Collector = () => {
   const [value, setValue] = useState<string | number>('collector');
   const [controllerCards, setControllerCards] = useState<CardItem[]>([]);
   const [collectorCards, setCollectorCards] = useState<CardItem[]>([]);
-  const [controllerCount, setControllerCount] = useState<number>(0);
-  const [collectorCount, setCollectorCount] = useState<number>(0);
+  const controllerCount = controllerCards.length;
+  const collectorCount = collectorCards.length;
   const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState<string>('');
   const [options, setOptions] = useState<Option[]>([]);
@@ -57,6 +57,11 @@ const Collector = () => {
     collector: setCollectorCards,
   };
 
+  const getList: Record<string, (params: any) => Promise<any>> = {
+    controller: (params: any) => getControllerList(params),
+    collector: (params: any) => getCollectorlist(params),
+  }
+
   const filterBySelected = (data: any[], selected: string[]) => {
     if (!selected?.length) return data;
     const selectedSet = new Set(selected);
@@ -68,7 +73,8 @@ const Collector = () => {
   const handleResult = (res: any, value: string, selected?: string[]) => {
     const optionSet = new Set<string>();
     const _options: Option[] = [];
-    let tempdata = res.map((item: any) => {
+    const filter = res.filter((item: any) => !item.controller_default_run);
+    let tempdata = filter.map((item: any) => {
       const system = item.node_operating_system || item.os;
       if (system && !optionSet.has(system)) {
         optionSet.add(system);
@@ -98,10 +104,8 @@ const Collector = () => {
     };
     try {
       const res = await Promise.all([getControllerList(params), getCollectorlist(params)]);
-      const controllerList = res[0];
-      const collectorList = res[1];
-      setControllerCount(controllerList.length);
-      setCollectorCount(collectorList.length);
+      const controllerList = res[0].filter((item: any) => !item.controller_default_run);
+      const collectorList = res[1].filter((item: any) => !item.controller_default_run);
       handleResult(controllerList, 'controller', selected);
       handleResult(collectorList, 'collector', selected);
     } catch (error) {
@@ -112,17 +116,10 @@ const Collector = () => {
   };
 
   const fetchCollectorlist = async (search?: string, selected?: string[]) => {
-    let res = null;
     const params = { name: search };
     try {
       setLoading(true);
-      if (value === 'collector') {
-        res = await getCollectorlist(params);
-        setCollectorCount(res.length);
-      } else {
-        res = await getControllerList(params);
-        setControllerCount(res.length);
-      }
+      const res = await getList[value](params);
       handleResult(res, value as string, selected);
     } catch (error) {
       console.log(error);
@@ -200,6 +197,7 @@ const Collector = () => {
         loading={loading}
         menuActions={(value) => menuActions(value)}
         filter={false}
+        search={false}
         operateSection={(
           <Space.Compact>
             <Select
