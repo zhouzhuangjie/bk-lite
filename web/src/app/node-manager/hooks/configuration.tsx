@@ -84,35 +84,36 @@ export const useConfigColumns = ({
       dataIndex: 'name',
       fixed: 'left',
       width: 300,
-      render: (text: string) => <p>{text}</p>,
     },
     {
       title: t('node-manager.cloudregion.node.node'),
       dataIndex: 'nodes',
       width: 150,
       render: (_, record) => {
-        return record.nodes?.map((node: any, index: number) => (
-          <>
-            <Button
-              key={node}
-              type="link"
-              className="text-blue-500 hover:text-blue-700"
-              onClick={() => nodeClick(node)}>
-              {node}
-            </Button>
-            {index === record.nodes.length - 1 ? '' : ', '}
-          </>
-        ))
+        return(<>
+          <Button
+            type="link"
+            className="text-blue-500 hover:text-blue-700"
+            onClick={() => nodeClick()}>
+            {record.nodes.map((item: any) => item.label).join(',')}
+          </Button>
+        </>)
       },
     },
     {
-      title: t('node-manager.cloudregion.Configuration.sidecar'),
-      dataIndex: 'collector',
-      align: 'center',
-      filters: filter.map((item) => ({ text: item, value: item })),
+      title: t('node-manager.cloudregion.node.system'),
+      dataIndex: 'operatingsystem',
       width: 150,
-      onFilter: (value, record) => record?.collector === value,
-      render: (text: string) => <p>{text}</p>,
+    },
+    {
+      title: t('node-manager.cloudregion.Configuration.sidecar'),
+      dataIndex: 'collector_name',
+      align: 'center',
+      filters: filter,
+      width: 150,
+      onFilter: (value, record) => {
+        return record?.collector_name === value
+      },
     },
     {
       title: t('common.actions'),
@@ -181,7 +182,6 @@ export const useSubConfigColumns = ({
             color="primary"
             variant="link"
             onClick={() => {
-              console.log(record);
               edit({
                 ...record,
                 nodes: nodeData.nodes || '--',

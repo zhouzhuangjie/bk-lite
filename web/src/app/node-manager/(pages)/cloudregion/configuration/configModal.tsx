@@ -46,17 +46,13 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
 
   useImperativeHandle(ref, () => ({
     showModal: ({ type, form }) => {
-      const dataForm: TableDataItem = cloneDeep(form) as TableDataItem;
-      const options = dataForm?.nodes.map((item: any) => ({
-        label: item,
-        value: item,
-      }));
-      dataForm.nodes = options.length ? options[0].value : '--';
+      const _form = cloneDeep(form) as TableDataItem;
+      setOptions(_form?.nodes);
+      _form.nodes = _form?.nodes[0]?.value;
       setConfigVisible(true);
       setType(type);
-      setEditeConfigId(form?.key);
-      setOptions(options);
-      setConfigForm(dataForm);
+      setEditeConfigId(_form?.key);
+      setConfigForm(_form);
     },
   }));
 
@@ -90,7 +86,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
     onSuccess();
     setConfirmLoading(false);
     setConfigVisible(false);
-  }
+  };
 
   const handleUpdate = (
     name: string,
@@ -194,6 +190,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
     return (
       <Form
         ref={configformRef}
+        initialValues={{nodes: options[0]?.value}}
         layout="vertical"
         colon={false}
       >
@@ -220,7 +217,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
               },
             ]}
           >
-            <Select disabled options={options} />
+            <Select options={options} />
           </Form.Item>
           <Form.Item
             name="collector"

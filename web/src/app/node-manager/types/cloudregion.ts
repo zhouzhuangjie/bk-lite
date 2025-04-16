@@ -1,11 +1,12 @@
 import type { TableDataItem } from '@/app/node-manager/types/index';
+import { ColumnFilterItem } from 'antd/es/table/interface';
 
 //配置页面的table的列定义
 interface ConfigHookParams {
   configurationClick: (key: string) => void;
   openSub: (key: string, item?: any) => void;
-  nodeClick: (key: string) => void;
-  filter: string[];
+  nodeClick: () => void;
+  filter: ColumnFilterItem[];
 }
 // 子配置页面table的列定义
 interface SubConfigHookParams {

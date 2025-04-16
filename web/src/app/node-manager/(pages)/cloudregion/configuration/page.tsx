@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Input } from 'antd';
 import type { GetProps } from 'antd';
+import { ColumnFilterItem } from 'antd/es/table/interface';
 import { useRouter, useSearchParams } from 'next/navigation';
 import CustomTable from '@/components/custom-table';
 import { ModalRef } from '@/app/node-manager/types/index';
@@ -39,7 +40,7 @@ const Configration = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [configdata, setConfigdata] = useState<ConfigDate[]>([]);
   const [showSub, setShowSub] = useState<boolean>(false);
-  const [filters, setFilters] = useState<string[]>([]);
+  const [filters, setFilters] = useState<ColumnFilterItem[]>([]);
   const [nodeData, setNodeData] = useState<ConfigDate>({
     key: '',
     name: '',
@@ -50,7 +51,7 @@ const Configration = () => {
     nodes: [],
   });
 
-  const showConfigurationModal = (type:string, form: any) => {
+  const showConfigurationModal = (type: string, form: any) => {
     configurationRef.current?.showModal({
       type,
       form,
@@ -72,39 +73,45 @@ const Configration = () => {
     setNodeData(item);
     setShowSub(true);
   };
-  
+
   const nodeClick = () => {
     router.push(`/node-manager/cloudregion/node?cloudregion_id=${cloudregionId}&name=${name}&id=${nodeId}`);
   };
 
   const { columns } = useConfigColumns({
     configurationClick,
-    filter: filters as string[],
+    filter: filters,
     openSub,
     nodeClick,
   });
 
   useEffect(() => {
     if (isLoading) return;
-    getConfiglist(nodeId || '');
-    getCollectorList();
+    setLoading(true);
+    Promise.all([getConfiglist(nodeId || '',true), getCollectorList()]).then(() => {
+      setLoading(false);
+    });
   }, [isLoading]);
 
   //获取配置文件列表
-  const getConfiglist = async (search?: string) => {
+  const getConfiglist = async (search: string, init?: boolean) => {
     setLoading(true);
-    const res = await Promise.all([getconfiglist(Number(cloudid), search), getnodelist({cloud_region_id: Number(cloudid)})]);
+    const res = await Promise.all([getconfiglist(Number(cloudid), search), getnodelist({ cloud_region_id: Number(cloudid) })]);
     const configlist = res[0];
     const nodeList = res[1];
     const data = configlist.map((item: IConfiglistprops) => {
-      const nodes = item.nodes?.map((node:string) => {
+      const nodes = item.nodes?.map((node: string) => {
         const nodeItem = nodeList.find((nodeData: any) => nodeData.id === node);
-        return nodeItem?.ip;
+        return {
+          label: nodeItem?.ip,
+          value: nodeItem?.id,
+        };
       });
       const config = {
         key: item.id,
         name: item.name,
         collector: item.collector as string,
+        collector_name: item.collector_name,
         operatingsystem: item.operating_system,
         nodecount: item.node_count,
         configinfo: item.config_template,
@@ -113,15 +120,17 @@ const Configration = () => {
       return config;
     });
     setConfigdata(data);
-    setLoading(false);
+    if (!init) setLoading(false);
   };
 
   // 获取采集器列表
   const getCollectorList = async () => {
     const res = await getCollectorlist({});
-    const filters = res.map((item: any) => item.id);
-    setFilters(filters);
-  }
+    const filters = new Map();
+    res.filter((item: any) => !item.controller_default_run)
+      .map((item: any) => filters.set(item.name,{ text: item.name, value: item.name }));
+    setFilters(Array.from(filters.values()) as ColumnFilterItem[]);
+  };
 
   //搜索框的触发事件
   const onSearch: SearchProps['onSearch'] = (value) => {
@@ -130,14 +139,14 @@ const Configration = () => {
 
   // 子配置返回配置页面事件
   const handleCBack = () => {
-    getConfiglist();
+    getConfiglist('');
     setShowSub(false);
   };
 
   // 弹窗确认成功后的回调
   const onSuccess = () => {
     if (!showSub) {
-      getConfiglist();
+      getConfiglist('');
       return;
     }
     subConfiguration.current?.getChildConfig();
@@ -176,6 +185,7 @@ const Configration = () => {
         {/* 弹窗组件（添加，编辑，应用）用于刷新页面 */}
         <ConfigModal
           ref={configurationRef}
+
           onSuccess={onSuccess}
         ></ConfigModal>
       </div>

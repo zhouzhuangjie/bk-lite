@@ -104,8 +104,8 @@ const Collector = () => {
     };
     try {
       const res = await Promise.all([getControllerList(params), getCollectorlist(params)]);
-      const controllerList = res[0].filter((item: any) => !item.controller_default_run);
-      const collectorList = res[1].filter((item: any) => !item.controller_default_run);
+      const controllerList = res[0];
+      const collectorList = res[1];
       handleResult(controllerList, 'controller', selected);
       handleResult(collectorList, 'collector', selected);
     } catch (error) {
