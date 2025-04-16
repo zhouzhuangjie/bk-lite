@@ -312,9 +312,7 @@ const Node = () => {
     getNodes('refresh');
     if (['installCollector', 'uninstallController'].includes(config.type)) {
       setTaskId(config.taskId);
-      setTableType(
-        config.type.includes('Collector') ? 'collector' : 'controller'
-      );
+      setTableType(config.type);
       setShowNodeTable(false);
       setShowInstallCollectorTable(true);
     }

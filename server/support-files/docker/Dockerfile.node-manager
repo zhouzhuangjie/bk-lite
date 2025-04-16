@@ -7,7 +7,6 @@ RUN apt-get install -y vim supervisor
 ADD ./support-files/supervisor/app.conf  /etc/supervisor/conf.d/app.conf
 ADD ./support-files/supervisor/celery.conf  /etc/supervisor/conf.d/celery.conf
 ADD ./support-files/supervisor/beat.conf  /etc/supervisor/conf.d/beat.conf
-ADD ./support-files/supervisor/consumer.conf  /etc/supervisor/conf.d/consumer.conf
 ADD ./support-files/supervisor/nats.conf  /etc/supervisor/conf.d/nats.conf
 
 ADD . .
@@ -15,5 +14,5 @@ ADD . .
 RUN pip install -r ./requirements/requirements-core.txt
 RUN pip install -r ./requirements/requirements-node_mgmt.txt
 
-RUN chmod +x ./support-files/docker/startup.sh
-ENTRYPOINT ["/bin/bash","/apps/support-files/docker/startup.sh"]
+RUN chmod +x ./support-files/docker/node-manager.sh
+ENTRYPOINT ["/bin/bash","/apps/support-files/docker/node-manager.sh"]

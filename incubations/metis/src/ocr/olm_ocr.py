@@ -4,7 +4,7 @@ import json
 
 
 class OlmOcr:
-    def __init__(self, base_url: str, api_key: str, model="allenai/olmOCR-7B-0225-preview"):
+    def __init__(self, base_url: str, api_key: str, model="olmOCR-7B-0225-preview"):
         self.base_url = base_url
         self.api_key = api_key
         self.model = model
