@@ -10,5 +10,4 @@ WORKDIR /app
 ADD . .
 
 RUN pip install -r ./requirements/requirements.in
-
 CMD ["supervisord", "-n"]

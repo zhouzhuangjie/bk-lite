@@ -34,13 +34,24 @@ class ElasticSearchRag:
             metadata_filter.append(
                 {"term": {f"metadata.{key}.keyword": value}})
 
+        # Build the query with metadata filter
         query = {
             "query": {
-                "bool": {
-                    "filter": metadata_filter
-                }
+            "bool": {
+                "filter": metadata_filter
+            }
             }
         }
+        
+        # Add match_phrase query if req.query is not empty
+        if req.query:
+            if not query["query"]["bool"].get("must"):
+                query["query"]["bool"]["must"] = []
+                query["query"]["bool"]["must"].append({
+                "match_phrase": {
+                    "text": req.query
+                }
+            })
 
         count = self.es.count(index=req.index_name, body=query)
         return count['count']
