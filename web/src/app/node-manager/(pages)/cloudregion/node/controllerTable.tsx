@@ -70,7 +70,7 @@ const ControllerTable: React.FC<ControllerInstallProps> = ({
       {
         title: t(
           `node-manager.cloudregion.node.${
-            config.type === 'collector' ? 'collector' : 'sidecar'
+            config.type.includes('Collector') ? 'collector' : 'sidecar'
           }`
         ),
         dataIndex: 'result',
@@ -78,14 +78,18 @@ const ControllerTable: React.FC<ControllerInstallProps> = ({
         key: 'result',
         ellipsis: true,
         render: (value: Record<string, string>) => {
+          const installStatus =
+            config.type === 'uninstallController'
+              ? `${value?.status}Uninstall`
+              : value?.status;
           return (
             <span
               style={{
                 color:
-                  installMay[value?.status]?.color || 'var(--ant-color-text)',
+                  installMay[installStatus]?.color || 'var(--ant-color-text)',
               }}
             >
-              {installMay[value?.status]?.text || '--'}
+              {installMay[installStatus]?.text || '--'}
             </span>
           );
         },
@@ -145,8 +149,9 @@ const ControllerTable: React.FC<ControllerInstallProps> = ({
   const getNodeList = async (refreshType: string) => {
     try {
       setPageLoading(refreshType !== 'timer');
-      const request =
-        config.type === 'collector' ? getCollectorNodes : getControllerNodes;
+      const request = config.type.includes('Collector')
+        ? getCollectorNodes
+        : getControllerNodes;
       const data = await request({ taskId: config.taskId });
       setTableData(
         data.map((item: TableDataItem, index: number) => ({
