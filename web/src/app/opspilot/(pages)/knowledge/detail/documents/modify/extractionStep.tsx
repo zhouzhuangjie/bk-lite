@@ -6,8 +6,7 @@ import { useTranslation } from '@/utils/i18n';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
 import styles from './modify.module.scss';
 import { ModelOption } from '@/app/opspilot/types/knowledge';
-import { getDefaultExtractionMethod, getExtractionMethodMap } from '@/app/opspilot/utils/extractionUtils';
-
+import { getDefaultExtractionMethod } from '@/app/opspilot/utils/extractionUtils';
 import fullTextImg from '@/app/opspilot/img/full_text_extraction.png';
 import chapterImg from '@/app/opspilot/img/chapter_extraction.png';
 import worksheetImg from '@/app/opspilot/img/worksheet_extraction.png';
@@ -22,16 +21,17 @@ const ExtractionStep: React.FC<{
   webLinkData?: { name: string; link: string; deep: number } | null;
   manualData?: { name: string; content: string } | null;
   onConfigChange?: (config: any) => void;
-  initialConfig?: {
+  extractionConfig?: {
     knowledge_source_type?: string;
     knowledge_document_list?: {
       id: number;
+      name?: string;
       enable_ocr_parse: boolean;
       ocr_model: string | null;
       parse_type: string;
     }[];
   };
-}> = ({ knowledgeDocumentIds, fileList, type, webLinkData, manualData, onConfigChange, initialConfig }) => {
+}> = ({ knowledgeDocumentIds, fileList, type, webLinkData, manualData, onConfigChange, extractionConfig }) => {
   const { t } = useTranslation();
   const { fetchOcrModels } = useKnowledgeApi();
   const [modalVisible, setModalVisible] = useState(false);
@@ -45,7 +45,6 @@ const ExtractionStep: React.FC<{
   const extractionMethods = {
     fullText: {
       label: t('knowledge.documents.fullTextExtraction'),
-      backendValue: 'full',
       description: {
         formats: t('knowledge.documents.fullTextFormats'),
         method: t('knowledge.documents.fullTextMethod'),
@@ -56,7 +55,6 @@ const ExtractionStep: React.FC<{
     },
     chapter: {
       label: t('knowledge.documents.chapterExtraction'),
-      backendValue: 'paragraph',
       description: {
         formats: t('knowledge.documents.chapterFormats'),
         method: t('knowledge.documents.chapterMethod'),
@@ -67,7 +65,6 @@ const ExtractionStep: React.FC<{
     },
     worksheet: {
       label: t('knowledge.documents.worksheetExtraction'),
-      backendValue: 'excel_full_content_parse',
       description: {
         formats: t('knowledge.documents.worksheetFormats'),
         method: t('knowledge.documents.worksheetMethod'),
@@ -78,7 +75,6 @@ const ExtractionStep: React.FC<{
     },
     row: {
       label: t('knowledge.documents.rowExtraction'),
-      backendValue: 'excel_header_row_parse',
       description: {
         formats: t('knowledge.documents.rowFormats'),
         method: t('knowledge.documents.rowMethod'),
@@ -105,10 +101,10 @@ const ExtractionStep: React.FC<{
   }, []);
 
   useEffect(() => {
-    if (initialConfig && initialConfig.knowledge_document_list) {
-      setKnowledgeDocumentList(initialConfig.knowledge_document_list);
+    if (extractionConfig?.knowledge_document_list) {
+      setKnowledgeDocumentList(extractionConfig.knowledge_document_list);
     }
-  }, [initialConfig]);
+  }, [extractionConfig]);
 
   const columns = [
     {
@@ -132,42 +128,57 @@ const ExtractionStep: React.FC<{
     },
   ];
 
-  const data = type === 'web_page' && webLinkData
-    ? [
-      {
+  const data = extractionConfig?.knowledge_document_list
+    ? extractionConfig.knowledge_document_list.map((doc) => {
+      const extension = (doc as any)?.name?.split('.').pop()?.toLowerCase() || 'text';
+      return {
+        key: doc.id,
+        name: (doc as any)?.name,
+        method: extractionMethods[doc.parse_type as keyof typeof extractionMethods]?.label || extractionMethods[getDefaultExtractionMethod(extension) as keyof typeof extractionMethods]?.label,
+        defaultMethod: doc.parse_type || 'fullText',
+      };
+    })
+    : type === 'web_page' && webLinkData
+      ? [{
         key: knowledgeDocumentIds[0] || 0,
         name: webLinkData.name,
         method: extractionMethods['fullText'].label,
-        defaultMethod: 'fullText',
-      },
-    ]
-    : type === 'manual' && manualData
-      ? [
-        {
+        defaultMethod: 'fullText'
+      }]
+      : type === 'manual' && manualData
+        ? [{
           key: knowledgeDocumentIds[0] || 0,
           name: manualData.name,
           method: extractionMethods['fullText'].label,
-          defaultMethod: 'fullText',
-        },
-      ]
-      : fileList.map((file, index) => {
-        const extension = file.name.split('.').pop()?.toLowerCase() || 'text';
-        const defaultMethod = getDefaultExtractionMethod(extension);
-        return {
-          key: knowledgeDocumentIds[index] || index,
-          name: file.name,
-          method: extractionMethods[defaultMethod as keyof typeof extractionMethods].label,
-          defaultMethod,
-        };
-      });
+          defaultMethod: 'fullText'
+        }]
+        : fileList.map((file, index) => {
+          const extension = file.name.split('.').pop()?.toLowerCase() || 'text';
+          const defaultMethod = getDefaultExtractionMethod(extension);
+          return {
+            key: knowledgeDocumentIds[index] || index,
+            name: file.name,
+            method: extractionMethods[defaultMethod as keyof typeof extractionMethods].label,
+            defaultMethod,
+          };
+        });
 
   const [knowledgeDocumentList, setKnowledgeDocumentList] = useState<any[]>(
-    data.map((item) => ({
-      id: item.key,
-      enable_ocr_parse: false,
-      ocr_model: null,
-      parse_type: item.defaultMethod,
-    }))
+    extractionConfig?.knowledge_document_list
+      ? extractionConfig.knowledge_document_list.map((doc) => ({
+        id: doc.id,
+        name: doc.name || '',
+        enable_ocr_parse: doc.enable_ocr_parse,
+        ocr_model: doc.ocr_model,
+        parse_type: doc.parse_type,
+      }))
+      : data.map((item) => ({
+        id: item.key,
+        name: item.name,
+        enable_ocr_parse: false,
+        ocr_model: null,
+        parse_type: item.defaultMethod,
+      }))
   );
 
   const handleConfigure = (record: { defaultMethod: keyof typeof extractionMethods; [key: string]: any }, index: number) => {
@@ -176,8 +187,18 @@ const ExtractionStep: React.FC<{
 
     setSelectedDocument({ ...record, index });
     setSelectedMethod(documentConfig?.parse_type || record.defaultMethod);
-    setOcrEnabled(documentConfig?.enable_ocr_parse || extractionMethods[record.defaultMethod]?.defaultOCR || false);
+    setOcrEnabled((documentConfig?.enable_ocr_parse ?? extractionMethods[record.defaultMethod]?.defaultOCR) || false);
     setSelectedOcrModel(documentConfig?.ocr_model || (defaultModel ? defaultModel.id : null));
+
+    if (extractionConfig && extractionConfig.knowledge_document_list) {
+      const doc = extractionConfig.knowledge_document_list.find((d) => d.id === record.key);
+      if (doc) {
+        setSelectedMethod(record.defaultMethod);
+        setOcrEnabled(doc.enable_ocr_parse);
+        setSelectedOcrModel(doc.ocr_model);
+      }
+    }
+
     setModalVisible(true);
   };
 
@@ -194,15 +215,17 @@ const ExtractionStep: React.FC<{
   const handleConfirm = () => {
     const updatedConfig = {
       id: knowledgeDocumentList[selectedDocument.index]?.id,
+      name: knowledgeDocumentList[selectedDocument.index]?.name, // Ensure name is included
       enable_ocr_parse: ocrEnabled,
       ocr_model: ocrEnabled ? selectedOcrModel : null,
-      mode: selectedMethod ? getExtractionMethodMap(selectedMethod) : 'full',
+      parse_type: selectedMethod || 'fullText',
     };
 
     const updatedList = [...knowledgeDocumentList];
     updatedList[selectedDocument.index] = updatedConfig;
 
     setKnowledgeDocumentList(updatedList);
+    console.log('Updated knowledge document list:', updatedList);
 
     if (onConfigChange) {
       onConfigChange({

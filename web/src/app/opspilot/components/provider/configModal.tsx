@@ -39,7 +39,7 @@ const ProviderModal: React.FC<ProviderModalProps> = ({
         modelName: model.llm_config?.model || '',
         type: model.llm_model_type || '',
         team: model.team,
-        apiKey: model.llm_config?.openai_api_key || '',
+        apiKey: filterType === 'llm_model' ? model.llm_config?.openai_api_key || '' : config?.api_key || '',
         url: filterType === 'llm_model' ? model.llm_config?.openai_base_url || '' : config?.base_url || '',
         enabled: model.enabled || false,
         consumer_team: model.consumer_team ?? '',
@@ -119,15 +119,13 @@ const ProviderModal: React.FC<ProviderModalProps> = ({
         >
           <AntdInput placeholder={`${t('common.inputMsg')} ${t('provider.form.url')}`} />
         </Form.Item>
-        {filterType === 'llm_model' && (
-          <Form.Item
-            name="apiKey"
-            label={t('provider.form.key')}
-            rules={[{ required: true, message: `${t('common.inputMsg')}${t('provider.form.key')}` }]}
-          >
-            <AntdInput.Password visibilityToggle={false} />
-          </Form.Item>
-        )}
+        <Form.Item
+          name="apiKey"
+          label={t('provider.form.key')}
+          rules={[{ required: true, message: `${t('common.inputMsg')}${t('provider.form.key')}` }]}
+        >
+          <AntdInput.Password visibilityToggle={false} />
+        </Form.Item>
         <Form.Item
           name="enabled"
           label={t('provider.form.enabled')}
