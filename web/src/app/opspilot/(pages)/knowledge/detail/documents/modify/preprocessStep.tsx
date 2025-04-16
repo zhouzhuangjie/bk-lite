@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, InputNumber, Select, Form, Button, Empty, Skeleton, List, Image } from 'antd';
 import styles from './modify.module.scss';
 import type { StaticImageData } from 'next/image';
@@ -56,12 +56,12 @@ const PreprocessStep: React.FC<{
   ];
 
   const [chunkType, setChunkType] = useState<keyof typeof chunkImages>(
-    initialConfig.chunk_type || chunkTypes[0].key // Default to the first chunk type
+    initialConfig.chunk_type || chunkTypes[0].key
   );
   const [formData, setFormData] = useState({
-    chunkSize: initialConfig.chunk_size || 256,
-    chunkOverlap: initialConfig.chunk_overlap || 0,
-    semanticModel: initialConfig.semantic_embedding_model || null,
+    chunkSize: initialConfig?.general_parse_chunk_size || 256,
+    chunkOverlap: initialConfig?.general_parse_chunk_overlap || 0,
+    semanticModel: initialConfig?.semantic_chunk_parse_embedding_model || null,
   });
   const [previewData, setPreviewData] = useState<PreviewData[]>([]);
   const [loadingPreview, setLoadingPreview] = useState<boolean>(false);
@@ -87,7 +87,24 @@ const PreprocessStep: React.FC<{
     none: 'none',
   };
 
-  const { previewChunk } = useKnowledgeApi();
+  const { previewChunk, fetchEmbeddingModels } = useKnowledgeApi();
+  const [embeddingModels, setEmbeddingModels] = useState<{ id: string; name: string }[]>([]);
+  const [loadingModels, setLoadingModels] = useState<boolean>(true);
+
+  useEffect(() => {
+    const fetchModels = async () => {
+      try {
+        const models = await fetchEmbeddingModels();
+        setEmbeddingModels(models);
+      } catch {
+        setEmbeddingModels([]);
+      } finally {
+        setLoadingModels(false);
+      }
+    };
+
+    fetchModels();
+  }, []);
 
   const updateConfig = (updates: Partial<typeof formData> & { chunkType?: keyof typeof chunkImages }) => {
     const newChunkType = updates.chunkType ?? chunkType;
@@ -97,15 +114,17 @@ const PreprocessStep: React.FC<{
       semanticModel: updates.chunkType ? null : formData.semanticModel,
       ...updates,
     };
-  
+
     setChunkType(newChunkType);
     setFormData(updatedFormData);
-  
+
     onConfigChange({
       knowledge_source_type: knowledgeSourceType,
       knowledge_document_list: knowledgeDocumentIds,
+      general_parse_chunk_size: updatedFormData.chunkSize,
+      general_parse_chunk_overlap: updatedFormData.chunkOverlap,
+      semantic_chunk_parse_embedding_model: updatedFormData.semanticModel,
       chunk_type: newChunkType,
-      ...updatedFormData,
     });
   };
   
@@ -127,10 +146,17 @@ const PreprocessStep: React.FC<{
         knowledge_document_id: knowledgeDocumentIds[0],
         general_parse_chunk_size: formData.chunkSize,
         general_parse_chunk_overlap: formData.chunkOverlap,
-        embed_model: formData.semanticModel,
+        semantic_chunk_parse_embedding_model: formData.semanticModel,
         chunk_type: chunkType,
       });
-      setPreviewData(data);
+
+      const processedData = data.map((content: string, index: number) => ({
+        id: index + 1,
+        content,
+        characters: content.length,
+      }));
+
+      setPreviewData(processedData);
     } catch {
       setPreviewData([]);
     } finally {
@@ -155,7 +181,7 @@ const PreprocessStep: React.FC<{
               <Icon type={type.icon} className="text-2xl mr-2" />
               <h3 className="text-sm font-semibold">{type.title}</h3>
             </div>
-            <p className="text-xs">{type.desc}</p>
+            <p className="text-xs text-[var(--color-text-3)]">{type.desc}</p>
           </Card>
         ))}
       </div>
@@ -203,10 +229,13 @@ const PreprocessStep: React.FC<{
                       style={{ width: '100%' }}
                       value={formData.semanticModel}
                       onChange={(value) => handleChange('semanticModel', value)}
+                      loading={loadingModels}
                     >
-                      {/* Replace with actual model options */}
-                      <Option value="model1">Model 1</Option>
-                      <Option value="model2">Model 2</Option>
+                      {embeddingModels.map((model) => (
+                        <Option key={model.id} value={model.id}>
+                          {model.name}
+                        </Option>
+                      ))}
                     </Select>
                   </Form.Item>
                 )}
@@ -263,7 +292,7 @@ const PreprocessStep: React.FC<{
             previewData.map((item) => (
               <div key={item.id} className={`rounded-md p-4 mb-3 ${styles.previewItem}`} onClick={() => handleContentClick(item.content)}>
                 <div className="flex justify-between items-center mb-2">
-                  <span className={`text-xs flex items-center ${styles.number}`}>#{item.id.toString().padStart(3, '0')}</span>
+                  <span className={`text-xs flex items-center ${styles.number}`}>#{item.id?.toString().padStart(3, '0')}</span>
                   <span className="flex items-center text-sm">
                     <Icon type="zifu" className="text-xl pr-1" />
                     {item.characters} {t('knowledge.documents.characters')}

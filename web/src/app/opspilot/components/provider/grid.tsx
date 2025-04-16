@@ -104,6 +104,7 @@ const ProviderGrid: React.FC<ProviderGridProps> = ({ models, filterType, loading
       (updatedModel[configField] as ModelConfig) = {
         ...(selectedModel[configField] as ModelConfig),
         base_url: values.url,
+        api_key: values.apiKey,
       };
     }
 
