@@ -4,6 +4,7 @@ import type { TableDataItem } from '@/app/node-manager/types/index';
 interface ConfigHookParams {
   configurationClick: (key: string) => void;
   openSub: (key: string, item?: any) => void;
+  nodeClick: (key: string) => void;
   filter: string[];
 }
 // 子配置页面table的列定义

@@ -74,6 +74,7 @@ export const useApplyColumns = ({
 export const useConfigColumns = ({
   configurationClick,
   openSub,
+  nodeClick,
   filter
 }: ConfigHookParams) => {
   const { t } = useTranslation();
@@ -89,7 +90,20 @@ export const useConfigColumns = ({
       title: t('node-manager.cloudregion.node.node'),
       dataIndex: 'nodes',
       width: 150,
-      render: (text: string) => <p>{text}</p>,
+      render: (_, record) => {
+        return record.nodes?.map((node: any, index: number) => (
+          <>
+            <Button
+              key={node}
+              type="link"
+              className="text-blue-500 hover:text-blue-700"
+              onClick={() => nodeClick(node)}>
+              {node}
+            </Button>
+            {index === record.nodes.length - 1 ? '' : ', '}
+          </>
+        ))
+      },
     },
     {
       title: t('node-manager.cloudregion.Configuration.sidecar'),

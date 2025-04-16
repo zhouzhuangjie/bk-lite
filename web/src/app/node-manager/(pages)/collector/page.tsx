@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import collectorstyle from "./index.module.scss";
 import { Segmented, Menu, Input, Space, Select } from "antd";
 import useApiClient from '@/utils/request';
@@ -144,7 +144,7 @@ const Collector = () => {
     fetchCollectorlist();
   };
 
-  const menuActions = (data: any) => {
+  const menuActions = useCallback((data: any) => {
     return (<Menu
       onClick={(e) => e.domEvent.preventDefault()}
     >
@@ -159,10 +159,10 @@ const Collector = () => {
       }
       )}
     </Menu>)
-  };
+  }, [menuItem, value]);
 
   const changeFilter = (selected: string[]) => {
-    fetchCollectorlist('', selected);
+    fetchCollectorlist(search, selected);
     setSelected(selected);
   };
 

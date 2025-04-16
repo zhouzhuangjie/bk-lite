@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
 import { Input } from 'antd';
-import type { TableProps, GetProps } from 'antd';
+import type { GetProps } from 'antd';
 import { useSearchParams } from 'next/navigation';
 import CustomTable from '@/components/custom-table';
 import { ModalRef } from '@/app/node-manager/types/index';
@@ -13,6 +13,7 @@ import type {
   SubRef,
 } from '@/app/node-manager/types/cloudregion';
 import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
+import useApiCollector from '@/app/node-manager/api/collector';
 import useCloudId from '@/app/node-manager/hooks/useCloudid';
 import Mainlayout from '../mainlayout/layout';
 import configstyle from './index.module.scss';
@@ -30,9 +31,8 @@ const Configration = () => {
   const { isLoading } = useApiClient();
   const searchParams = useSearchParams();
   const nodeId = searchParams.get('id') || '';
-  const { getconfiglist } = useApiCloudRegion();
-  const [selectedconfigurationRowKeys, setSelectedconfigurationRowKeys] =
-    useState<React.Key[]>([]);
+  const { getconfiglist, getnodelist } = useApiCloudRegion();
+  const { getCollectorlist } = useApiCollector();
   const [loading, setLoading] = useState<boolean>(true);
   const [configdata, setConfigdata] = useState<ConfigDate[]>([]);
   const [showSub, setShowSub] = useState<boolean>(false);
@@ -74,54 +74,49 @@ const Configration = () => {
     configurationClick,
     filter: filters as string[],
     openSub,
+    nodeClick: (key: string) => {
+      console.log(key)
+    }
   });
 
   useEffect(() => {
     if (isLoading) return;
     getConfiglist(nodeId || '');
+    getCollectorList();
   }, [isLoading]);
 
-  //处理多选触发的事件逻辑
-  const rowSelection: TableProps<TableProps>['rowSelection'] = {
-    onChange: (selectedRowKeys: React.Key[]) => {
-      console.log(selectedconfigurationRowKeys);
-      setSelectedconfigurationRowKeys(selectedRowKeys);
-    },
-    //禁止选中
-    getCheckboxProps: (record: any) => {
-      return {
-        disabled: record.nodecount,
-        name: record.name,
+  //获取配置文件列表
+  const getConfiglist = async (search?: string) => {
+    setLoading(true);
+    const res = await Promise.all([getconfiglist(Number(cloudid), search), getnodelist({cloud_region_id: Number(cloudid)})]);
+    const configlist = res[0];
+    const nodeList = res[1];
+    const data = configlist.map((item: IConfiglistprops) => {
+      const nodes = item.nodes?.map((node:string) => {
+        const nodeItem = nodeList.find((nodeData: any) => nodeData.id === node);
+        return nodeItem?.ip;
+      });
+      const config = {
+        key: item.id,
+        name: item.name,
+        collector: item.collector as string,
+        operatingsystem: item.operating_system,
+        nodecount: item.node_count,
+        configinfo: item.config_template,
+        nodes: nodes?.length ? [...nodes,'1.1.1.1'] : '--',
       };
-    },
+      return config;
+    });
+    setConfigdata(data);
+    setLoading(false);
   };
 
-  //获取配置文件列表
-  const getConfiglist = (search?: string) => {
-    setLoading(true);
-    getconfiglist(Number(cloudid), search)
-      .then((res) => {
-        const filterSet = new Set<string>();
-        const data = res.map((item: IConfiglistprops) => {
-          const config = {
-            key: item.id,
-            name: item.name,
-            collector: item.collector as string,
-            operatingsystem: item.operating_system,
-            nodecount: item.node_count,
-            configinfo: item.config_template,
-            nodes: item.nodes?.length ? item.nodes[0] : '--',
-          };
-          filterSet.add(item.collector as string);
-          return config;
-        });
-        setFilters(Array.from(filterSet));
-        setConfigdata(data);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  };
+  // 获取采集器列表
+  const getCollectorList = async () => {
+    const res = await getCollectorlist({});
+    const filters = res.map((item: any) => item.id);
+    setFilters(filters);
+  }
 
   //搜索框的触发事件
   const onSearch: SearchProps['onSearch'] = (value) => {
@@ -162,7 +157,6 @@ const Configration = () => {
                 scroll={{ y: 'calc(100vh - 400px)', x: 'max-content' }}
                 columns={columns}
                 dataSource={configdata}
-                rowSelection={rowSelection}
               />
             </div>
           </>
