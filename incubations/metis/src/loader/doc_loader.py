@@ -4,10 +4,6 @@ import tempfile
 import docx
 from langchain_core.documents import Document
 from tqdm import tqdm
-from docx.shared import Inches
-from PIL import Image
-import io
-import numpy as np
 
 from src.ocr.base_ocr import BaseOCR
 

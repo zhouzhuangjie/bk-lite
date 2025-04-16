@@ -146,9 +146,9 @@ async def count_index_document(request, body: ElasticSearchDocumentCountRequest)
         return json({"status": "error", "message": str(e)})
 
 
-@rag_api_router.post("/cusom_content_ingest")
+@rag_api_router.post("/custom_content_ingest")
 @auth.login_required
-async def cusom_content_ingest(request):
+async def custom_content_ingest(request):
     try:
         content = request.form.get('content')
         chunk_mode = request.form.get('chunk_mode')
@@ -199,9 +199,6 @@ async def website_ingest(request):
         chunk_mode = request.form.get('chunk_mode')
         is_preview = request.form.get('preview', 'false').lower() == 'true'
 
-        # 日志记录
-        log_operation_start(is_preview, "网站内容", url=url, max_depth=max_depth)
-
         # 加载网站内容
         loader = WebSiteLoader(url, max_depth)
         docs = loader.load()
@@ -243,6 +240,7 @@ async def website_ingest(request):
 @auth.login_required
 async def file_ingest(request):
     file = request.files.get('file')
+    logger.info(f"上传文件名: {file.name}, 文件大小: {len(file.body) / (1024 * 1024):.2f} MB")
     allowed_types = ['docx', 'pptx', 'ppt', 'doc', 'txt',
                      'jpg', 'png', 'jpeg', 'pdf', 'csv', 'xlsx', 'xls', 'md']
     file_extension = file.name.split(
@@ -320,22 +318,6 @@ def prepare_documents_metadata(docs, is_preview, title, knowledge_id=None):
         return process_documents(docs, title)
     else:
         return process_documents(docs, title, knowledge_id)
-
-
-def log_operation_start(is_preview, content_type, **kwargs):
-    """
-    记录操作开始的日志
-
-    Args:
-        is_preview: 是否为预览模式
-        content_type: 内容类型
-        **kwargs: 额外的日志信息
-    """
-    if is_preview:
-        log_message = f'开始预览{content_type}分块'
-        if kwargs:
-            log_message += f'，参数：{kwargs}'
-        logger.info(log_message)
 
 
 def perform_chunking(docs, chunk_mode, request, is_preview, content_type):
