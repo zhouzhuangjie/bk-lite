@@ -508,7 +508,7 @@ const ControllerInstall: React.FC<ControllerInstallProps> = ({
                       >
                         {sidecarVersionList.map((item) => (
                           <Option value={item.id} key={item.id}>
-                            {item.name}
+                            {item.version}
                           </Option>
                         ))}
                       </Select>
