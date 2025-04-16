@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import Icon from '@/components/icon';
 import {
   UserItem,
@@ -21,7 +21,7 @@ const Ralationships = () => {
   const { t } = useTranslation();
   const commonContext = useCommon();
   const searchParams = useSearchParams();
-  const { modelList, assoTypes, loading, fetchModelData } = useRelationships();
+  const { modelList, assoTypes, loading } = useRelationships();
   const authList = useRef(commonContext?.authOrganizations || []);
   const organizationList: Organization[] = authList.current;
   const users = useRef(commonContext?.userList || []);
@@ -31,10 +31,6 @@ const Ralationships = () => {
   const [activeTab, setActiveTab] = useState<string>('list');
   const modelId: string = searchParams.get('model_id') || '';
   const instId: string = searchParams.get('inst_id') || '';
-
-  useEffect(() => {
-    fetchModelData();
-  }, []);
 
   const handleTabChange = (val: string) => {
     setActiveTab(val);
