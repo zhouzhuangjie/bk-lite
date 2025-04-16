@@ -123,7 +123,7 @@ const KnowledgePage = () => {
             className="p-4 rounded-xl flex items-center justify-center shadow-md cursor-pointer bg-[var(--color-bg)]"
           >
             <div
-              className="w-full h-full flex items-center justify-center"
+              className="w-full h-full flex items-center justify-center min-h-[120px]"
               onClick={() => { setIsModalVisible(true); setEditingCard(null); }}
             >
               <Icon type="tianjia" className="text-2xl" />

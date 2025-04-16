@@ -159,6 +159,8 @@
     "menu": "Skill",
     "add": "Add New Skill",
     "edit": "Edit Skill",
+    "createBlankAgent": "Create Blank Agent",
+    "createFromTemplate": "Create From Template",
     "information": "Information",
     "form": {
       "name": "Name",
@@ -170,7 +172,11 @@
       "temperature": "Temperature",
       "temperatureTip": "Used to control the randomness and creativity of text generation; a low temperature produces more definitive results, while a high temperature increases the diversity and randomness of the text.",
       "prompt": "Prompt",
-      "promptTip": "You can input relevant prompts to guide the model in generating specific responses by providing context or questions to adjust the direction and quality of the output content."
+      "promptTip": "You can input relevant prompts to guide the model in generating specific responses by providing context or questions to adjust the direction and quality of the output content.",
+      "qaType": "Knowledge Q&A",
+      "qaTypeDesc": "With simple configuration, you can generate a chat-based intelligent agent based on the LLM large model. This agent can reference private domain knowledge and is suitable for pure Q&A scenarios.",
+      "toolsType": "Basic Tool",
+      "toolsTypeDesc": "An intelligent agent with reasoning and tool invocation capabilities. This agent can reference private domain knowledge and flexibly choose execution tools, making it suitable for more complex intelligent scenarios."
     },
     "chatEnhancement": "Chat Enhancement",
     "chatHistory": "Chat History",
