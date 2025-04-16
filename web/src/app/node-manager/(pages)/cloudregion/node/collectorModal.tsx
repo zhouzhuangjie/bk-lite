@@ -94,6 +94,14 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
             };
             request = batchoperationcollector;
             break;
+          case 'stopCollector':
+            params = {
+              node_ids: nodeIds,
+              collector_id: collector,
+              operation: 'stop',
+            };
+            request = batchoperationcollector;
+            break;
           default:
             break;
         }
@@ -147,7 +155,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
         onCancel={handleCancel}
         footer={
           <>
-            <Button key="back" loading={confirmLoading} onClick={handleCancel}>
+            <Button key="back" onClick={handleCancel}>
               {t('common.cancel')}
             </Button>
             {Popconfirmarr.includes(type) ? (
