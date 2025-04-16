@@ -20,6 +20,7 @@ class CollectService(object):
             "vmware_info": "VmwareManage",
             "snmp_facts": "SnmpFacts",
             "snmp_topo": "SnmpTopoClient",
+            "mysql_info": "MysqlInfo",
         }
 
     def collect(self):
