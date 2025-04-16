@@ -2,7 +2,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Input } from 'antd';
 import type { TableProps, GetProps } from 'antd';
-import { useSearchParams } from 'next/navigation';
 import CustomTable from '@/components/custom-table';
 import { ModalRef } from '@/app/node-manager/types/index';
 import { useTranslation } from '@/utils/i18n';
@@ -29,8 +28,9 @@ const Configration = () => {
   const { t } = useTranslation();
   const { isLoading } = useApiClient();
   const cloudid = useCloudId();
-  const searchParams = useSearchParams();
-  const nodeId = searchParams.get('id') || '';
+  const nodeId = JSON.parse(
+    sessionStorage.getItem('cloudRegionInfo') || '{}'
+  ).id;
   const { getconfiglist } = useApiCloudRegion();
   const [selectedconfigurationRowKeys, setSelectedconfigurationRowKeys] =
     useState<React.Key[]>([]);
@@ -78,6 +78,9 @@ const Configration = () => {
   useEffect(() => {
     if (isLoading) return;
     getConfiglist(nodeId || '');
+    return () => {
+      sessionStorage.removeItem('cloudRegionInfo');
+    };
   }, [isLoading]);
 
   //组价初始渲染
@@ -149,7 +152,7 @@ const Configration = () => {
       return;
     }
     subConfiguration.current?.getChildConfig();
-  }
+  };
 
   return (
     <Mainlayout>

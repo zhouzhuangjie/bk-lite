@@ -219,7 +219,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
               <Select showSearch allowClear loading={versionLoading}>
                 {packageList.map((item) => (
                   <Option value={item.id} key={item.id}>
-                    {item.name}
+                    {item.version}
                   </Option>
                 ))}
               </Select>

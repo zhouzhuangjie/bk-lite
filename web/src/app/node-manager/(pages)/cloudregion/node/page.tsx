@@ -69,8 +69,8 @@ const Node = () => {
     const data = {
       cloud_region_id: cloudId,
       name,
-      id: row.id + '',
     };
+    sessionStorage.setItem('cloudRegionInfo', JSON.stringify({ id: row.id }));
     const params = new URLSearchParams(data);
     const targetUrl = `/node-manager/cloudregion/configuration?${params.toString()}`;
     router.push(targetUrl);
@@ -92,11 +92,8 @@ const Node = () => {
 
   const enableOperateSideCar = useMemo(() => {
     if (!selectedRowKeys.length) return true;
-    const list = (nodelist || []).filter((item) =>
-      selectedRowKeys.includes(item.key)
-    );
-    return list.some((item) => item.status?.status !== 0);
-  }, [selectedRowKeys, nodelist]);
+    return false;
+  }, [selectedRowKeys]);
 
   const tableColumns = useMemo(() => {
     if (!activeColumns?.length) return columns;
@@ -107,10 +104,7 @@ const Node = () => {
 
   const enableOperateCollecter = useMemo(() => {
     if (!selectedRowKeys.length) return true;
-    const list = (nodelist || []).filter((item) =>
-      selectedRowKeys.includes(item.key)
-    );
-    return list.some((item) => item.status?.status !== 0);
+    return false;
   }, [selectedRowKeys, nodelist]);
 
   useEffect(() => {
@@ -268,7 +262,7 @@ const Node = () => {
                   bordered={false}
                   color={!target?.status ? 'success' : 'error'}
                 >
-                  {!item.status?.status ? 'Running' : 'Error'}
+                  {!target?.status ? 'Running' : 'Error'}
                 </Tag>
               </Tooltip>
             ) : (
@@ -285,20 +279,24 @@ const Node = () => {
             (item: TableDataItem) => item.collector_id === tex.id
           );
           return target ? (
-            <div>
-              <span
-                className="recordStatus"
-                style={{
-                  backgroundColor:
-                    statusMap[target?.status]?.color || '#b2b5bd',
-                }}
-              ></span>
-              <span
-                style={{ color: statusMap[target?.status]?.color || '#b2b5bd' }}
-              >
-                {target?.message || '--'}
-              </span>
-            </div>
+            <Tooltip title={`${target?.message}`}>
+              <div>
+                <span
+                  className="recordStatus"
+                  style={{
+                    backgroundColor:
+                      statusMap[target?.status]?.color || '#b2b5bd',
+                  }}
+                ></span>
+                <span
+                  style={{
+                    color: statusMap[target?.status]?.color || '#b2b5bd',
+                  }}
+                >
+                  {!target?.status ? 'Running' : 'Error'}
+                </span>
+              </div>
+            </Tooltip>
           ) : (
             '--'
           );
