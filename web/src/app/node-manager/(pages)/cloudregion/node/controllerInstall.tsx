@@ -424,7 +424,7 @@ const ControllerInstall: React.FC<ControllerInstallProps> = ({
         <ControllerTable
           config={{
             taskId,
-            type: 'controller',
+            type: 'installController',
             groupList,
           }}
           cancel={cancelInstall}
