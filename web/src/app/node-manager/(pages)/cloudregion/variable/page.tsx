@@ -18,11 +18,11 @@ type SearchProps = GetProps<typeof Input.Search>;
 const { Search } = Input;
 
 const Variable = () => {
-  const { getvariablelist, deletevariable } = useApiCloudRegion();
-  const { isLoading } = useApiClient();
-  const variableRef = useRef<ModalRef>(null);
-  const { t } = useTranslation();
   const cloudid = useCloudId();
+  const { t } = useTranslation();
+  const { isLoading } = useApiClient();
+  const { getvariablelist, deletevariable } = useApiCloudRegion();
+  const variableRef = useRef<ModalRef>(null);
   const [data, setData] = useState<TableDataItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -32,13 +32,13 @@ const Variable = () => {
     }
   }, [isLoading]);
 
-  //根据传入的值打开对应的用户弹窗（添加用户弹窗和编辑用户的弹窗）
   const openUerModal = (type: string, form: TableDataItem) => {
     variableRef.current?.showModal({
       type,
       form,
     });
   };
+
   //遍历数据，取出要回显的数据
   const getFormDataById = (key: string) => {
     const formData = data.find((item) => item.key === key);
@@ -47,7 +47,7 @@ const Variable = () => {
     }
     return formData;
   };
-  //删除的确定的弹窗
+
   const delconfirm = (key: string) => {
     deletevariable(key)
       .then(() => {
@@ -64,12 +64,10 @@ const Variable = () => {
     delconfirm,
   });
 
-  //添加和编辑成功后，重新获取表格数据
   const onsuccessvariablemodal = () => {
     getVariablelist();
   };
 
-  //搜索框的事件
   const onSearch: SearchProps['onSearch'] = (value) => {
     getvariablelist(Number(cloudid), value).then((res) => {
       const tempdata = res.map((item: any) => {
