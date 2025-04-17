@@ -1,66 +1,46 @@
 "use client";
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import collectorstyle from "./index.module.scss";
-import { Segmented, Menu, Input, Space, Select } from "antd";
+import collectorstyle from "../index.module.scss";
+import { Menu, Input, Space, Select } from "antd";
 import useApiClient from '@/utils/request';
 import useApiCollector from "@/app/node-manager/api/collector/index";
 import EntityList from "@/components/entity-list/index";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "@/utils/i18n";
 import type { CardItem } from "@/app/node-manager/types/collector";
-import CollectorModal from "./collectorModal";
+import CollectorModal from "../collectorModal";
 import { ModalRef } from "@/app/node-manager/types";
 import { useMenuItem } from "@/app/node-manager/constants/collector";
 import { Option } from "@/types";
 const { Search } = Input;
 
-const Collector = () => {
+const Controller = () => {
   const router = useRouter();
   const { t } = useTranslation();
   const { isLoading } = useApiClient();
-  const { getCollectorlist, getControllerList } = useApiCollector();
+  const { getControllerList } = useApiCollector();
   const modalRef = useRef<ModalRef>(null);
-  const [value, setValue] = useState<string | number>('collector');
   const [controllerCards, setControllerCards] = useState<CardItem[]>([]);
-  const [collectorCards, setCollectorCards] = useState<CardItem[]>([]);
-  const controllerCount = controllerCards.length;
-  const collectorCount = collectorCards.length;
   const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState<string>('');
   const [options, setOptions] = useState<Option[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const menuItem = useMenuItem();
-  const titleItem = [
-    {
-      label: `${t('node-manager.collector.collector')}(${collectorCount})`,
-      value: 'collector',
-    },
-    {
-      label: `${t('node-manager.collector.controller')}(${controllerCount})`,
-      value: 'controller',
-    },
-  ];
 
   useEffect(() => {
     if (!isLoading) {
       firstFetchList(search, selected);
     }
-  }, [isLoading, value])
+  }, [isLoading])
 
   const navigateToCollectorDetail = (item: CardItem) => {
     router.push(`
-      /node-manager/collector/detail?id=${item.id}&name=${item.name}&introduction=${item.description}&system=${item.tagList[0]}`);
+      /node-manager/sidecar/controller/detail?id=${item.id}&name=${item.name}&introduction=${item.description}&system=${item.tagList[0]}`);
   };
 
   const cardSetters: Record<string, React.Dispatch<React.SetStateAction<CardItem[]>>> = {
-    controller: setControllerCards,
-    collector: setCollectorCards,
+    collector: setControllerCards,
   };
-
-  const getList: Record<string, (params: any) => Promise<any>> = {
-    controller: (params: any) => getControllerList(params),
-    collector: (params: any) => getCollectorlist(params),
-  }
 
   const filterBySelected = (data: any[], selected: string[]) => {
     if (!selected?.length) return data;
@@ -86,7 +66,7 @@ const Collector = () => {
         service_type: item.service_type,
         executable_path: item.executable_path,
         execute_parameters: item.execute_parameters,
-        description: item.introduction || '--',
+        description: item.description || '--',
         icon: 'caijiqizongshu',
         tagList: [system]
       })
@@ -103,11 +83,8 @@ const Collector = () => {
       name: search
     };
     try {
-      const res = await Promise.all([getControllerList(params), getCollectorlist(params)]);
-      const controllerList = res[0];
-      const collectorList = res[1];
-      handleResult(controllerList, 'controller', selected);
-      handleResult(collectorList, 'collector', selected);
+      const res = await getControllerList(params);
+      handleResult(res, 'collector', selected);
     } catch (error) {
       console.log(error);
     } finally {
@@ -119,8 +96,8 @@ const Collector = () => {
     const params = { name: search };
     try {
       setLoading(true);
-      const res = await getList[value](params);
-      handleResult(res, value as string, selected);
+      const res = await getControllerList(params);
+      handleResult(res, 'collector', selected);
     } catch (error) {
       console.log(error);
     } finally {
@@ -146,29 +123,21 @@ const Collector = () => {
       onClick={(e) => e.domEvent.preventDefault()}
     >
       {menuItem.map((item) => {
-        if (value === 'controller' && ['delete', 'edit'].includes(item.key)) return;
+        if (['delete', 'edit'].includes(item.key)) return;
         return (
           <Menu.Item
             key={item.title}
-            onClick={() => openModal({ ...item.config, form: data, key: value })}>{t(`node-manager.collector.${item.title}`)}
+            onClick={() => openModal({ ...item.config, form: data, key: 'collector' })}>{t(`node-manager.collector.${item.title}`)}
           </Menu.Item>
         )
       }
       )}
     </Menu>)
-  }, [menuItem, value]);
+  }, [menuItem]);
 
   const changeFilter = (selected: string[]) => {
     fetchCollectorlist(search, selected);
     setSelected(selected);
-  };
-
-  const ifOpenAddModal = () => {
-    if (value === 'collector') {
-      return {
-        openModal: () => openModal({ title: 'addCollector', type: 'add', form: {} })
-      }
-    }
   };
 
   const onSearch = (search: string) => {
@@ -176,24 +145,11 @@ const Collector = () => {
     fetchCollectorlist(search, selected);
   };
 
-  const handleValueChange = (value: string) => {
-    setSelected([]);
-    setSearch('');
-    setValue(value);
-  };
-
   return (
     <div className={`${collectorstyle.collection}`}>
-      {/* 顶部的提示信息 */}
-      <Segmented
-        className="custom-tabs"
-        options={titleItem}
-        defaultValue='collector'
-        onChange={(value) => handleValueChange(value)}
-      />
       {/* 卡片的渲染 */}
       <EntityList
-        data={value === 'controller' ? controllerCards : collectorCards}
+        data={controllerCards}
         loading={loading}
         menuActions={(value) => menuActions(value)}
         filter={false}
@@ -223,11 +179,10 @@ const Collector = () => {
             />
           </Space.Compact>
         )}
-        {...ifOpenAddModal()}
         onCardClick={(item: CardItem) => navigateToCollectorDetail(item)}></EntityList>
       <CollectorModal ref={modalRef} onSuccess={handleSubmit} />
     </div>
   );
 }
 
-export default Collector;
+export default Controller;

@@ -95,7 +95,7 @@ export const useConfigColumns = ({
             type="link"
             className="text-blue-500 hover:text-blue-700"
             onClick={() => nodeClick()}>
-            {record.nodes.map((item: any) => item.label).join(',')}
+            {record.nodes?.length ? record.nodes?.map((item: any) => item.label).join(',') : '--'}
           </Button>
         </>)
       },

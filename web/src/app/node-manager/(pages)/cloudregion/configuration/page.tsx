@@ -93,24 +93,28 @@ const Configration = () => {
     if (isLoading) return;
     setLoading(true);
     Promise.all([getConfiglist(nodeId || ''), getCollectorList()])
-      .then(() => {
+      .then()
+      .catch((e) => {
+        console.log(e)
+      })
+      .finally(() => {
         setLoading(false);
-      });
+      })
     return () => {
       sessionStorage.removeItem('cloudRegionInfo');
     };
   }, [isLoading])
 
   useEffect(() => {
-    if(!collectorId.length && !configdata.length) return;
-    if(!loading) setLoading(true);
+    if (!collectorId.length && !configdata.length) return;
+    if (!loading) setLoading(true);
     Promise.resolve().then(() => {
       setTableData(configdata.filter((item) => {
         return collectorId.includes(item.collector);
       }));
       setLoading(false);
     });
-  }, [collectorId,configdata])
+  }, [collectorId, configdata])
 
   //获取配置文件列表
   const getConfiglist = async (search: string) => {
@@ -133,7 +137,7 @@ const Configration = () => {
         operatingsystem: item.operating_system,
         nodecount: item.node_count,
         configinfo: item.config_template,
-        nodes: nodes?.length ? nodes : '--',
+        nodes: nodes,
       };
       return config;
     });
@@ -158,9 +162,14 @@ const Configration = () => {
   //搜索框的触发事件
   const onSearch: SearchProps['onSearch'] = (value) => {
     setLoading(true);
-    getConfiglist(value).then(() => {
-      setLoading(false);
-    })
+    getConfiglist(value)
+      .then()
+      .catch((e) => {
+        console.log(e);
+      })
+      .finally(() => {
+        setLoading(false);
+      })
   };
 
   // 子配置返回配置页面事件
@@ -173,9 +182,13 @@ const Configration = () => {
   const onSuccess = () => {
     if (!showSub) {
       setLoading(true);
-      getConfiglist('').then(() => {
-        setLoading(false);
-      })
+      getConfiglist('')
+        .then()
+        .catch((e) => {
+          console.log(e);
+        }).finally(() => {
+          setLoading(false);
+        })
       return;
     }
     subConfiguration.current?.getChildConfig();
