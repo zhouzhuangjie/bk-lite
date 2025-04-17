@@ -21,6 +21,7 @@ export const useVarColumns = ({
     {
       title: t('node-manager.cloudregion.variable.desc'),
       dataIndex: 'description',
+      render: (text: string) => <p>{text || '--'}</p>,
     },
     {
       title: t('common.actions'),
