@@ -6,6 +6,7 @@ import styles from './index.module.scss';
 import K8sTask from './components/k8sTask';
 import VMTask from './components/vmTask';
 import SNMPTask from './components/snmpTask';
+import SQLTask from './components/sqlTask';
 import TaskDetail from './components/taskDetail';
 import useApiClient from '@/utils/request';
 import CustomTable from '@/components/custom-table';
@@ -339,6 +340,8 @@ const ProfessionalCollection: React.FC = () => {
       return <K8sTask {...props} />;
     } else if (['network_topo', 'network'].includes(selectedRef.current.nodeId)) {
       return <SNMPTask {...props} />;
+    } else if (selectedRef.current.nodeId === 'databases') {
+      return <SQLTask {...props} />;
     }
     return <VMTask {...props} />;
   };
@@ -601,7 +604,7 @@ const ProfessionalCollection: React.FC = () => {
             rowKey="id"
             columns={currentColumns}
             dataSource={tableData}
-            scroll={{ y: 'calc(100vh - 450px)' }}
+            scroll={{ y: hasMultipleTabs ? 'calc(100vh - 510px)' :  'calc(100vh - 450px)'}}
             onSelectFields={onSelectFields}
             onChange={handleTableChange}
             pagination={{

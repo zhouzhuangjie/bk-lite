@@ -215,7 +215,7 @@ export const useKnowledgeApi = () => {
     knowledge_document_id: number;
     general_parse_chunk_size: number;
     general_parse_chunk_overlap: number;
-    embed_model: number | null;
+    semantic_chunk_parse_embedding_model: number | null;
     chunk_type: string;
   }): Promise<any[]> => {
     return post('/opspilot/knowledge_mgmt/knowledge_document/preview_chunk/', params);
@@ -223,6 +223,13 @@ export const useKnowledgeApi = () => {
 
   const getDocListConfig = async (params: any) => {
     return post('/opspilot/knowledge_mgmt/knowledge_document/get_doc_list_config/', params);
+  };
+
+  /**
+   * Fetches configuration for a single document by ID.
+   */
+  const getDocumentConfig = async (id: number): Promise<any> => {
+    return get(`/opspilot/knowledge_mgmt/knowledge_document/${id}/`);
   };
 
   return {
@@ -252,5 +259,6 @@ export const useKnowledgeApi = () => {
     updateChunkSettings,
     previewChunk,
     getDocListConfig,
+    getDocumentConfig,
   };
 };

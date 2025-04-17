@@ -37,11 +37,11 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) =
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [formData, setFormData] = useState<TableDataItem>(initData);
   const [fileList, setFileList] = useState<any>([]);
-  //需要二次弹窗确定的类型
-  const Popconfirmarr = ["delete"];
+  const Popconfirmarr = ['delete'];
 
   useImperativeHandle(ref, () => ({
     showModal: ({ type, form, title, key }) => {
+      const isAdd = type === 'add';
       const info = cloneDeep(form) as TableDataItem;
       const { name, tagList, description } = form as TableDataItem;
       setKey(key as string);
@@ -49,15 +49,9 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) =
       setType(type);
       setTitle(title as string);
       setVisible(true);
-      if (type !== 'add') {
-        info.name = name || "";
-        info.system = tagList?.length ? tagList[0] : 'windows';
-        info.description = description || '--';
-      } else {
-        info.system = "windows";
-        info.name = "";
-        info.description = "";
-      }
+      info.name = !isAdd ? name || '' : '';
+      info.system = !isAdd && tagList?.length ? tagList[0] : 'windows';
+      info.description = !isAdd ? description || '--' : '--';
       setFormData(info);
     }
   }));
@@ -75,7 +69,12 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) =
   const errorCatch = (error: any) => {
     message.error(error.code);
     setConfirmLoading(false);
-  }
+  };
+
+  const handleObject: Record<string, (param: any) => Promise<any>> = {
+    add: addCollector,
+    edit: editCollecttor,
+  };
 
   const onSubmit = () => {
     if (Popconfirmarr.includes(type)) {
@@ -92,21 +91,16 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) =
         executable_path: formData.executable_path || 'text/',
         execute_parameters: formData.execute_parameters || 'text',
       };
-      if (type === 'add') {
-        addCollector(param).then(() => {
+
+      if (type !== 'upload') {
+        handleObject[type](param).then(() => {
+          const msg = type === 'edit' ? 'updateSuccess' : 'addSuccess';
           setConfirmLoading(false);
           setVisible(false);
-          message.success(t('common.addSuccess'));
+          message.success(t(`common.${msg}`));
           onSuccess();
-        }).catch(errorCatch)
-      } else if (type === 'edit') {
-        editCollecttor(param).then(() => {
-          setConfirmLoading(false);
-          setVisible(false);
-          message.success(t('common.updateSuccess'));
-          onSuccess();
-        }).catch(errorCatch)
-      } else if (type === 'upload') {
+        }).catch(errorCatch);
+      } else {
         handleUpload(values);
       }
     }).catch(() => {
@@ -120,27 +114,25 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) =
 
   const handleUpload = async (values: any) => {
     const file = fileList.length ? fileList[0] : '';
-    if (file) {
-      const fd = new FormData();
-      fd.append('file', file.originFileObj);
-      const params = {
-        name: file.name,
-        os: formData.system,
-        type: key,
-        version: values.version,
-        object: formData.name,
-        file: file.originFileObj
-      };
-      Object.entries(params).forEach(([k, v]) => {
-        fd.append(k, v);
-      });
-      uploadPackage(params).then(() => {
-        setConfirmLoading(false);
-        message.success(t('node-manager.collector.uploadSuccess'));
-        setVisible(false);
-      });
-    }
-  }
+    if (!file) return;
+    const fd = new FormData();
+    const params = {
+      name: file.name,
+      os: formData.system,
+      type: key,
+      version: values.version,
+      object: formData.name,
+      file: file.originFileObj
+    };
+    Object.entries(params).forEach(([k, v]) => {
+      fd.append(k, v);
+    });
+    uploadPackage(params).then(() => {
+      setConfirmLoading(false);
+      message.success(t('node-manager.collector.uploadSuccess'));
+      setVisible(false);
+    });
+  };
 
   const props: UploadProps = {
     name: 'file',

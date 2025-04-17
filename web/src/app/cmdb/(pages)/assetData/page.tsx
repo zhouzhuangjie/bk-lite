@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { KeepAlive } from 'react-activation';
 import {
   Button,
   Space,
@@ -69,7 +70,7 @@ interface FieldConfig {
   list: Array<any>;
 }
 
-const AssetData = () => {
+const AssetDataContent = () => {
   const { t } = useTranslation();
   const { get, del, post, isLoading } = useApiClient();
   const router = useRouter();
@@ -238,6 +239,7 @@ const AssetData = () => {
       setModelId(defaultModelId);
       setSelectedTreeKeys([defaultModelId]);
       getInitData(defaultModelId);
+      router.push(`/cmdb/assetData?modelId=${defaultModelId}&classificationId=${defaultGroupId}`);
     } catch {
       setLoading(false);
     }
@@ -544,6 +546,7 @@ const AssetData = () => {
         }));
         setModelList(newModelList);
         getInitData(firstModelKey);
+        router.push(`/cmdb/assetData?modelId=${firstModelKey}&classificationId=${groupIdSelected}`);
       }
     } else {
       setSelectedTreeKeys([key]);
@@ -557,6 +560,7 @@ const AssetData = () => {
             icn: item.icn,
           }));
           setModelList(newModelList);
+          router.push(`/cmdb/assetData?modelId=${key}&classificationId=${group.classification_id}`);
         }
       });
       getInitData(key);
@@ -758,6 +762,14 @@ const AssetData = () => {
         </div>
       </div>
     </Spin>
+  );
+};
+
+const AssetData = () => {
+  return (
+    <KeepAlive id="assetData" name="assetData">
+      <AssetDataContent />
+    </KeepAlive>
   );
 };
 

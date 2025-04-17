@@ -11,7 +11,11 @@ import ExtractionStep from './extractionStep';
 import Icon from '@/components/icon'
 import { useTranslation } from '@/utils/i18n';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
-import { getDefaultExtractionMethod, getExtractionMethodMap } from '@/app/opspilot/utils/extractionUtils';
+import { 
+  getDefaultExtractionMethod,
+  getExtractionMethodMap,
+  getReverseExtractionMethodMap 
+} from '@/app/opspilot/utils/extractionUtils';
 
 const { Step } = Steps;
 
@@ -31,64 +35,33 @@ const KnowledgeModifyPage = () => {
     getDocumentDetail,
     parseContent,
     updateChunkSettings,
-    getDocListConfig
+    getDocListConfig,
+    getDocumentConfig
   } = useKnowledgeApi();
 
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [isStepValid, setIsStepValid] = useState<boolean>(false);
   const [fileList, setFileList] = useState<File[]>([]);
   const [documentIds, setDocumentIds] = useState<number[]>([]);
-  const [extractionConfig, setExtractionConfig] = useState<any>(null);
+  const [extractionConfig, setExtractionConfig] = useState<{
+    knowledge_source_type?: string;
+    knowledge_document_list?: {
+      id: number;
+      name?: string;
+      enable_ocr_parse: boolean;
+      ocr_model: string | null;
+      parse_type: string;
+    }[];
+  } | null>(null);
   const [preprocessConfig, setPreprocessConfig] = useState<any>(null);
   const [webLinkData, setWebLinkData] = useState<{ name: string, link: string, deep: number }>({ name: '', link: '', deep: 1 });
   const [manualData, setManualData] = useState<{ name: string, content: string }>({ name: '', content: '' });
   const [pageLoading, setPageLoading] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
   const [config, setConfig] = useState<any>(null);
-  const [extractionInitConfig, setExtractionInitConfig] = useState<{
-    knowledge_source_type?: string;
-    knowledge_document_list?: {
-      id: number;
-      enable_ocr_parse: boolean;
-      ocr_model: string | null;
-      parse_type: string;
-    }[];
-  } | undefined>(undefined);
   const [isUpdate, setIsUpdate] = useState<boolean>(false);
 
   const formRef = useRef<any>(null);
-
-  useEffect(() => {
-    const documentIds = searchParams ? searchParams.get('documentIds') : null;
-    if (documentIds) {
-      setCurrentStep(1);
-      setIsUpdate(true);
-      setConfig({});
-      const fetchDocumentDetails = async () => {
-        try {
-          const documentDetails = await getDocListConfig({ doc_ids: documentIds.split(',').map(Number) });
-          setDocumentIds(documentIds.split(',').map(Number));
-          setExtractionInitConfig({
-            knowledge_source_type: type ?? undefined,
-            knowledge_document_list: documentDetails.map((doc: any) => ({
-              id: doc.id,
-              enable_ocr_parse: doc.enable_ocr_parse,
-              ocr_model: doc.ocr_model,
-              parse_type: doc.mode,
-            })),
-          });
-        } catch {
-          message.error(t('common.fetchFailed'));
-        } finally {
-          setPageLoading(false);
-        }
-      };
-
-      fetchDocumentDetails();
-    } else {
-      setPageLoading(false);
-    }
-  }, [searchParams]);
 
   const sourceTypeToDisplayText: { [key: string]: string } = {
     file: t('knowledge.localFile'),
@@ -96,99 +69,179 @@ const KnowledgeModifyPage = () => {
     manual: t('knowledge.cusText'),
   };
 
-  const handleNext = async () => {
-    setLoading(true);
 
-    if (currentStep === 0) {
-      if (type === 'web_page') {
-        try {
-          await formRef.current?.validateFields();
-          const params = {
-            name: webLinkData.name,
-            url: webLinkData.link,
-            max_depth: webLinkData.deep,
-          };
-          if (documentIds.length) {
-            await updateDocumentBaseInfo(documentIds[0], params);
-          } else {
-            const data = await createWebPageKnowledge(id, params);
-            setDocumentIds([data]);
-          }
-          message.success(t('knowledge.documents.webLinkSaveSuccess'));
-        } catch {
-          message.error(t('knowledge.documents.webLinkSaveFail'));
-          setLoading(false);
-          return;
-        }
-      } else if (type === 'file') {
-        try {
-          const formData = new FormData();
-          formData.append('knowledge_base_id', id as string);
-          fileList.forEach(file => formData.append('files', file));
+  useEffect(() => {
+    const fetchData = async () => {
+      const documentIds = searchParams ? searchParams.get('documentIds') : null;
 
-          const data = await createFileKnowledge(formData);
-          setDocumentIds(data);
-          message.success(t('knowledge.documents.fileUploadSuccess'));
-        } catch {
-          message.error(t('knowledge.documents.fileUploadFailed'));
-          setLoading(false);
-          return;
-        }
-      } else if (type === 'manual') {
+      if (documentIds) {
+        setCurrentStep(1);
+        setIsUpdate(true);
+        setConfig({});
+
+        const documentIdArray = documentIds.split(',').map(Number);
+
         try {
-          const params = {
-            name: manualData.name,
-            content: manualData.content,
-          };
-          if (documentIds.length) {
-            await updateDocumentBaseInfo(documentIds[0], params);
-          } else {
-            const data = await createManualKnowledge(id, params);
-            setDocumentIds([data]);
+          // Fetch document details
+          await fetchDocumentDetails(documentIds);
+
+          // Fetch configuration for a single document if applicable
+          if (documentIdArray.length === 1) {
+            const config = await getDocumentConfig(documentIdArray[0]);
+            setConfig(config);
           }
-          message.success(t('knowledge.documents.manualDataSaveSuccess'));
         } catch {
-          message.error(t('knowledge.documents.manualDataSaveFailed'));
-          setLoading(false);
-          return;
+          message.error(t('common.fetchFailed'));
+        } finally {
+          setPageLoading(false);
         }
+      } else {
+        setPageLoading(false);
       }
-    } else if (currentStep === 1) {
-      // Compute the updated configuration based on the latest fileList and documentIds
-      const updatedConfig = {
-        knowledge_source_type: type || 'file',
-        knowledge_document_list: fileList.map((file, index) => {
+    };
+
+    fetchData();
+  }, [searchParams]);
+
+  const fetchDocumentDetails = async (documentIds: string) => {
+    try {
+      const documentDetails = await getDocListConfig({ doc_ids: documentIds.split(',').map(Number) });
+      setDocumentIds(documentIds.split(',').map(Number));
+      setExtractionConfig({
+        knowledge_source_type: type ?? undefined,
+        knowledge_document_list: documentDetails.map((doc: any) => ({
+          id: doc.id,
+          name: doc.name,
+          enable_ocr_parse: doc.enable_ocr_parse,
+          ocr_model: doc.ocr_model_id,
+          parse_type: getReverseExtractionMethodMap(doc.mode) || 'fullText',
+        })),
+      });
+      setIsStepValid(!!documentIds.length)
+    } catch {
+      message.error(t('common.fetchFailed'));
+    } finally {
+      setPageLoading(false);
+    }
+  };
+
+  const handleSaveKnowledge = async () => {
+    try {
+      if (type === 'web_page') {
+        await formRef.current?.validateFields();
+        const params = {
+          name: webLinkData.name,
+          url: webLinkData.link,
+          max_depth: webLinkData.deep,
+        };
+        if (documentIds.length) {
+          await updateDocumentBaseInfo(documentIds[0], params);
+        } else {
+          const data = await createWebPageKnowledge(id, params);
+          setDocumentIds([data]);
+        }
+        message.success(t('knowledge.documents.webLinkSaveSuccess'));
+      } else if (type === 'file') {
+        const formData = new FormData();
+        formData.append('knowledge_base_id', id as string);
+        fileList.forEach(file => formData.append('files', file));
+        const data = await createFileKnowledge(formData);
+        setDocumentIds(data);
+        message.success(t('knowledge.documents.fileUploadSuccess'));
+      } else if (type === 'manual') {
+        const params = {
+          name: manualData.name,
+          content: manualData.content,
+        };
+        if (documentIds.length) {
+          await updateDocumentBaseInfo(documentIds[0], params);
+        } else {
+          const data = await createManualKnowledge(id, params);
+          setDocumentIds([data]);
+        }
+        message.success(t('knowledge.documents.manualDataSaveSuccess'));
+      }
+    } catch (error) {
+      if (type === 'web_page') {
+        message.error(t('knowledge.documents.webLinkSaveFail'));
+      } else if (type === 'file') {
+        message.error(t('knowledge.documents.fileUploadFailed'));
+      } else if (type === 'manual') {
+        message.error(t('knowledge.documents.manualDataSaveFailed'));
+      }
+      setLoading(false);
+      throw error;
+    }
+  };
+
+  const buildExtractionConfig = () => {
+    const baseConfig = {
+      knowledge_source_type: type || 'file',
+      knowledge_document_list: extractionConfig?.knowledge_document_list || [],
+    };
+
+    if (type === 'file') {
+      if (!isUpdate) {
+        baseConfig.knowledge_document_list = fileList.map((file, index) => {
           const extension = file.name.split('.').pop()?.toLowerCase() || 'text';
-          const existingConfig = extractionConfig?.knowledge_document_list?.find((doc: any) => doc.id === documentIds[index]);
+          const existingConfig = extractionConfig?.knowledge_document_list?.find((doc) => doc.id === documentIds[index]);
           return {
             id: documentIds[index] || index,
             enable_ocr_parse: existingConfig?.enable_ocr_parse ?? false,
             ocr_model: existingConfig?.ocr_model ?? null,
-            mode: existingConfig?.parse_type ?? getExtractionMethodMap(getDefaultExtractionMethod(extension)),
+            parse_type: existingConfig?.parse_type ?? getDefaultExtractionMethod(extension),
           };
-        }),
-      };
-      setPreprocessConfig(updatedConfig);
-      try {
+        });
+      }
+    } else if (type === 'web_page' || type === 'manual') {
+      baseConfig.knowledge_document_list = documentIds.map((docId, index) => ({
+        id: docId || index,
+        enable_ocr_parse: extractionConfig?.knowledge_document_list?.[index]?.enable_ocr_parse ?? false,
+        ocr_model: extractionConfig?.knowledge_document_list?.[index]?.ocr_model ?? null,
+        parse_type: extractionConfig?.knowledge_document_list?.[index]?.parse_type ?? 'fullText',
+      }));
+    }
+
+    // Ensure the correct property name (`mode`) is used when sending to the backend
+    baseConfig.knowledge_document_list = baseConfig.knowledge_document_list.map((doc) => ({
+      ...doc,
+      mode: getExtractionMethodMap(doc.parse_type),
+    }));
+
+    return baseConfig;
+  };
+
+  const handleNext = async () => {
+    setLoading(true);
+
+    try {
+      if (currentStep === 0) {
+        await handleSaveKnowledge();
+      } else if (currentStep === 1) {
+        const updatedConfig = buildExtractionConfig();
         await parseContent(updatedConfig);
         message.success(t('common.saveSuccess'));
-      } catch {
-        message.error(t('common.saveFailed'));
-        setLoading(false);
-        return;
-      }
-    } else if (currentStep === 2) {
-      try {
+        if (!preprocessConfig) {
+          const defaultConfig = {
+            knowledge_source_type: type || 'file',
+            knowledge_document_list: documentIds,
+            general_parse_chunk_size: 256,
+            general_parse_chunk_overlap: 0,
+            semantic_chunk_parse_embedding_model: null,
+            chunk_type: 'fixed_size',
+          };
+          setPreprocessConfig(defaultConfig);
+        }
+      } else if (currentStep === 2) {
         await updateChunkSettings(preprocessConfig);
-        message.success(t('knowledge.documents.chunkSuccess'));
-      } catch {
-        message.error(t('knowledge.documents.chunkFailed'));
-        setLoading(false);
-        return;
+        message.success(t('common.saveSuccess'));
       }
+      setCurrentStep(currentStep + 1);
+    } catch {
+      message.error(t('common.saveFailed'));
+    } finally {
+      setLoading(false);
     }
-    setCurrentStep(currentStep + 1);
-    setLoading(false);
   };
 
   const handlePrevious = async () => {
@@ -211,7 +264,7 @@ const KnowledgeModifyPage = () => {
     } else if (currentStep === 2) {
       setIsStepValid(preprocessConfig !== null);
     } else if (currentStep === 1) {
-      setIsStepValid(fileList.length > 0);
+      setIsStepValid(fileList.length > 0 || !!extractionConfig);
     }
     setCurrentStep(currentStep - 1);
   };
@@ -227,13 +280,11 @@ const KnowledgeModifyPage = () => {
 
   const handlePreprocessConfigChange = useCallback((config: any) => {
     setPreprocessConfig(config);
-    console.log('Preprocess config updated:', config);
     setIsStepValid(true);
   }, []);
 
   const handleExtractionConfigChange = useCallback((config: any) => {
     setExtractionConfig(config);
-    console.log('Extraction config updated:', config);
     setIsStepValid(true);
   }, []);
 
@@ -279,8 +330,8 @@ const KnowledgeModifyPage = () => {
         type={type}
         webLinkData={type === 'web_page' ? webLinkData : null}
         manualData={type === 'manual' ? manualData : null}
+        extractionConfig={extractionConfig || undefined}
         onConfigChange={handleExtractionConfigChange}
-        initialConfig={extractionInitConfig}
       />,
     },
     {
@@ -332,9 +383,9 @@ const KnowledgeModifyPage = () => {
             </div>
           </div>
         )}
-        <div className="fixed bottom-10 right-20 z-50 flex space-x-2">
-          {currentStep > 0 && currentStep < steps.length && (
-            <Button onClick={handlePrevious}>
+        <div className="fixed bottom-10 right-10 z-50 flex space-x-2">
+          {currentStep > 0 && currentStep < steps.length - 1 && (
+            <Button onClick={handlePrevious} disabled={isUpdate && currentStep === 1}>
               {t('common.pre')}
             </Button>
           )}

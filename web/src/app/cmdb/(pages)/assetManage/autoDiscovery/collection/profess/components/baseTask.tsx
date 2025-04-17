@@ -126,9 +126,16 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
     const [instLoading, setInstLoading] = useState(false);
     const [ipRangeOrg, setIpRangeOrg] = useState<string[]>([]);
     const [selectedInstIds, setSelectedInstIds] = useState<number[]>([]);
+    const [instPagination, setInstPagination] = useState({
+      current: 1,
+      pageSize: 10,
+      total: 0,
+    });
     const dropdownItems = {
       items: NETWORK_DEVICE_OPTIONS,
     };
+    
+    const isDatabasesNode = nodeId === 'databases';
 
     const instColumns = [
       {
@@ -145,6 +152,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
       },
     ];
 
+
     useEffect(() => {
       if (selectedData.length && instData.length) {
         const selectedInsts = instData.filter((item) =>
@@ -155,15 +163,20 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
       }
     }, [selectedData, instData]);
 
-    const fetchInstData = async (modelId: string) => {
+    const fetchInstData = async (modelId: string, page = 1, pageSize = 10) => {
       try {
         setInstLoading(true);
         const res = await post('/cmdb/api/instance/search/', {
           model_id: modelId,
-          page: 1,
-          page_size: 10000,
+          page,
+          page_size: pageSize,
         });
         setInstData(res.insts || []);
+        setInstPagination((prev) => ({
+          ...prev,
+          current: page,
+          total: res.count || 0,
+        }));
       } catch (error) {
         console.error('Failed to fetch instances:', error);
       } finally {
@@ -171,16 +184,17 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
       }
     };
 
+    const handleOpenDrawer = () => {
+      setInstVisible(true);
+      if (isDatabasesNode) {
+        fetchInstData(modelId);
+      }
+    };
+
     const handleMenuClick = ({ key }: { key: string }) => {
       setRelateType(key);
       setInstVisible(true);
       fetchInstData(key);
-
-      const data = instData.filter((item) =>
-        selectedData.some((d) => d._id === item._id)
-      );
-      setSelectedRows(data);
-      setSelectedKeys(data.map((item) => item._id));
     };
 
     const handleRowSelect = (
@@ -461,7 +475,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
             )}
 
             {/* ip选择 */}
-            {nodeId && ['network_topo', 'network'].includes(nodeId) && (
+            {nodeId && ['network_topo', 'network', 'databases'].includes(nodeId) && (
               <>
                 <Radio.Group
                   value={collectionType}
@@ -518,13 +532,19 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                   >
                     <div>
                       <Space>
-                        <Dropdown
-                          menu={{ ...dropdownItems, onClick: handleMenuClick }}
-                        >
-                          <Button type="primary">
-                            {t('common.select')} <DownOutlined />
+                        {isDatabasesNode ? (
+                          <Button type="primary" onClick={handleOpenDrawer}>
+                            {t('common.select')}
                           </Button>
-                        </Dropdown>
+                        ) : (
+                          <Dropdown
+                            menu={{ ...dropdownItems, onClick: handleMenuClick }}
+                          >
+                            <Button type="primary">
+                              {t('common.select')} <DownOutlined />
+                            </Button>
+                          </Dropdown>
+                        )}
                         <Button
                           onClick={handleBatchDelete}
                           disabled={displaySelectedKeys.length === 0}
@@ -637,7 +657,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
         />
 
         <Drawer
-          title={`选择${dropdownItems.items.find((item) => item.key === relateType)?.label || '资产'}`}
+          title={isDatabasesNode ? t('Collection.chooseAsset') : `选择${dropdownItems.items.find((item) => item.key === relateType)?.label || '资产'}`}
           width={620}
           open={instVisible}
           onClose={handleDrawerClose}
@@ -657,11 +677,14 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
           <CustomTable
             columns={instColumns}
             dataSource={instData}
-            rowKey="_id"
-            pagination={{ pageSize: 10 }}
-            scroll={{ y: 400 }}
             size="middle"
             loading={instLoading}
+            rowKey="_id"
+            scroll={{ y: 'calc(100vh - 280px)' }}
+            pagination={{
+              ...instPagination,
+              onChange: (page, pageSize) => fetchInstData(isDatabasesNode ? modelId : relateType, page, pageSize),
+            }}
             rowSelection={{
               type: 'checkbox',
               selectedRowKeys: selectedKeys,

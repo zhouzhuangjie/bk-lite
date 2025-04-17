@@ -22,3 +22,14 @@ export const getExtractionMethodMap = (extension: string): string => {
   };
   return extensionMapping[extension] || 'full';
 };
+
+export const getReverseExtractionMethodMap = (value: string): string => {
+  const reverseMapping: Record<string, string> = {
+    full: 'fullText',
+    paragraph: 'chapter',
+    excel_full_content_parse: 'worksheet',
+    excel_header_row_parse: 'row',
+  };
+  
+  return reverseMapping[value] || 'fullText';
+};

@@ -110,6 +110,8 @@
       },
       "Configuration": {
         "system": "Operating System",
+        "linxu": "Linux",
+        "windows": "Windows",
         "collector": "Collector",
         "count": "Node Count",
         "ip": "IP",

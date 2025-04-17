@@ -1,7 +1,7 @@
 "use client";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import collectorstyle from "./index.module.scss";
-import { Segmented, Menu } from "antd";
+import { Segmented, Menu, Input, Space, Select } from "antd";
 import useApiClient from '@/utils/request';
 import useApiCollector from "@/app/node-manager/api/collector/index";
 import EntityList from "@/components/entity-list/index";
@@ -12,6 +12,7 @@ import CollectorModal from "./collectorModal";
 import { ModalRef } from "@/app/node-manager/types";
 import { useMenuItem } from "@/app/node-manager/constants/collector";
 import { Option } from "@/types";
+const { Search } = Input;
 
 const Collector = () => {
   const router = useRouter();
@@ -22,8 +23,8 @@ const Collector = () => {
   const [value, setValue] = useState<string | number>('collector');
   const [controllerCards, setControllerCards] = useState<CardItem[]>([]);
   const [collectorCards, setCollectorCards] = useState<CardItem[]>([]);
-  const [controllerCount, setControllerCount] = useState<number>(0);
-  const [collectorCount, setCollectorCount] = useState<number>(0);
+  const controllerCount = controllerCards.length;
+  const collectorCount = collectorCards.length;
   const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState<string>('');
   const [options, setOptions] = useState<Option[]>([]);
@@ -38,29 +39,45 @@ const Collector = () => {
       label: `${t('node-manager.collector.controller')}(${controllerCount})`,
       value: 'controller',
     },
-    
   ];
 
   useEffect(() => {
     if (!isLoading) {
-      fetchCollectorlist();
+      firstFetchList(search, selected);
     }
-  }, [isLoading])
-
-  useEffect(() => {
-    fetchCollectorlist(search, selected);
-  }, [value])
+  }, [isLoading, value])
 
   const navigateToCollectorDetail = (item: CardItem) => {
     router.push(`
       /node-manager/collector/detail?id=${item.id}&name=${item.name}&introduction=${item.description}&system=${item.tagList[0]}`);
   };
 
+  const cardSetters: Record<string, React.Dispatch<React.SetStateAction<CardItem[]>>> = {
+    controller: setControllerCards,
+    collector: setCollectorCards,
+  };
+
+  const getList: Record<string, (params: any) => Promise<any>> = {
+    controller: (params: any) => getControllerList(params),
+    collector: (params: any) => getCollectorlist(params),
+  }
+
+  const filterBySelected = (data: any[], selected: string[]) => {
+    if (!selected?.length) return data;
+    const selectedSet = new Set(selected);
+    return data.filter((item) =>
+      item.tagList.every((tag: string) => selectedSet.has(tag))
+    );
+  };
+
   const handleResult = (res: any, value: string, selected?: string[]) => {
+    const optionSet = new Set<string>();
     const _options: Option[] = [];
-    let tempdata = res.map((item: any) => {
+    const filter = res.filter((item: any) => !item.controller_default_run);
+    let tempdata = filter.map((item: any) => {
       const system = item.node_operating_system || item.os;
-      if (system && !_options.find((option) => option.value === system)) {
+      if (system && !optionSet.has(system)) {
+        optionSet.add(system);
         _options.push({ value: system, label: system });
       }
       return ({
@@ -71,38 +88,43 @@ const Collector = () => {
         execute_parameters: item.execute_parameters,
         description: item.introduction || '--',
         icon: 'caijiqizongshu',
-        tagList: [item.node_operating_system || item.os]
+        tagList: [system]
       })
     });
-    if (selected?.length) {
-      tempdata = tempdata.filter((item: any) => {
-        return item.tagList.every((tag: string) => selected?.includes(tag));
-      });
-    }
-    if (value === 'controller') {
-      setControllerCards(tempdata);
-    } else {
-      setCollectorCards(tempdata);
-    }
+    tempdata = filterBySelected(tempdata, selected || []);
+    cardSetters[value](tempdata);
     setOptions(_options);
-  }
+  };
 
-  const fetchCollectorlist = async (search?: string, selected?: string[]) => {
+  // 首次加载执行
+  const firstFetchList = async (search?: string, selected?: string[]) => {
+    setLoading(true);
     const params = {
       name: search
-    }
+    };
     try {
-      setLoading(true);
       const res = await Promise.all([getControllerList(params), getCollectorlist(params)]);
       const controllerList = res[0];
       const collectorList = res[1];
-      setControllerCount(controllerList.length);
-      setCollectorCount(collectorList.length);
       handleResult(controllerList, 'controller', selected);
       handleResult(collectorList, 'collector', selected);
-      setLoading(false);
     } catch (error) {
-      console.log(error)
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCollectorlist = async (search?: string, selected?: string[]) => {
+    const params = { name: search };
+    try {
+      setLoading(true);
+      const res = await getList[value](params);
+      handleResult(res, value as string, selected);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -119,7 +141,7 @@ const Collector = () => {
     fetchCollectorlist();
   };
 
-  const menuActions = (data: any) => {
+  const menuActions = useCallback((data: any) => {
     return (<Menu
       onClick={(e) => e.domEvent.preventDefault()}
     >
@@ -134,10 +156,10 @@ const Collector = () => {
       }
       )}
     </Menu>)
-  };
+  }, [menuItem, value]);
 
   const changeFilter = (selected: string[]) => {
-    fetchCollectorlist('', selected);
+    fetchCollectorlist(search, selected);
     setSelected(selected);
   };
 
@@ -147,12 +169,17 @@ const Collector = () => {
         openModal: () => openModal({ title: 'addCollector', type: 'add', form: {} })
       }
     }
-    return {}
   };
 
   const onSearch = (search: string) => {
     setSearch(search);
     fetchCollectorlist(search, selected);
+  };
+
+  const handleValueChange = (value: string) => {
+    setSelected([]);
+    setSearch('');
+    setValue(value);
   };
 
   return (
@@ -162,16 +189,41 @@ const Collector = () => {
         className="custom-tabs"
         options={titleItem}
         defaultValue='collector'
-        onChange={(value) => setValue(value)}
+        onChange={(value) => handleValueChange(value)}
       />
       {/* 卡片的渲染 */}
       <EntityList
         data={value === 'controller' ? controllerCards : collectorCards}
         loading={loading}
         menuActions={(value) => menuActions(value)}
-        filter filterOptions={options} changeFilter={changeFilter}
+        filter={false}
+        search={false}
+        operateSection={(
+          <Space.Compact>
+            <Select
+              size='middle'
+              allowClear={true}
+              placeholder={`${t('common.select')}...`}
+              mode="multiple"
+              maxTagCount="responsive"
+              className="w-[170px]"
+              options={options}
+              value={selected}
+              onChange={changeFilter}
+            />
+            <Search
+              size='middle'
+              allowClear
+              enterButton
+              placeholder={`${t('common.search')}...`}
+              className="w-60"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onSearch={onSearch}
+            />
+          </Space.Compact>
+        )}
         {...ifOpenAddModal()}
-        onSearch={onSearch}
         onCardClick={(item: CardItem) => navigateToCollectorDetail(item)}></EntityList>
       <CollectorModal ref={modalRef} onSuccess={handleSubmit} />
     </div>
