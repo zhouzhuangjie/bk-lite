@@ -1,7 +1,7 @@
 import { useTranslation } from '@/utils/i18n';
 import { Button, Tag } from 'antd';
 import type { TableColumnsType } from 'antd';
-import { ConfigHookParams } from '@/app/node-manager/types/cloudregion';
+import { ConfigHookParams, SubConfigHookParams } from '@/app/node-manager/types/cloudregion';
 import { TableDataItem } from '@/app/node-manager/types/index';
 
 export const useApplyColumns = ({
@@ -49,7 +49,7 @@ export const useApplyColumns = ({
         return (
           <div>
             {nodes.includes(sidecarinfo.key) ? (
-              <Button type="link" onClick={() => {}}>
+              <Button type="link" onClick={() => { }}>
                 {t('common.unapply')}
               </Button>
             ) : (
@@ -74,6 +74,8 @@ export const useApplyColumns = ({
 export const useConfigColumns = ({
   configurationClick,
   openSub,
+  nodeClick,
+  filter
 }: ConfigHookParams) => {
   const { t } = useTranslation();
   const columns: TableColumnsType<TableDataItem> = [
@@ -82,31 +84,37 @@ export const useConfigColumns = ({
       dataIndex: 'name',
       fixed: 'left',
       width: 300,
-      render: (text: string) => <p>{text}</p>,
     },
     {
       title: t('node-manager.cloudregion.node.node'),
       dataIndex: 'nodes',
       width: 150,
-      render: (text: string) => <p>{text}</p>,
+      render: (_, record) => {
+        return(<>
+          <Button
+            type="link"
+            className="text-blue-500 hover:text-blue-700"
+            onClick={() => nodeClick()}>
+            {record.nodes.map((item: any) => item.label).join(',')}
+          </Button>
+        </>)
+      },
+    },
+    {
+      title: t('node-manager.cloudregion.node.system'),
+      dataIndex: 'operatingsystem',
+      width: 150,
+      render: (_,record) => t(`node-manager.cloudregion.Configuration.${record.operatingsystem}`),
     },
     {
       title: t('node-manager.cloudregion.Configuration.sidecar'),
-      dataIndex: 'collector',
+      dataIndex: 'collector_name',
       align: 'center',
-      filters: [
-        {
-          text: 'Telegraf',
-          value: 'Telegraf',
-        },
-        {
-          text: 'Sidecar',
-          value: 'Sidecar',
-        },
-      ],
+      filters: filter,
       width: 150,
-      onFilter: (value, record) => record?.sidecar === value,
-      render: (text: string) => <p>{text}</p>,
+      onFilter: (value, record) => {
+        return record?.collector_name === value
+      },
     },
     {
       title: t('common.actions'),
@@ -143,6 +151,57 @@ export const useConfigColumns = ({
     columns,
   };
 };
+
+export const useSubConfigColumns = ({
+  nodeData,
+  edit
+}: SubConfigHookParams) => {
+  const { t } = useTranslation();
+  const columns: TableColumnsType<TableDataItem> = [
+    {
+      title: t('common.name'),
+      dataIndex: 'name',
+      fixed: 'left',
+      className: 'text-center',
+      align: 'center',
+      width: 300,
+      render: (_: any, record: any) => {
+        return (
+          <span>{record.name || '--'}</span>
+        )
+      }
+    },
+    {
+      title: t('common.actions'),
+      dataIndex: 'key',
+      fixed: 'right',
+      align: 'center',
+      width: 180,
+      render: (_: any, record: any) => (
+        <div className="flex justify-center">
+          <Button
+            color="primary"
+            variant="link"
+            onClick={() => {
+              edit({
+                ...record,
+                nodes: nodeData.nodes || '--',
+                collector: nodeData.collector,
+                configinfo: record.content
+              });
+            }}
+          >
+            {t('common.edit')}
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  return {
+    columns
+  }
+}
 
 export const useConfigModalColumns = () => {
   const { t } = useTranslation();

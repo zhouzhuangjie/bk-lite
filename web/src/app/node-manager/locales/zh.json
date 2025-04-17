@@ -110,6 +110,8 @@
       },
       "Configuration": {
         "system": "操作系统",
+        "linux": "Linux",
+        "windows": "Windows",
         "collector": "采集器",
         "count": "节点总数",
         "ip": "IP",
