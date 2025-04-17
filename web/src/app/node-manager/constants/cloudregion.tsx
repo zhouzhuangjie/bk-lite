@@ -56,6 +56,10 @@ const useInstallMap = (): Record<string, Record<string, string>> => {
         color: '#ea3636',
         text: t('node-manager.cloudregion.node.failInstall'),
       },
+      failedUninstall: {
+        color: '#ea3636',
+        text: t('node-manager.cloudregion.node.failUninstall'),
+      },
     }),
     [t]
   );

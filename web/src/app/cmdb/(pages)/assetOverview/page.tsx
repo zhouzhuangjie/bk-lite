@@ -9,6 +9,7 @@ import { deepClone, getIconUrl } from '@/app/cmdb/utils/common';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Spin, Input, Empty } from 'antd';
+import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 
 const AssetsOverview: React.FC = () => {
   const { get, isLoading } = useApiClient();
@@ -138,7 +139,10 @@ const AssetsOverview: React.FC = () => {
                           width={20}
                           height={20}
                         />
-                        <span title={sec.model_name}>{sec.model_name}</span>
+                        <EllipsisWithTooltip
+                          text={sec.model_name}
+                          className="overflow-hidden text-ellipsis whitespace-nowrap"
+                        />
                       </span>
                       <span className={assetsOverviewStyle.rightSide}>
                         {sec.count}

@@ -87,6 +87,7 @@
       "save": "Save",
       "publish": "Publish",
       "saveOnly": "Save Only",
+      "execute": "Execute",
       "next": "Next",
       "pre": "Previous",
       "train": "Train",
@@ -298,5 +299,15 @@
         "soidTitle": "SOID Library",
         "soidMessage": "You can expand the automatic discovery capability of network devices by managing the mapping relationship of device sysObject IDs",
         "scanFeatureMessage": "You can determine the type of asset being scanned by setting recognition rules."
+    },
+    "OperationLog": {
+        "title": "Operation Log",
+        "description": "Display all historical records of additions, deletions, and modifications, and you can search based on conditions such as operator/operation type/time",
+        "timeRange": "Time Range",
+        "operator": "Operator",
+        "operationType": "Type",
+        "summary": "Overview",
+        "operationObject": "Object",
+        "operationTime": "Operating Time"
     }
 }

@@ -59,7 +59,7 @@ const ControllerInstall: React.FC<ControllerInstallProps> = ({
     username: 'root',
     password: null,
   };
-  const { getnodelist, getPackages, installController } = useApiCloudRegion();
+  const { getPackages, installController } = useApiCloudRegion();
   const cloudId = useCloudId();
   const searchParams = useSearchParams();
   const [form] = Form.useForm();
@@ -69,7 +69,6 @@ const ControllerInstall: React.FC<ControllerInstallProps> = ({
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [installMethod, setInstallMethod] = useState<string>('remoteInstall');
   const [showInstallTable, setShowInstallTable] = useState<boolean>(false);
-  const [nodeList, setNodeList] = useState<TableDataItem[]>([]);
   const [taskId, setTaskId] = useState<number | null>(null);
   const [sidecarVersionList, setSidecarVersionList] = useState<TableDataItem[]>(
     []
@@ -245,7 +244,7 @@ const ControllerInstall: React.FC<ControllerInstallProps> = ({
 
   useEffect(() => {
     if (!isLoading) {
-      initPage();
+      getSidecarList();
     }
   }, [isLoading]);
 
@@ -355,24 +354,14 @@ const ControllerInstall: React.FC<ControllerInstallProps> = ({
     }
   };
 
-  const initPage = () => {
-    setPageLoading(true);
-    Promise.all([getNodes(), getSidecarList()]).finally(() => {
-      setPageLoading(false);
-    });
-  };
-
-  const getNodes = async () => {
-    const data = await getnodelist({
-      cloud_region_id: Number(cloudId),
-      operating_system: config.os,
-    });
-    setNodeList(data);
-  };
-
   const getSidecarList = async () => {
-    const data = await getPackages({ os: config.os });
-    setSidecarVersionList(data);
+    setPageLoading(true);
+    try {
+      const data = await getPackages({ os: config.os });
+      setSidecarVersionList(data);
+    } finally {
+      setPageLoading(false);
+    }
   };
 
   const goBack = () => {
@@ -393,7 +382,7 @@ const ControllerInstall: React.FC<ControllerInstallProps> = ({
       const params = {
         cloud_region_id: +cloudId,
         nodes,
-        work_node: values.work_node || '',
+        work_node: name,
         package_id: values.sidecar_package || '',
       };
       create(params);
@@ -459,36 +448,6 @@ const ControllerInstall: React.FC<ControllerInstallProps> = ({
                 <>
                   <Form.Item<ControllerInstallFields>
                     required
-                    label={t('node-manager.cloudregion.node.defaultNode')}
-                  >
-                    <Form.Item
-                      name="work_node"
-                      noStyle
-                      rules={[
-                        { required: true, message: t('common.required') },
-                      ]}
-                    >
-                      <Select
-                        style={{
-                          width: 300,
-                        }}
-                        showSearch
-                        allowClear
-                        placeholder={t('common.pleaseSelect')}
-                      >
-                        {nodeList.map((item) => (
-                          <Option value={item.id} key={item.id}>
-                            {item.name}
-                          </Option>
-                        ))}
-                      </Select>
-                    </Form.Item>
-                    <div className={controllerInstallSyle.description}>
-                      {t('node-manager.cloudregion.node.defaultNodeDes')}
-                    </div>
-                  </Form.Item>
-                  <Form.Item<ControllerInstallFields>
-                    required
                     label={t('node-manager.cloudregion.node.sidecarVersion')}
                   >
                     <Form.Item
@@ -508,7 +467,7 @@ const ControllerInstall: React.FC<ControllerInstallProps> = ({
                       >
                         {sidecarVersionList.map((item) => (
                           <Option value={item.id} key={item.id}>
-                            {item.name}
+                            {item.version}
                           </Option>
                         ))}
                       </Select>

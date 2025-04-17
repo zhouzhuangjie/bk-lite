@@ -5,6 +5,7 @@ go 1.23.7
 require (
 	github.com/melbahja/goph v1.4.0
 	github.com/nats-io/nats.go v1.41.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (

@@ -40,7 +40,6 @@ const SideMenuLayout: React.FC<WithSideMenuLayoutProps> = ({
   layoutType = 'sideMenu',
   taskProgressComponent,
   pagePathName,
-  relationData,
   onBackButtonClick,
 }) => {
   const router = useRouter();
@@ -110,7 +109,6 @@ const SideMenuLayout: React.FC<WithSideMenuLayoutProps> = ({
                 showProgress={showProgress}
                 taskProgressComponent={taskProgressComponent}
                 onBackButtonClick={onBackButtonClick}
-                relationData={relationData}
               >
                 {intro}
               </SideMenu>

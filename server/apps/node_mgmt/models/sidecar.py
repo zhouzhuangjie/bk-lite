@@ -67,6 +67,7 @@ class Collector(TimeInfo, MaintainerInfo):
     default_template = models.TextField(blank=True, null=True, verbose_name="默认模板")
     introduction = models.TextField(blank=True, verbose_name="采集器介绍")
     icon = models.CharField(max_length=100, default="", verbose_name="图标key")
+    controller_default_run = models.BooleanField(default=False, verbose_name="控制器默认运行")
 
     class Meta:
         verbose_name = "采集器信息"

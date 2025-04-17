@@ -1,7 +1,8 @@
 'use client';
 import useApiClient from '@/utils/request';
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { ModelItem, AssoTypeItem, CrentialsAssoInstItem } from '../types/assetManage';
+import { useSearchParams } from 'next/navigation';
 
 interface RelationshipsContextType {
   modelList: ModelItem[];
@@ -23,6 +24,14 @@ export const RelationshipsProvider: React.FC<{ children: React.ReactNode }> = ({
   const [assoInstances, setAssoInstances] = useState<CrentialsAssoInstItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedAssoId, setSelectedAssoId] = useState<string>('');
+  const searchParams = useSearchParams();
+  const modelId: string = searchParams.get('model_id') || '';
+  const instId: string = searchParams.get('inst_id') || '';
+
+  useEffect(() => {
+    fetchAssoInstances(modelId, instId);
+    fetchModelData();
+  }, [modelId, instId]);
 
   const fetchModelData = useCallback(async () => {
     setLoading(true);

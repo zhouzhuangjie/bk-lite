@@ -32,7 +32,9 @@ const Configration = () => {
   const { t } = useTranslation();
   const { isLoading } = useApiClient();
   const searchParams = useSearchParams();
-  const nodeId = searchParams.get('id') || '';
+  const nodeId = JSON.parse(
+    sessionStorage.getItem('cloudRegionInfo') || '{}'
+  ).id;
   const cloudregionId = searchParams.get('cloud_region_id') || '';
   const name = searchParams.get('name') || '';
   const { getconfiglist, getnodelist } = useApiCloudRegion();
@@ -94,6 +96,9 @@ const Configration = () => {
       .then(() => {
         setLoading(false);
       });
+    return () => {
+      sessionStorage.removeItem('cloudRegionInfo');
+    };
   }, [isLoading])
 
   useEffect(() => {
