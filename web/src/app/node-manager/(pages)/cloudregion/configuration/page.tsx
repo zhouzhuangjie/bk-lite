@@ -79,7 +79,7 @@ const Configration = () => {
   };
 
   const nodeClick = () => {
-    router.push(`/node-manager/cloudregion/node?cloudregion_id=${cloudregionId}&name=${name}&id=${nodeId}`);
+    router.push(`/node-manager/cloudregion/node?cloudregion_id=${cloudregionId}&name=${name}`);
   };
 
   const { columns } = useConfigColumns({
@@ -102,8 +102,8 @@ const Configration = () => {
   }, [isLoading])
 
   useEffect(() => {
-    if(!loading) setLoading(true);
     if(!collectorId.length && !configdata.length) return;
+    if(!loading) setLoading(true);
     Promise.resolve().then(() => {
       setTableData(configdata.filter((item) => {
         return collectorId.includes(item.collector);
