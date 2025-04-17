@@ -217,7 +217,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
               },
             ]}
           >
-            <Select options={options} />
+            <Select disabled options={options} />
           </Form.Item>
           <Form.Item
             name="collector"

@@ -104,6 +104,7 @@ export const useConfigColumns = ({
       title: t('node-manager.cloudregion.node.system'),
       dataIndex: 'operatingsystem',
       width: 150,
+      render: (_,record) => t(`node-manager.cloudregion.Configuration.${record.operatingsystem}`),
     },
     {
       title: t('node-manager.cloudregion.Configuration.sidecar'),

@@ -39,6 +39,7 @@ const Configration = () => {
   const { getCollectorlist } = useApiCollector();
   const [loading, setLoading] = useState<boolean>(true);
   const [configdata, setConfigdata] = useState<ConfigDate[]>([]);
+  const [tableData, setTableData] = useState<ConfigDate[]>([]);
   const [showSub, setShowSub] = useState<boolean>(false);
   const [filters, setFilters] = useState<ColumnFilterItem[]>([]);
   const [nodeData, setNodeData] = useState<ConfigDate>({
@@ -50,13 +51,14 @@ const Configration = () => {
     configinfo: '',
     nodes: [],
   });
+  const [collectorId, setCollectorId] = useState<string[]>([]);
 
   const showConfigurationModal = (type: string, form: any) => {
     configurationRef.current?.showModal({
       type,
       form,
     })
-  }
+  };
 
   //点击编辑配置文件的触发事件
   const configurationClick = (key: string) => {
@@ -88,14 +90,25 @@ const Configration = () => {
   useEffect(() => {
     if (isLoading) return;
     setLoading(true);
-    Promise.all([getConfiglist(nodeId || '',true), getCollectorList()]).then(() => {
+    Promise.all([getConfiglist(nodeId || ''), getCollectorList()])
+      .then(() => {
+        setLoading(false);
+      });
+  }, [isLoading])
+
+  useEffect(() => {
+    if(!loading) setLoading(true);
+    if(!collectorId.length && !configdata.length) return;
+    Promise.resolve().then(() => {
+      setTableData(configdata.filter((item) => {
+        return collectorId.includes(item.collector);
+      }));
       setLoading(false);
     });
-  }, [isLoading]);
+  }, [collectorId,configdata])
 
   //获取配置文件列表
-  const getConfiglist = async (search: string, init?: boolean) => {
-    setLoading(true);
+  const getConfiglist = async (search: string) => {
     const res = await Promise.all([getconfiglist(Number(cloudid), search), getnodelist({ cloud_region_id: Number(cloudid) })]);
     const configlist = res[0];
     const nodeList = res[1];
@@ -120,21 +133,29 @@ const Configration = () => {
       return config;
     });
     setConfigdata(data);
-    if (!init) setLoading(false);
   };
 
   // 获取采集器列表
   const getCollectorList = async () => {
     const res = await getCollectorlist({});
     const filters = new Map();
-    res.filter((item: any) => !item.controller_default_run)
-      .map((item: any) => filters.set(item.name,{ text: item.name, value: item.name }));
+    const collectorId =
+      res
+        .filter((item: any) => !item.controller_default_run)
+        .map((item: any) => {
+          filters.set(item.name, { text: item.name, value: item.name });
+          return item.id;
+        });
     setFilters(Array.from(filters.values()) as ColumnFilterItem[]);
+    setCollectorId(collectorId);
   };
 
   //搜索框的触发事件
   const onSearch: SearchProps['onSearch'] = (value) => {
-    getConfiglist(value);
+    setLoading(true);
+    getConfiglist(value).then(() => {
+      setLoading(false);
+    })
   };
 
   // 子配置返回配置页面事件
@@ -146,7 +167,10 @@ const Configration = () => {
   // 弹窗确认成功后的回调
   const onSuccess = () => {
     if (!showSub) {
-      getConfiglist('');
+      setLoading(true);
+      getConfiglist('').then(() => {
+        setLoading(false);
+      })
       return;
     }
     subConfiguration.current?.getChildConfig();
@@ -170,7 +194,7 @@ const Configration = () => {
                 loading={loading}
                 scroll={{ y: 'calc(100vh - 400px)', x: 'max-content' }}
                 columns={columns}
-                dataSource={configdata}
+                dataSource={tableData}
               />
             </div>
           </>
