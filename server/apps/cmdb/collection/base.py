@@ -76,6 +76,11 @@ class CollectBase(metaclass=ABCMeta):
         instance = CollectModels.objects.get(id=self.task_id)
         return instance
 
+    @property
+    def model_id(self):
+        instance = self.get_collect_inst()
+        return instance.model_id
+
     def query_data(self):
         """查询数据"""
         sql = self.prom_sql()
