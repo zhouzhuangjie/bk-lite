@@ -54,7 +54,7 @@
           "children": [
             {
               "title": "包管理",
-              "url": "/node-manager/sidecar/detail",
+              "url": "/node-manager/sidecar/controller/detail",
               "icon": "shezhi",
               "name": "collector_overview"
             }
