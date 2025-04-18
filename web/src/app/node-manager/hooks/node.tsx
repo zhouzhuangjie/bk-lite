@@ -4,6 +4,7 @@ import { Tag, Tooltip, Button } from 'antd';
 import type { TableColumnsType } from 'antd';
 import { TableDataItem } from '@/app/node-manager/types/index';
 import { useUserInfoContext } from '@/context/userInfo';
+import Permission from '@/components/permission';
 
 interface HookParams {
   checkConfig: (row: TableDataItem) => void;
@@ -49,9 +50,11 @@ export const useColumns = ({
         fixed: 'right',
         width: 140,
         render: (key, item) => (
-          <Button type="link" onClick={() => checkConfig(item)}>
-            {t('node-manager.cloudregion.node.checkConfig')}
-          </Button>
+          <Permission requiredPermissions={["View"]}>
+            <Button type="link" onClick={() => checkConfig(item)}>
+              {t('node-manager.cloudregion.node.checkConfig')}
+            </Button>
+          </Permission>
         ),
       },
     ],
