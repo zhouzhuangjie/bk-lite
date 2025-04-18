@@ -201,6 +201,7 @@ export const useSubConfigColumns = ({
                 ...record,
                 nodes: nodeData.nodes || [],
                 collector: nodeData.collector,
+                nodesList: nodeData.nodesList,
                 configinfo: record.content,
               });
             }}

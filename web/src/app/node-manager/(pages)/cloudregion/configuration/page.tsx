@@ -75,7 +75,15 @@ const Configration = () => {
   };
 
   const openSub = (key: string, item?: any) => {
-    setNodeData(item);
+    if (item) {
+      setNodeData({
+        ...item,
+        nodesList: originNodes.map((item) => ({
+          label: item?.ip,
+          value: item?.id,
+        })),
+      });
+    }
     setShowSub(true);
   };
 
@@ -159,8 +167,11 @@ const Configration = () => {
   const getConfigData = async (search = '') => {
     setLoading(true);
     try {
-      await getconfiglist(Number(cloudid), search || '');
-      dealConfigData();
+      const data = await getconfiglist(Number(cloudid), search || '');
+      dealConfigData({
+        configlist: data,
+        nodeList: originNodes,
+      });
     } finally {
       setLoading(false);
     }
