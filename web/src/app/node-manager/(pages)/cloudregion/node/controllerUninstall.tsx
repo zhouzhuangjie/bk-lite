@@ -8,15 +8,7 @@ import React, {
   useCallback,
   useMemo,
 } from 'react';
-import {
-  Form,
-  Select,
-  message,
-  Button,
-  Input,
-  Popconfirm,
-  InputNumber,
-} from 'antd';
+import { Form, message, Button, Input, Popconfirm, InputNumber } from 'antd';
 import { EditOutlined } from '@ant-design/icons';
 import OperateModal from '@/components/operate-modal';
 import type { FormInstance } from 'antd';
@@ -30,22 +22,19 @@ import { ControllerInstallFields } from '@/app/node-manager/types/cloudregion';
 import CustomTable from '@/components/custom-table';
 import BatchEditModal from './batchEditModal';
 import { cloneDeep, isNumber } from 'lodash';
-const { Option } = Select;
 
 const ControllerUninstall = forwardRef<ModalRef, ModalSuccess>(
   ({ onSuccess, config }, ref) => {
     const collectorformRef = useRef<FormInstance>(null);
     const { t } = useTranslation();
     const cloudid = useCloudId();
-    const { getnodelist, uninstallController } = useApiCloudRegion();
+    const { uninstallController } = useApiCloudRegion();
     const instRef = useRef<ModalRef>(null);
     const [type, setType] = useState<string>('uninstallSidecar');
     const [collectorVisible, setCollectorVisible] = useState<boolean>(false);
     //需要二次弹窗确定的类型
     const Popconfirmarr = ['uninstallSidecar'];
-    const [collectorLoading, setCollectorLoading] = useState<boolean>(false);
     const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
-    const [nodeList, setNodeList] = useState<TableDataItem[]>([]);
     const [tableData, setTableData] = useState<TableDataItem[]>([]);
 
     const tableColumns = useMemo(
@@ -151,12 +140,11 @@ const ControllerUninstall = forwardRef<ModalRef, ModalSuccess>(
           id: item.id,
           os: item.operating_system,
           ip: item.ip,
-          port: null,
+          port: 22,
           username: null,
           password: null,
         }));
         setTableData(list);
-        initPage();
       },
     }));
 
@@ -198,23 +186,9 @@ const ControllerUninstall = forwardRef<ModalRef, ModalSuccess>(
       }
     };
 
-    const initPage = async () => {
-      setCollectorLoading(true);
-      try {
-        const res = await getnodelist({
-          cloud_region_id: Number(cloudid),
-          operating_system: config.os,
-        });
-        setNodeList(res || []);
-      } finally {
-        setCollectorLoading(false);
-      }
-    };
-
     //关闭用户的弹窗(取消和确定事件)
     const handleCancel = () => {
       setCollectorVisible(false);
-      setCollectorLoading(false);
     };
 
     const validateTableData = async () => {
@@ -236,11 +210,11 @@ const ControllerUninstall = forwardRef<ModalRef, ModalSuccess>(
 
     //点击确定按钮的相关逻辑处理
     const handleConfirm = () => {
-      collectorformRef.current?.validateFields().then((values) => {
+      collectorformRef.current?.validateFields().then(() => {
         const data = cloneDeep(tableData);
         const params = {
           cloud_region_id: +cloudid,
-          work_node: values.work_node,
+          work_node: config.work_node,
           nodes: data.map((item) => {
             delete item.id;
             return item;
@@ -304,35 +278,6 @@ const ControllerUninstall = forwardRef<ModalRef, ModalSuccess>(
         }
       >
         <Form ref={collectorformRef} layout="vertical" colon={false}>
-          <Form.Item<ControllerInstallFields>
-            required
-            label={t('node-manager.cloudregion.node.defaultNode')}
-          >
-            <Form.Item
-              name="work_node"
-              noStyle
-              rules={[{ required: true, message: t('common.required') }]}
-            >
-              <Select
-                style={{
-                  width: 300,
-                }}
-                showSearch
-                allowClear
-                loading={collectorLoading}
-                placeholder={t('common.pleaseSelect')}
-              >
-                {nodeList.map((item) => (
-                  <Option value={item.id} key={item.id}>
-                    {item.name}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
-            <div className="text-[var(--color-text-2)] text-[12px] mt-[10px]">
-              {t('node-manager.cloudregion.node.defaultUninstallNodeDes')}
-            </div>
-          </Form.Item>
           <Form.Item<ControllerInstallFields>
             name="nodes"
             label={t('node-manager.cloudregion.node.controllerInfo')}

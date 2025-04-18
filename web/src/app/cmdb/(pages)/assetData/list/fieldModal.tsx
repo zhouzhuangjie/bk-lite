@@ -126,7 +126,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
     const renderFormLabel = (item: AttrFieldType) => {
       return (
         <div className="flex items-center">
-          {type === 'batchEdit' && item.editable && item.attr_id !== 'inst_name' && (
+          {type === 'batchEdit' && item.editable && !item.is_only && (
             <Checkbox
               checked={enabledFields[item.attr_id]}
               onChange={(e) => handleFieldToggle(item.attr_id, e.target.checked)}
@@ -143,9 +143,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
     const renderFormField = (item: AttrFieldType) => {
       const isEditable = type !== 'batchEdit' || enabledFields[item.attr_id];
       const baseDisabled = !item.editable && type !== 'add';
-      const fieldDisabled = type === 'batchEdit' 
-        ? !isEditable 
-        : baseDisabled || (item.attr_id === 'inst_name' && type !== 'add');
+      const fieldDisabled = type === 'batchEdit' ? !isEditable  : baseDisabled;
 
       const formField = (() => {
         switch (item.attr_type) {
