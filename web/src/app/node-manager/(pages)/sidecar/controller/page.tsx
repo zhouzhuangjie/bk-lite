@@ -114,7 +114,7 @@ const Controller = () => {
           >
             <PermissionWrapper
               key={item.title}
-              requiredPermissions={["AddPacket"]}
+              requiredPermissions={[item.role]}
               className="!block"
             >
               <Button type="text" className="w-full" >
