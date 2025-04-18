@@ -6,6 +6,7 @@ import CustomTable from '@/components/custom-table';
 import Introduction from '@/app/cmdb/components/introduction';
 import styles from './index.module.scss';
 import type { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 import { Input, Select, DatePicker, message } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { useCommon } from '@/app/cmdb/context/common';
@@ -23,7 +24,7 @@ interface ListItem {
 interface Filters {
   operator: undefined | string;
   type: undefined | string;
-  overview: string;
+  message: string;
   dateRange: [Dayjs | null, Dayjs | null] | null;
 }
 
@@ -45,15 +46,17 @@ const OperationLog: React.FC = () => {
   const [filters, setFilters] = useState<Filters>({
     operator: undefined,
     type: undefined,
-    overview: '',
+    message: '',
     dateRange: null,
   });
 
   const operationTypes = [
-    { label: t('common.addNew'), value: 'Add' },
-    { label: t('common.edit'), value: 'Edit' },
-    { label: t('common.delete'), value: 'Delete' },
-    { label: t('common.execute'), value: 'Execute' },
+    { label: t('OperationLog.operationOpts.create_entity'), value: 'create_entity' },
+    { label: t('OperationLog.operationOpts.update_entity'), value: 'update_entity' },
+    { label: t('OperationLog.operationOpts.delete_entity'), value: 'delete_entity' },
+    { label: t('OperationLog.operationOpts.execute'), value: 'execute' },
+    { label: t('OperationLog.operationOpts.create_edge'), value: 'create_edge' },
+    { label: t('OperationLog.operationOpts.delete_edge'), value: 'delete_edge' },
   ];
 
   const operators = userList.map(user => ({
@@ -79,11 +82,11 @@ const OperationLog: React.FC = () => {
         page_size: allParams.pageSize,
         operator: allParams.operator,
         type: allParams.type,
-        overview: allParams.overview,
-        start_time: allParams.dateRange?.[0]?.format('YYYY-MM-DD HH:mm:ss'),
-        end_time: allParams.dateRange?.[1]?.format('YYYY-MM-DD HH:mm:ss'),
+        message: allParams.message,
+        created_at_after: allParams.dateRange?.[0]?.format('YYYY-MM-DD HH:mm:ss'),
+        created_at_before: allParams.dateRange?.[1]?.format('YYYY-MM-DD HH:mm:ss'),
       };
-      const data = await get('/cmdb/api/oid/', { params: queryParams });
+      const data = await get('/cmdb/api/change_record', { params: queryParams });
       setDataList(data.items || []);
       setPagination((prev) => ({
         ...prev,
@@ -113,12 +116,12 @@ const OperationLog: React.FC = () => {
   };
 
   const handleInputSearch = () => {
-    handleFilterChange('overview', inputValue);
+    handleFilterChange('message', inputValue);
   };
 
   const handleInputClear = () => {
     setInputValue('');
-    handleFilterChange('overview', '');
+    handleFilterChange('message', '');
   };
 
   const handleTableChange = (newPagination: any) => {
@@ -138,8 +141,8 @@ const OperationLog: React.FC = () => {
       },
       {
         title: t('OperationLog.operationObject'),
-        dataIndex: 'object_name',
-        key: 'object_name',
+        dataIndex: 'model_object',
+        key: 'model_object',
         width: 160,
       },
       {
@@ -147,17 +150,19 @@ const OperationLog: React.FC = () => {
         dataIndex: 'type',
         key: 'type',
         width: 120,
+        render: (type: string) => t(`OperationLog.operationOpts.${type}`),
       },
       {
         title: t('OperationLog.operationTime'),
         dataIndex: 'created_at',
         key: 'created_at',
         width: 240,
+        render: (time: string) => dayjs(time).format('YYYY-MM-DD HH:mm:ss'),
       },
       {
         title: t('OperationLog.summary'),
-        dataIndex: 'overview',
-        key: 'overview',
+        dataIndex: 'message',
+        key: 'message',
         width: 300,
       }
     ];
