@@ -97,11 +97,11 @@ const Cloudregion = () => {
         menuActions={() => {
           return (
             <Menu>
-              <PermissionWrapper requiredPermissions={["Edit"]}>
-                <Menu.Item key="edit" onClick={() => handleEdit()}>
+              <Menu.Item key="edit" onClick={() => handleEdit()}>
+                <PermissionWrapper requiredPermissions={["Edit"]}>
                   {t('common.edit')}
-                </Menu.Item>
-              </PermissionWrapper>
+                </PermissionWrapper>
+              </Menu.Item>
 
             </Menu>
           );

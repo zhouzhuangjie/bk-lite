@@ -105,21 +105,24 @@ const Collector = () => {
     >
       {menuItem.map((item) => {
         return (
-          <PermissionWrapper
+
+          <Menu.Item
             key={item.title}
-            requiredPermissions={["Edit", "Delete", "AddPacket"]}
-            className="!block"
+            onClick={() => openModal({ ...item.config, form: data, key: 'collector' })}
           >
-            <Menu.Item
-              onClick={() => openModal({ ...item.config, form: data, key: 'collector' })}
+            <PermissionWrapper
+
+              requiredPermissions={["Add", "Edit", "Delete", "AddPacket"]}
+              className="!block"
             >
               {t(`node-manager.collector.${item.title}`)}
-            </Menu.Item>
-          </PermissionWrapper>
+            </PermissionWrapper>
+          </Menu.Item>
         )
       }
-      )}
-    </Menu>)
+      )
+      }
+    </Menu >)
   }, [menuItem]);
 
   const changeFilter = (selected: string[]) => {

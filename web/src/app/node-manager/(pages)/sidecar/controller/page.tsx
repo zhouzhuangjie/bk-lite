@@ -106,18 +106,19 @@ const Controller = () => {
       {menuItem.map((item) => {
         if (['delete', 'edit'].includes(item.key)) return;
         return (
-          <PermissionWrapper
+
+          <Menu.Item
             key={item.title}
-            requiredPermissions={["AddPacket"]}
-            className="!block"
+            onClick={() => openModal({ ...item.config, form: data, key: 'controller' })}
           >
-            <Menu.Item
+            <PermissionWrapper
               key={item.title}
-              onClick={() => openModal({ ...item.config, form: data, key: 'controller' })}
+              requiredPermissions={["AddPacket"]}
+              className="!block"
             >
               {t(`node-manager.collector.${item.title}`)}
-            </Menu.Item>
-          </PermissionWrapper>
+            </PermissionWrapper>
+          </Menu.Item>
         )
       }
       )}

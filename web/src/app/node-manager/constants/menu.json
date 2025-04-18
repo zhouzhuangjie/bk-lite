@@ -30,19 +30,19 @@
       "title": "探针",
       "icon": "xiaocaijiqi",
       "url": "/node-manager/sidecar",
-      "name": "collector_list",
+      "name": "Probe",
       "children": [
         {
           "title": "采集器",
           "icon": "shezhi",
           "url": "/node-manager/sidecar/collector",
-          "name": "cloud_region_node",
+          "name": "collector_list",
           "children": [
             {
               "title": "包管理",
               "url": "/node-manager/sidecar/collector/detail",
               "icon": "shezhi",
-              "name": "collector_overview"
+              "name": "collector_packet"
             }
           ]
         },
@@ -50,13 +50,13 @@
           "title": "控制器",
           "icon": "shezhi",
           "url": "/node-manager/sidecar/controller",
-          "name": "cloud_region_configuration",
+          "name": "controller_list",
           "children": [
             {
               "title": "包管理",
               "url": "/node-manager/sidecar/controller/detail",
               "icon": "shezhi",
-              "name": "collector_overview"
+              "name": "controller_packet"
             }
           ]
         }
@@ -94,14 +94,36 @@
   {
     "title": "Sidecar",
     "icon": "xiaocaijiqi",
-    "url": "/node-manager/collector/",
-    "name": "collector_list",
+    "url": "/node-manager/sidecar",
+    "name": "Probe",
     "children": [
       {
-        "title": "Overview",
-        "url": "/node-manager/collector/detail",
+        "title": "Collector",
         "icon": "shezhi",
-        "name": "collector_overview"
+        "url": "/node-manager/sidecar/collector",
+        "name": "collector_list",
+        "children": [
+          {
+            "title": "Package Management",
+            "url": "/node-manager/sidecar/collector/detail",
+            "icon": "shezhi",
+            "name": "collector_packet"
+          }
+        ]
+      },
+      {
+        "title": "Controller",
+        "icon": "shezhi",
+        "url": "/node-manager/sidecar/controller",
+        "name": "controller_list",
+        "children": [
+          {
+            "title": "Package Management",
+            "url": "/node-manager/sidecar/controller/detail",
+            "icon": "shezhi",
+            "name": "controller_list"
+          }
+        ]
       }
     ]
   }

@@ -5,11 +5,13 @@ import { message } from 'antd';
 import CustomTable from '@/components/custom-table';
 import { useDetailColumns } from '@/app/node-manager/hooks/collector';
 import useApiCollector from '@/app/node-manager/api/collector';
-import type {  Pagination, TableDataItem } from '@/app/node-manager/types/index';
+import useApiClient from '@/utils/request';
+import type { Pagination, TableDataItem } from '@/app/node-manager/types/index';
 
 const Collectordetail = () => {
   const { t } = useTranslation();
   const { getPackageList, deletePackage } = useApiCollector();
+  const { isLoading } = useApiClient();
   const [pagination, setPagination] = useState<Pagination>({
     current: 1,
     total: 0,
@@ -22,8 +24,10 @@ const Collectordetail = () => {
   });
 
   useEffect(() => {
-    getTableData();
-  }, [])
+    if (!isLoading) {
+      getTableData();
+    }
+  }, [isLoading])
 
 
   const getTableData = async () => {

@@ -350,34 +350,30 @@ const Node = () => {
                     {t('node-manager.cloudregion.node.installController')}
                   </Button>
                 </PermissionWrapper>
-                <PermissionWrapper requiredPermissions={["UninstallController"]}>
-                  <Dropdown
-                    className="mr-[8px]"
-                    menu={SidecarmenuProps}
-                    disabled={enableOperateSideCar}
-                  >
-                    <Button>
-                      <Space>
-                        {t('node-manager.cloudregion.node.sidecar')}
-                        <DownOutlined />
-                      </Space>
-                    </Button>
-                  </Dropdown>
-                </PermissionWrapper>
-                <PermissionWrapper requiredPermissions={["OperateCollector"]}>
-                  <Dropdown
-                    className="mr-[8px]"
-                    menu={CollectormenuProps}
-                    disabled={enableOperateCollecter}
-                  >
-                    <Button>
-                      <Space>
-                        {t('node-manager.cloudregion.node.collector')}
-                        <DownOutlined />
-                      </Space>
-                    </Button>
-                  </Dropdown>
-                </PermissionWrapper>
+                <Dropdown
+                  className="mr-[8px]"
+                  menu={SidecarmenuProps}
+                  disabled={enableOperateSideCar}
+                >
+                  <Button>
+                    <Space>
+                      {t('node-manager.cloudregion.node.sidecar')}
+                      <DownOutlined />
+                    </Space>
+                  </Button>
+                </Dropdown>
+                <Dropdown
+                  className="mr-[8px]"
+                  menu={CollectormenuProps}
+                  disabled={enableOperateCollecter}
+                >
+                  <Button>
+                    <Space>
+                      {t('node-manager.cloudregion.node.collector')}
+                      <DownOutlined />
+                    </Space>
+                  </Button>
+                </Dropdown>
               </div>
             </div>
             <div className="tablewidth">
