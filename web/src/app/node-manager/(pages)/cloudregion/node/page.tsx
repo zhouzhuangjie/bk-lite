@@ -336,10 +336,6 @@ const Node = () => {
                   onChange={(e) => setSearchText(e.target.value)}
                   onSearch={onSearch}
                 />
-                <ReloadOutlined
-                  className="mr-[8px]"
-                  onClick={() => getNodes('refresh')}
-                />
                 <Button
                   type="primary"
                   className="mr-[8px]"
@@ -371,6 +367,7 @@ const Node = () => {
                     </Space>
                   </Button>
                 </Dropdown>
+                <ReloadOutlined onClick={() => getNodes('refresh')} />
               </div>
             </div>
             <div className="tablewidth">
@@ -390,7 +387,7 @@ const Node = () => {
             />
             <ControllerUninstall
               ref={controllerRef}
-              config={{ os: system }}
+              config={{ os: system, work_node: name }}
               onSuccess={(config) => {
                 handleCollector(config);
               }}
