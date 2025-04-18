@@ -51,7 +51,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) =
       setVisible(true);
       info.name = !isAdd ? name || '' : '';
       info.system = !isAdd && tagList?.length ? tagList[0] : 'windows';
-      info.description = !isAdd ? description || '--' : '--';
+      info.description = !isAdd ? description || '--' : '';
       setFormData(info);
     }
   }));
