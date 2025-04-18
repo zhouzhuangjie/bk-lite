@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import collectorstyle from "../index.module.scss";
-import { Menu, Input, Space, Select } from "antd";
+import { Menu, Input, Space, Select, Button } from "antd";
 import useApiClient from '@/utils/request';
 import useApiCollector from "@/app/node-manager/api/collector/index";
 import EntityList from "@/components/entity-list/index";
@@ -108,14 +108,16 @@ const Collector = () => {
 
           <Menu.Item
             key={item.title}
+            className="!p-0"
             onClick={() => openModal({ ...item.config, form: data, key: 'collector' })}
           >
             <PermissionWrapper
-
-              requiredPermissions={["Add", "Edit", "Delete", "AddPacket"]}
+              requiredPermissions={[item.role]}
               className="!block"
             >
-              {t(`node-manager.collector.${item.title}`)}
+              <Button type="text" className="w-full">
+                {t(`node-manager.collector.${item.title}`)}
+              </Button>
             </PermissionWrapper>
           </Menu.Item>
         )

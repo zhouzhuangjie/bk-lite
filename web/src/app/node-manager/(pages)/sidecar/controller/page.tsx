@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import collectorstyle from "../index.module.scss";
-import { Menu, Input, Space, Select } from "antd";
+import { Menu, Input, Space, Select, Button } from "antd";
 import useApiClient from '@/utils/request';
 import useApiCollector from "@/app/node-manager/api/collector/index";
 import EntityList from "@/components/entity-list/index";
@@ -116,7 +116,9 @@ const Controller = () => {
               requiredPermissions={["AddPacket"]}
               className="!block"
             >
-              {t(`node-manager.collector.${item.title}`)}
+              <Button type="text" size="small">
+                {t(`node-manager.collector.${item.title}`)}
+              </Button>
             </PermissionWrapper>
           </Menu.Item>
         )
