@@ -20,7 +20,6 @@ const SidecarLayout = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
-
     const info = {
       id: searchParams.get('id') || '',
       name: searchParams.get('name') || '',
@@ -66,7 +65,7 @@ const SidecarLayout = ({ children }: { children: React.ReactNode }) => {
         showBackButton={true}
         intro={!isDetail || <Collectorintro></Collectorintro>}
         onBackButtonClick={() => {
-          router.push('/node-manager/collector/');
+          router.back();
         }}
       >
         {children}

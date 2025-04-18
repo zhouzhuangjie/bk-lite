@@ -14,6 +14,7 @@ import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
 import useApiClient from '@/utils/request';
 import useCloudId from '@/app/node-manager/hooks/useCloudid';
 import variableStyle from './index.module.scss';
+import PermissionWrapper from '@/components/permission';
 type SearchProps = GetProps<typeof Input.Search>;
 const { Search } = Input;
 
@@ -112,20 +113,23 @@ const Variable = () => {
             enterButton
             onSearch={onSearch}
           />
-          <Button
-            type="primary"
-            onClick={() => {
-              openUerModal('add', {
-                name: '',
-                key: '',
-                value: '',
-                description: '',
-              });
-            }}
-          >
-            <PlusOutlined />
-            {t('common.add')}
-          </Button>
+          <PermissionWrapper requiredPermissions={["Add"]}>
+            <Button
+              type="primary"
+              onClick={() => {
+                openUerModal('add', {
+                  name: '',
+                  key: '',
+                  value: '',
+                  description: '',
+                });
+              }}
+            >
+              <PlusOutlined />
+              {t('common.add')}
+            </Button>
+          </PermissionWrapper>
+
         </div>
         <div className="tablewidth">
           <CustomTable

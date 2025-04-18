@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/utils/i18n';
 import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
 import EntityList from '@/components/entity-list/index';
+import PermissionWrapper from '@/components/permission'
 import type {
   cloudRegionItem,
   CloudregioncardProps,
@@ -96,13 +97,16 @@ const Cloudregion = () => {
         menuActions={() => {
           return (
             <Menu>
-              <Menu.Item key="edit" onClick={() => handleEdit()}>
-                {t('common.edit')}
-              </Menu.Item>
+              <PermissionWrapper requiredPermissions={["Edit"]}>
+                <Menu.Item key="edit" onClick={() => handleEdit()}>
+                  {t('common.edit')}
+                </Menu.Item>
+              </PermissionWrapper>
+
             </Menu>
           );
         }}
-        openModal={() => {}}
+        openModal={() => { }}
         onCardClick={(item: cloudRegionItem) => {
           navigateToNode(item);
         }}

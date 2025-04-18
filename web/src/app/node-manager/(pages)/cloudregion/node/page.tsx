@@ -27,6 +27,7 @@ import ControllerInstall from './controllerInstall';
 import ControllerUninstall from './controllerUninstall';
 import CollectorInstallTable from './controllerTable';
 import { useRouter, useSearchParams } from 'next/navigation';
+import PermissionWrapper from '@/components/permission';
 import {
   OPERATE_SYSTEMS,
   useSidecaritems,
@@ -340,37 +341,43 @@ const Node = () => {
                   className="mr-[8px]"
                   onClick={() => getNodes('refresh')}
                 />
-                <Button
-                  type="primary"
-                  className="mr-[8px]"
-                  onClick={handleInstallController}
-                >
-                  {t('node-manager.cloudregion.node.installController')}
-                </Button>
-                <Dropdown
-                  className="mr-[8px]"
-                  menu={SidecarmenuProps}
-                  disabled={enableOperateSideCar}
-                >
-                  <Button>
-                    <Space>
-                      {t('node-manager.cloudregion.node.sidecar')}
-                      <DownOutlined />
-                    </Space>
+                <PermissionWrapper requiredPermissions={["InstallController"]}>
+                  <Button
+                    type="primary"
+                    className="mr-[8px]"
+                    onClick={handleInstallController}
+                  >
+                    {t('node-manager.cloudregion.node.installController')}
                   </Button>
-                </Dropdown>
-                <Dropdown
-                  className="mr-[8px]"
-                  menu={CollectormenuProps}
-                  disabled={enableOperateCollecter}
-                >
-                  <Button>
-                    <Space>
-                      {t('node-manager.cloudregion.node.collector')}
-                      <DownOutlined />
-                    </Space>
-                  </Button>
-                </Dropdown>
+                </PermissionWrapper>
+                <PermissionWrapper requiredPermissions={["UninstallController"]}>
+                  <Dropdown
+                    className="mr-[8px]"
+                    menu={SidecarmenuProps}
+                    disabled={enableOperateSideCar}
+                  >
+                    <Button>
+                      <Space>
+                        {t('node-manager.cloudregion.node.sidecar')}
+                        <DownOutlined />
+                      </Space>
+                    </Button>
+                  </Dropdown>
+                </PermissionWrapper>
+                <PermissionWrapper requiredPermissions={["OperateCollector"]}>
+                  <Dropdown
+                    className="mr-[8px]"
+                    menu={CollectormenuProps}
+                    disabled={enableOperateCollecter}
+                  >
+                    <Button>
+                      <Space>
+                        {t('node-manager.cloudregion.node.collector')}
+                        <DownOutlined />
+                      </Space>
+                    </Button>
+                  </Dropdown>
+                </PermissionWrapper>
               </div>
             </div>
             <div className="tablewidth">

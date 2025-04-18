@@ -23,7 +23,7 @@ const Collectordetail = () => {
 
   useEffect(() => {
     getTableData();
-  }, []);
+  }, [])
 
 
   const getTableData = async () => {
@@ -59,14 +59,14 @@ const Collectordetail = () => {
     }).finally(() => {
       setTableLoading(false);
     })
-  }
+  };
 
   const handleTableChange = (pagination: any) => {
     setPagination((prev: Pagination) => ({
       total: prev.total,
       ...pagination
     }));
-  }
+  };
 
   return (
     <div className="w-full h-full">

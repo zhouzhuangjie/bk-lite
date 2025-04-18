@@ -10,6 +10,7 @@ import { useTranslation } from "@/utils/i18n";
 import type { CardItem } from "@/app/node-manager/types/collector";
 import CollectorModal from "../collectorModal";
 import { ModalRef } from "@/app/node-manager/types";
+import PermissionWrapper from '@/components/permission';
 import { useMenuItem } from "@/app/node-manager/constants/collector";
 import { Option } from "@/types";
 const { Search } = Input;
@@ -29,17 +30,13 @@ const Collector = () => {
 
   useEffect(() => {
     if (!isLoading) {
-      firstFetchList(search, selected);
+      fetchCollectorlist(search, selected);
     }
   }, [isLoading])
 
   const navigateToCollectorDetail = (item: CardItem) => {
     router.push(`
       /node-manager/sidecar/collector/detail?id=${item.id}&name=${item.name}&introduction=${item.description}&system=${item.tagList[0]}`);
-  };
-
-  const cardSetters: Record<string, React.Dispatch<React.SetStateAction<CardItem[]>>> = {
-    collector: setCollectorCards,
   };
 
   const filterBySelected = (data: any[], selected: string[]) => {
@@ -50,7 +47,7 @@ const Collector = () => {
     );
   };
 
-  const handleResult = (res: any, value: string, selected?: string[]) => {
+  const handleResult = (res: any, selected?: string[]) => {
     const optionSet = new Set<string>();
     const _options: Option[] = [];
     const filter = res.filter((item: any) => !item.controller_default_run);
@@ -72,24 +69,8 @@ const Collector = () => {
       })
     });
     tempdata = filterBySelected(tempdata, selected || []);
-    cardSetters[value](tempdata);
+    setCollectorCards(tempdata);
     setOptions(_options);
-  };
-
-  // 首次加载执行
-  const firstFetchList = async (search?: string, selected?: string[]) => {
-    setLoading(true);
-    const params = {
-      name: search
-    };
-    try {
-      const res = await getCollectorlist(params);
-      handleResult(res, 'collector', selected);
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const fetchCollectorlist = async (search?: string, selected?: string[]) => {
@@ -97,7 +78,7 @@ const Collector = () => {
     try {
       setLoading(true);
       const res = await getCollectorlist(params);
-      handleResult(res, 'collector', selected);
+      handleResult(res, selected);
     } catch (error) {
       console.log(error);
     } finally {
@@ -124,10 +105,17 @@ const Collector = () => {
     >
       {menuItem.map((item) => {
         return (
-          <Menu.Item
+          <PermissionWrapper
             key={item.title}
-            onClick={() => openModal({ ...item.config, form: data, key: 'collector' })}>{t(`node-manager.collector.${item.title}`)}
-          </Menu.Item>
+            requiredPermissions={["Edit", "Delete", "AddPacket"]}
+            className="!block"
+          >
+            <Menu.Item
+              onClick={() => openModal({ ...item.config, form: data, key: 'collector' })}
+            >
+              {t(`node-manager.collector.${item.title}`)}
+            </Menu.Item>
+          </PermissionWrapper>
         )
       }
       )}
