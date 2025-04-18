@@ -1,11 +1,11 @@
 'use client';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Input } from 'antd';
 import type { GetProps } from 'antd';
 import { ColumnFilterItem } from 'antd/es/table/interface';
 import { useRouter, useSearchParams } from 'next/navigation';
 import CustomTable from '@/components/custom-table';
-import { ModalRef } from '@/app/node-manager/types/index';
+import { ModalRef, TableDataItem } from '@/app/node-manager/types/index';
 import { useTranslation } from '@/utils/i18n';
 import useApiClient from '@/utils/request';
 import type {
@@ -40,8 +40,7 @@ const Configration = () => {
   const { getconfiglist, getnodelist } = useApiCloudRegion();
   const { getCollectorlist } = useApiCollector();
   const [loading, setLoading] = useState<boolean>(true);
-  const [configdata, setConfigdata] = useState<ConfigDate[]>([]);
-  const [tableData, setTableData] = useState<ConfigDate[]>([]);
+  const [configData, setConfigData] = useState<ConfigDate[]>([]);
   const [showSub, setShowSub] = useState<boolean>(false);
   const [filters, setFilters] = useState<ColumnFilterItem[]>([]);
   const [nodeData, setNodeData] = useState<ConfigDate>({
@@ -53,18 +52,20 @@ const Configration = () => {
     configinfo: '',
     nodes: [],
   });
-  const [collectorId, setCollectorId] = useState<string[]>([]);
+  const [collectorIds, setCollectorIds] = useState<string[]>([]);
+  const [originNodes, setOriginNodes] = useState<TableDataItem[]>([]);
+  const [originConfigs, setOriginConfigs] = useState<IConfiglistprops[]>([]);
 
   const showConfigurationModal = (type: string, form: any) => {
     configurationRef.current?.showModal({
       type,
       form,
-    })
+    });
   };
 
   //点击编辑配置文件的触发事件
   const configurationClick = (key: string) => {
-    const configurationformdata = configdata.find((item) => item.key === key);
+    const configurationformdata = configData.find((item) => item.key === key);
     showConfigurationModal('edit', configurationformdata);
   };
 
@@ -74,12 +75,22 @@ const Configration = () => {
   };
 
   const openSub = (key: string, item?: any) => {
-    setNodeData(item);
+    if (item) {
+      setNodeData({
+        ...item,
+        nodesList: originNodes.map((item) => ({
+          label: item?.ip,
+          value: item?.id,
+        })),
+      });
+    }
     setShowSub(true);
   };
 
   const nodeClick = () => {
-    router.push(`/node-manager/cloudregion/node?cloudregion_id=${cloudregionId}&name=${name}`);
+    router.push(
+      `/node-manager/cloudregion/node?cloudregion_id=${cloudregionId}&name=${name}`
+    );
   };
 
   const { columns } = useConfigColumns({
@@ -91,91 +102,109 @@ const Configration = () => {
 
   useEffect(() => {
     if (isLoading) return;
-    setLoading(true);
-    Promise.all([getConfiglist(nodeId || ''), getCollectorList()])
-      .then(() => {
-        setLoading(false);
-      });
+    initPage();
     return () => {
       sessionStorage.removeItem('cloudRegionInfo');
     };
-  }, [isLoading])
+  }, [isLoading]);
 
-  useEffect(() => {
-    if(!collectorId.length && !configdata.length) return;
-    if(!loading) setLoading(true);
-    Promise.resolve().then(() => {
-      setTableData(configdata.filter((item) => {
-        return collectorId.includes(item.collector);
-      }));
-      setLoading(false);
-    });
-  }, [collectorId,configdata])
+  const tableData = useMemo(() => {
+    if (!collectorIds.length) return configData;
+    if (configData.length && collectorIds.length) {
+      return configData.filter((item) => {
+        return collectorIds.includes(item.collector);
+      });
+    }
+    return [];
+  }, [collectorIds, configData]);
 
   //获取配置文件列表
-  const getConfiglist = async (search: string) => {
-    const res = await Promise.all([getconfiglist(Number(cloudid), search), getnodelist({ cloud_region_id: Number(cloudid) })]);
-    const configlist = res[0];
-    const nodeList = res[1];
-    const data = configlist.map((item: IConfiglistprops) => {
-      const nodes = item.nodes?.map((node: string) => {
-        const nodeItem = nodeList.find((nodeData: any) => nodeData.id === node);
-        return {
-          label: nodeItem?.ip,
-          value: nodeItem?.id,
-        };
+  const initPage = async () => {
+    setLoading(true);
+    try {
+      const res = await Promise.all([
+        getconfiglist(Number(cloudid), nodeId || ''),
+        getnodelist({ cloud_region_id: Number(cloudid) }),
+        getCollectorlist({}),
+      ]);
+      const configlist = res[0] || [];
+      const nodeList = res[1] || [];
+      setFilterConfig(res[2] || []);
+      setOriginConfigs(configlist);
+      setOriginNodes(nodeList);
+      dealConfigData({
+        configlist,
+        nodeList,
       });
-      const config = {
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const dealConfigData = (
+    config = {
+      configlist: originConfigs,
+      nodeList: originNodes,
+    }
+  ) => {
+    const nodes = config.nodeList.map((item) => ({
+      label: item?.ip,
+      value: item?.id,
+    }));
+    const data: any = config.configlist.map((item: IConfiglistprops) => {
+      return {
+        ...item,
         key: item.id,
-        name: item.name,
-        collector: item.collector as string,
-        collector_name: item.collector_name,
         operatingsystem: item.operating_system,
         nodecount: item.node_count,
         configinfo: item.config_template,
-        nodes: nodes?.length ? nodes : '--',
+        nodesList: nodes || [],
       };
-      return config;
     });
-    setConfigdata(data);
+    setConfigData(data);
   };
 
-  // 获取采集器列表
-  const getCollectorList = async () => {
-    const res = await getCollectorlist({});
+  const getConfigData = async (search = '') => {
+    setLoading(true);
+    try {
+      const data = await getconfiglist(Number(cloudid), search || '');
+      dealConfigData({
+        configlist: data,
+        nodeList: originNodes,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 根据采集器列表过滤数据
+  const setFilterConfig = (data: TableDataItem) => {
     const filters = new Map();
-    const collectorId =
-      res
-        .filter((item: any) => !item.controller_default_run)
-        .map((item: any) => {
-          filters.set(item.name, { text: item.name, value: item.name });
-          return item.id;
-        });
+    const collectorIds = data
+      .filter((item: any) => !item.controller_default_run)
+      .map((item: any) => {
+        filters.set(item.name, { text: item.name, value: item.name });
+        return item.id;
+      });
     setFilters(Array.from(filters.values()) as ColumnFilterItem[]);
-    setCollectorId(collectorId);
+    setCollectorIds(collectorIds);
   };
 
   //搜索框的触发事件
   const onSearch: SearchProps['onSearch'] = (value) => {
-    setLoading(true);
-    getConfiglist(value).then(() => {
-      setLoading(false);
-    })
+    getConfigData(value);
   };
 
   // 子配置返回配置页面事件
   const handleCBack = () => {
-    getConfiglist('');
+    getConfigData();
     setShowSub(false);
   };
 
   // 弹窗确认成功后的回调
   const onSuccess = () => {
     if (!showSub) {
-      setLoading(true);
-      getConfiglist('').then(() => {
-        setLoading(false);
-      })
+      getConfigData();
       return;
     }
     subConfiguration.current?.getChildConfig();
@@ -212,11 +241,7 @@ const Configration = () => {
           />
         )}
         {/* 弹窗组件（添加，编辑，应用）用于刷新页面 */}
-        <ConfigModal
-          ref={configurationRef}
-
-          onSuccess={onSuccess}
-        ></ConfigModal>
+        <ConfigModal ref={configurationRef} onSuccess={onSuccess}></ConfigModal>
       </div>
     </Mainlayout>
   );

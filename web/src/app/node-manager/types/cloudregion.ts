@@ -1,4 +1,5 @@
 import type { TableDataItem } from '@/app/node-manager/types/index';
+import { ListItem } from '@/types';
 import { ColumnFilterItem } from 'antd/es/table/interface';
 
 //配置页面的table的列定义
@@ -10,8 +11,8 @@ interface ConfigHookParams {
 }
 // 子配置页面table的列定义
 interface SubConfigHookParams {
-  edit: (item: IConfiglistprops) => void, 
-  nodeData: ConfigDate
+  edit: (item: IConfiglistprops) => void;
+  nodeData: ConfigDate;
 }
 interface VariableProps {
   openUerModal: (type: string, form: TableDataItem) => void;
@@ -83,17 +84,18 @@ interface ConfigDate {
   operatingsystem: string;
   nodecount: number;
   configinfo: string;
-  nodes: string[]
+  nodes: string[];
+  nodesList?: ListItem;
 }
 
 interface SubRef {
   getChildConfig: () => void;
 }
 
-interface SubProps { 
-  cancel: () => void, 
-  edit: (item: IConfiglistprops) => void, 
-  nodeData: ConfigDate 
+interface SubProps {
+  cancel: () => void;
+  edit: (item: IConfiglistprops) => void;
+  nodeData: ConfigDate;
 }
 
 interface cloudRegionItem {
@@ -166,5 +168,5 @@ export type {
   ControllerInstallFields,
   ControllerInstallProps,
   NodeItem,
-  SubConfigHookParams
+  SubConfigHookParams,
 };
