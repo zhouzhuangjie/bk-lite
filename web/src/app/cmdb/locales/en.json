@@ -308,6 +308,14 @@
         "operationType": "Type",
         "summary": "Overview",
         "operationObject": "Object",
-        "operationTime": "Operating Time"
+        "operationTime": "Operating Time",
+        "operationOpts": {
+            "create_entity": "Create",
+            "delete_entity": "Delete",
+            "update_entity": "Update",
+            "create_edge": "Create Association",
+            "delete_edge": "Delete Association",
+            "execute": "Execute"
+        }
     }
 }

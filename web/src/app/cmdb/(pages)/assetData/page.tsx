@@ -19,7 +19,7 @@ import CustomTable from '@/components/custom-table';
 import SearchFilter from './list/searchFilter';
 import ImportInst from './list/importInst';
 import SelectInstance from './detail/relationships/selectInstance';
-import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { SearchOutlined, DownOutlined } from '@ant-design/icons';
 import { useSearchParams } from 'next/navigation';
 import assetDataStyle from './index.module.scss';
 import FieldModal from './list/fieldModal';
@@ -412,14 +412,14 @@ const AssetDataContent = () => {
     setQueryList(condition);
   };
 
-  const checkDetail = (row = { _id: '', inst_name: '' }) => {
+  const checkDetail = (row = { _id: '', inst_name: '', ip_addr: '' }) => {
     const modelItem = modelList.find((item) => item.key === modelId);
     router.push(
       `/cmdb/assetData/detail/baseInfo?icn=${modelItem?.icn || ''}&model_name=${
         modelItem?.label || ''
       }&model_id=${modelId}&classification_id=${groupId}&inst_id=${
         row._id
-      }&inst_name=${row.inst_name}`
+      }&${row.inst_name ? `inst_name=${row.inst_name}` : `ip_addr=${row.ip_addr}`}`
     );
   };
 
@@ -699,13 +699,12 @@ const AssetDataContent = () => {
             </Space>
             <Space>
               <PermissionWrapper requiredPermissions={['Add']}>
-                <Dropdown
-                  menu={{ items: addInstItems }}
-                  placement="bottom"
-                  arrow
-                >
-                  <Button icon={<PlusOutlined />} type="primary">
-                    {t('common.addNew')}
+                <Dropdown menu={{ items: addInstItems }} placement="bottom">
+                  <Button type="primary">
+                    <Space>
+                      {t('common.addNew')}
+                      <DownOutlined />
+                    </Space>
                   </Button>
                 </Dropdown>
               </PermissionWrapper>
@@ -713,17 +712,25 @@ const AssetDataContent = () => {
                 menu={{ items: exportItems }}
                 disabled={exportLoading}
                 placement="bottom"
-                arrow
               >
-                <Button>{t('export')}</Button>
+                <Button>
+                  <Space>
+                    {t('export')}
+                    <DownOutlined />
+                  </Space>
+                </Button>
               </Dropdown>
               <Dropdown
                 menu={{ items: batchOperateItems }}
                 disabled={!selectedRowKeys.length}
                 placement="bottom"
-                arrow
               >
-                <Button>{t('more')}</Button>
+                <Button>
+                  <Space>
+                    {t('more')}
+                    <DownOutlined />
+                  </Space>
+                </Button>
               </Dropdown>
             </Space>
           </div>
