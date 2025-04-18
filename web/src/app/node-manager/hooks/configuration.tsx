@@ -1,7 +1,10 @@
 import { useTranslation } from '@/utils/i18n';
 import { Button, Tag } from 'antd';
 import type { TableColumnsType } from 'antd';
-import { ConfigHookParams, SubConfigHookParams } from '@/app/node-manager/types/cloudregion';
+import {
+  ConfigHookParams,
+  SubConfigHookParams,
+} from '@/app/node-manager/types/cloudregion';
 import { TableDataItem } from '@/app/node-manager/types/index';
 
 export const useApplyColumns = ({
@@ -49,7 +52,7 @@ export const useApplyColumns = ({
         return (
           <div>
             {nodes.includes(sidecarinfo.key) ? (
-              <Button type="link" onClick={() => { }}>
+              <Button type="link" onClick={() => {}}>
                 {t('common.unapply')}
               </Button>
             ) : (
@@ -75,7 +78,7 @@ export const useConfigColumns = ({
   configurationClick,
   openSub,
   nodeClick,
-  filter
+  filter,
 }: ConfigHookParams) => {
   const { t } = useTranslation();
   const columns: TableColumnsType<TableDataItem> = [
@@ -90,21 +93,34 @@ export const useConfigColumns = ({
       dataIndex: 'nodes',
       width: 150,
       render: (_, record) => {
-        return(<>
-          <Button
-            type="link"
-            className="text-blue-500 hover:text-blue-700"
-            onClick={() => nodeClick()}>
-            {record.nodes?.length ? record.nodes?.map((item: any) => item.label).join(',') : '--'}
-          </Button>
-        </>)
+        return (
+          <>
+            {record.nodes?.length ? (
+              <Button
+                type="link"
+                className="text-blue-500 hover:text-blue-700"
+                onClick={() => nodeClick()}
+              >
+                {record.nodesList
+                  .filter((item: TableDataItem) =>
+                    record.nodes.includes(item.value)
+                  )
+                  .map((item: TableDataItem) => item.label)
+                  .join(',')}
+              </Button>
+            ) : (
+              '--'
+            )}
+          </>
+        );
       },
     },
     {
       title: t('node-manager.cloudregion.node.system'),
       dataIndex: 'operatingsystem',
       width: 150,
-      render: (_,record) => t(`node-manager.cloudregion.Configuration.${record.operatingsystem}`),
+      render: (_, record) =>
+        t(`node-manager.cloudregion.Configuration.${record.operatingsystem}`),
     },
     {
       title: t('node-manager.cloudregion.Configuration.sidecar'),
@@ -113,7 +129,7 @@ export const useConfigColumns = ({
       filters: filter,
       width: 150,
       onFilter: (value, record) => {
-        return record?.collector_name === value
+        return record?.collector_name === value;
       },
     },
     {
@@ -154,7 +170,7 @@ export const useConfigColumns = ({
 
 export const useSubConfigColumns = ({
   nodeData,
-  edit
+  edit,
 }: SubConfigHookParams) => {
   const { t } = useTranslation();
   const columns: TableColumnsType<TableDataItem> = [
@@ -166,10 +182,8 @@ export const useSubConfigColumns = ({
       align: 'center',
       width: 300,
       render: (_: any, record: any) => {
-        return (
-          <span>{record.name || '--'}</span>
-        )
-      }
+        return <span>{record.name || '--'}</span>;
+      },
     },
     {
       title: t('common.actions'),
@@ -185,9 +199,9 @@ export const useSubConfigColumns = ({
             onClick={() => {
               edit({
                 ...record,
-                nodes: nodeData.nodes || '--',
+                nodes: nodeData.nodes || [],
                 collector: nodeData.collector,
-                configinfo: record.content
+                configinfo: record.content,
               });
             }}
           >
@@ -199,9 +213,9 @@ export const useSubConfigColumns = ({
   ];
 
   return {
-    columns
-  }
-}
+    columns,
+  };
+};
 
 export const useConfigModalColumns = () => {
   const { t } = useTranslation();
