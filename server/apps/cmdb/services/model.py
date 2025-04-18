@@ -11,10 +11,13 @@ from apps.cmdb.constants import (
     SUBORDINATE_MODEL,
     UPDATE_MODEL_CHECK_ATTR_MAP,
     USER,
+    OPERATOR_MODEL,
 )
 from apps.cmdb.graph.neo4j import Neo4jClient
 from apps.cmdb.language.service import SettingLanguage
+from apps.cmdb.models import UPDATE_INST, DELETE_INST, CREATE_INST
 from apps.cmdb.services.classification import ClassificationManage
+from apps.cmdb.utils.change_record import create_change_record
 from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.core.services.user_group import UserGroup
 from apps.rpc.system_mgmt import SystemMgmt
@@ -22,7 +25,7 @@ from apps.rpc.system_mgmt import SystemMgmt
 
 class ModelManage(object):
     @staticmethod
-    def create_model(data: dict):
+    def create_model(data: dict, username="admin"):
         """
         创建模型
         """
@@ -45,6 +48,9 @@ class ModelManage(object):
                 ),
                 "classification_model_asst_id",
             )
+        create_change_record(operator=username, model_id=data["model_id"], label="模型管理",
+                             _type=CREATE_INST, message=f"创建模型. 模型名称: {data['model_name']}",
+                             inst_id=result['_id'], model_object=OPERATOR_MODEL)
         return result
 
     @staticmethod
@@ -94,7 +100,7 @@ class ModelManage(object):
         return json.loads(attrs.replace('\\"', '"'))
 
     @staticmethod
-    def create_model_attr(model_id, attr_info):
+    def create_model_attr(model_id, attr_info, username="admin"):
         """
         创建模型属性
         """
@@ -118,10 +124,14 @@ class ModelManage(object):
                 continue
             attr = attr
 
+        create_change_record(operator=username, model_id=model_id, label="模型管理",
+                             _type=CREATE_INST, message=f"创建模型属性. 模型名称: {model_info['model_name']}",
+                             inst_id=model_info['_id'], model_object=OPERATOR_MODEL)
+
         return attr
 
     @staticmethod
-    def update_model_attr(model_id, attr_info):
+    def update_model_attr(model_id, attr_info, username="admin"):
         """
         更新模型属性
         """
@@ -155,10 +165,14 @@ class ModelManage(object):
                 continue
             attr = attr
 
+        create_change_record(operator=username, model_id=model_id, label="模型管理",
+                             _type=UPDATE_INST, message=f"修改模型属性. 模型名称: {model_info['model_name']}",
+                             inst_id=model_info['_id'], model_object=OPERATOR_MODEL)
+
         return attr
 
     @staticmethod
-    def delete_model_attr(model_id: str, attr_id: str):
+    def delete_model_attr(model_id: str, attr_id: str, username: str = "admin"):
         """
         删除模型属性
         """
@@ -182,6 +196,10 @@ class ModelManage(object):
             # 模型属性删除后，要删除对应模型实例的属性
             model_params = [{"field": "model_id", "type": "str=", "value": model_id}]
             ag.remove_entitys_properties(INSTANCE, model_params, [attr_id])
+
+        create_change_record(operator=username, model_id=model_id, label="模型管理",
+                             _type=DELETE_INST, message=f"删除模型属性. 模型名称: {model_info['model_name']}",
+                             inst_id=model_info['_id'], model_object=OPERATOR_MODEL)
 
         return ModelManage.parse_attrs(result[0].get("attrs", "[]"))
 

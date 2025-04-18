@@ -5,7 +5,7 @@
 from apps.cmdb.constants import CollectPluginTypes
 from apps.cmdb.models.collect_model import CollectModels
 from apps.cmdb.collection.service import MetricsCannula, CollectK8sMetrics, CollectVmwareMetrics, \
-    CollectNetworkMetrics
+    CollectNetworkMetrics, ProtocolCollectMetrics
 
 
 class ProtocolCollect(object):
@@ -18,7 +18,8 @@ class ProtocolCollect(object):
         result = {
             CollectPluginTypes.VM: self.collect_vmware,
             CollectPluginTypes.SNMP: self.collect_network,
-            CollectPluginTypes.K8S: self.collect_k8s
+            CollectPluginTypes.K8S: self.collect_k8s,
+            CollectPluginTypes.PROTOCOL: self.collect_protocol
         }
         return result
 
@@ -39,6 +40,10 @@ class ProtocolCollect(object):
 
     def collect_network(self):
         data = NetworkCollect(self.task.id)()
+        return data
+
+    def collect_protocol(self):
+        data = ProtocolTaskCollect(self.task.id)()
         return data
 
     def main(self):
@@ -134,3 +139,7 @@ class VmwareCollect(BaseCollect):
 
 class NetworkCollect(BaseCollect):
     COLLECT_PLUGIN = CollectNetworkMetrics
+
+
+class ProtocolTaskCollect(BaseCollect):
+    COLLECT_PLUGIN = ProtocolCollectMetrics
