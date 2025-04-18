@@ -272,7 +272,6 @@ const AttributesModal = forwardRef<AttrModalRef, AttrModalProps>(
                                   >
                                     <HolderOutlined className="mr-[4px]" />
                                     <Input
-                                      disabled={type === 'edit'}
                                       placeholder={t('fieldKey')}
                                       className="mr-[10px] w-1/5"
                                       value={enumItem.name}
