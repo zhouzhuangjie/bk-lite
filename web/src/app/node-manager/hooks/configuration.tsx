@@ -1,5 +1,5 @@
 import { useTranslation } from '@/utils/i18n';
-import { Button, Tag } from 'antd';
+import { Button, Tag, Popconfirm } from 'antd';
 import type { TableColumnsType } from 'antd';
 import {
   ConfigHookParams,
@@ -78,6 +78,7 @@ export const useConfigColumns = ({
   configurationClick,
   openSub,
   nodeClick,
+  modifydeleteconfirm,
   filter,
 }: ConfigHookParams) => {
   const { t } = useTranslation();
@@ -158,6 +159,19 @@ export const useConfigColumns = ({
           >
             {t('node-manager.cloudregion.Configuration.subconfiguration')}
           </Button>
+          <Popconfirm
+            title={t('common.prompt')}
+            description={t(
+              'node-manager.cloudregion.Configuration.modifydelinfo'
+            )}
+            okText={t('common.confirm')}
+            cancelText={t('common.cancel')}
+            onConfirm={() => modifydeleteconfirm(item.key)}
+          >
+            <Button variant="link" color="primary">
+              {t('common.delete')}
+            </Button>
+          </Popconfirm>
         </div>
       ),
     },

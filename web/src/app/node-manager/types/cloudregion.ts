@@ -7,6 +7,7 @@ interface ConfigHookParams {
   configurationClick: (key: string) => void;
   openSub: (key: string, item?: any) => void;
   nodeClick: () => void;
+  modifydeleteconfirm: (key: string) => void;
   filter: ColumnFilterItem[];
 }
 // 子配置页面table的列定义

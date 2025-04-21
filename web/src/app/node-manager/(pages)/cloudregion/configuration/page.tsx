@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Input, Button } from 'antd';
+import { Input, Button, message } from 'antd';
 import type { GetProps } from 'antd';
 import { ColumnFilterItem } from 'antd/es/table/interface';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -37,7 +37,8 @@ const Configration = () => {
   ).id;
   const cloudregionId = searchParams.get('cloud_region_id') || '';
   const name = searchParams.get('name') || '';
-  const { getconfiglist, getnodelist } = useApiCloudRegion();
+  const { getconfiglist, getnodelist, batchdeletecollector } =
+    useApiCloudRegion();
   const { getCollectorlist } = useApiCollector();
   const [loading, setLoading] = useState<boolean>(true);
   const [configData, setConfigData] = useState<ConfigDate[]>([]);
@@ -94,11 +95,22 @@ const Configration = () => {
     );
   };
 
+  //批量删除的确定的弹窗
+  const modifydeleteconfirm = async (id: string) => {
+    setLoading(true);
+    await batchdeletecollector({
+      ids: [id],
+    });
+    message.success(t('common.deleteSuccess'));
+    getConfigData();
+  };
+
   const { columns } = useConfigColumns({
     configurationClick,
     filter: filters,
     openSub,
     nodeClick,
+    modifydeleteconfirm,
   });
 
   useEffect(() => {
