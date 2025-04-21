@@ -7,6 +7,8 @@ from django.db.models import Q
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
+from apps.cmdb.models import EXECUTE
+from apps.cmdb.utils.change_record import create_change_record
 from apps.rpc.node_mgmt import NodeMgmt
 from config.drf.viewsets import ModelViewSet
 from rest_framework.decorators import action
@@ -16,7 +18,7 @@ from django.utils.timezone import now
 from apps.cmdb.celery_tasks import sync_collect_task
 from config.drf.pagination import CustomPageNumberPagination
 from apps.core.utils.web_utils import WebUtils
-from apps.cmdb.constants import COLLECT_OBJ_TREE, CollectRunStatusType
+from apps.cmdb.constants import COLLECT_OBJ_TREE, CollectRunStatusType, OPERATOR_COLLECT_TASK
 from apps.cmdb.filters.collect_filters import CollectModelFilter, OidModelFilter
 from apps.cmdb.models.collect_model import CollectModels, OidMapping
 from apps.cmdb.serializers.collect_serializer import CollectModelSerializer, CollectModelLIstSerializer, \
@@ -108,6 +110,10 @@ class CollectModelViewSet(ModelViewSet):
             sync_collect_task.delay(instance.id)
         else:
             sync_collect_task(instance.id)
+
+        create_change_record(operator=request.user.username, model_id=instance.model_id, label="采集任务",
+                             _type=EXECUTE, message=f"执行采集任务. 任务名称: {instance.name}",
+                             inst_id=instance.id, model_object=OPERATOR_COLLECT_TASK)
 
         return WebUtils.response_success(instance.id)
 

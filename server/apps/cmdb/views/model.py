@@ -3,9 +3,11 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
-from apps.cmdb.constants import ASSOCIATION_TYPE
+from apps.cmdb.constants import ASSOCIATION_TYPE, OPERATOR_MODEL
 from apps.cmdb.language.service import SettingLanguage
+from apps.cmdb.models import DELETE_INST, UPDATE_INST
 from apps.cmdb.services.model import ModelManage
+from apps.cmdb.utils.change_record import create_change_record
 from apps.core.decorators.api_perminssion import HasRole
 from apps.core.utils.web_utils import WebUtils
 
@@ -27,7 +29,7 @@ class ModelViewSet(viewsets.ViewSet):
     )
     @HasRole(["admin"])
     def create(self, request):
-        result = ModelManage.create_model(request.data)
+        result = ModelManage.create_model(request.data, username=request.user.username)
         return WebUtils.response_success(result)
 
     @swagger_auto_schema(
@@ -52,6 +54,10 @@ class ModelViewSet(viewsets.ViewSet):
         # 执行删除
         model_info = ModelManage.search_model_info(pk)
         ModelManage.delete_model(model_info.get("_id"))
+
+        create_change_record(operator=request.user.username, model_id=model_info["model_id"], label="模型管理",
+                             _type=DELETE_INST, message=f"删除模型. 模型名称: {model_info['model_name']}",
+                             inst_id=model_info['_id'], model_object=OPERATOR_MODEL)
         return WebUtils.response_success()
 
     @swagger_auto_schema(
@@ -71,6 +77,10 @@ class ModelViewSet(viewsets.ViewSet):
     def update(self, request, pk: str):
         model_info = ModelManage.search_model_info(pk)
         data = ModelManage.update_model(model_info.get("_id"), request.data)
+
+        create_change_record(operator=request.user.username, model_id=model_info["model_id"], label="模型管理",
+                             _type=UPDATE_INST, message=f"修改模型. 模型名称: {model_info['model_name']}",
+                             inst_id=model_info['_id'], model_object=OPERATOR_MODEL)
         return WebUtils.response_success(data)
 
     @swagger_auto_schema(
@@ -169,7 +179,7 @@ class ModelViewSet(viewsets.ViewSet):
     @HasRole(["admin"])
     @action(detail=False, methods=["post"], url_path="(?P<model_id>.+?)/attr")
     def model_attr_create(self, request, model_id):
-        result = ModelManage.create_model_attr(model_id, request.data)
+        result = ModelManage.create_model_attr(model_id, request.data, username=request.user.username)
         return WebUtils.response_success(result)
 
     @swagger_auto_schema(
@@ -200,7 +210,7 @@ class ModelViewSet(viewsets.ViewSet):
     @HasRole(["admin"])
     @action(detail=False, methods=["put"], url_path="(?P<model_id>.+?)/attr_update")
     def model_attr_update(self, request, model_id):
-        result = ModelManage.update_model_attr(model_id, request.data)
+        result = ModelManage.update_model_attr(model_id, request.data, username=request.user.username)
         return WebUtils.response_success(result)
 
     @swagger_auto_schema(
@@ -228,7 +238,7 @@ class ModelViewSet(viewsets.ViewSet):
         url_path="(?P<model_id>.+?)/attr/(?P<attr_id>.+?)",
     )
     def model_attr_delete(self, request, model_id: str, attr_id: str):
-        result = ModelManage.delete_model_attr(model_id, attr_id)
+        result = ModelManage.delete_model_attr(model_id, attr_id, username=request.user.username)
         return WebUtils.response_success(result)
 
     @swagger_auto_schema(

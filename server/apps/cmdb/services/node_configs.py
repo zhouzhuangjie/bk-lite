@@ -13,7 +13,7 @@ from apps.cmdb.constants import STARGAZER_URL
 class BaseNodeParams(metaclass=ABCMeta):
     PLUGIN_MAP = {}
     _registry = {}  # 自动收集支持的 model_id 对应的子类
-    BASE_INTERVAL_MAP = {"vmware_vc": 180, "network": 300, "network_topo": 300}  # 默认的采集间隔时间
+    BASE_INTERVAL_MAP = {"vmware_vc": 300, "network": 300, "network_topo": 300, "mysql_info": 300}  # 默认的采集间隔时间
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -224,6 +224,32 @@ class NetworkNodeParams(BaseNodeParams):
         }
         if self.model_id == "network_topo":
             credential_data.update({"topo": "true"})
+        return credential_data
+
+    def get_instance_id(self, instance):
+        """
+        获取实例 id
+        """
+        if self.has_set_instances:
+            return f"{self.instance.id}_{instance['inst_name']}"
+        else:
+            return f"{self.instance.id}_{instance}"
+
+
+class MysqlNodeParams(BaseNodeParams):
+    supported_model_id = "mysql"  # 通过此属性自动注册
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # 当 instance.model_id 为 "vmware_vc" 时，PLUGIN_MAP 配置为 "vmware_info"
+        self.PLUGIN_MAP.update({self.model_id: "mysql_info"})
+
+    def set_credential(self):
+        credential_data = {
+            "port": self.credential.get("port", 3306),
+            "user": self.credential.get("user", ""),
+            "password": self.credential.get("password", ""),
+        }
         return credential_data
 
     def get_instance_id(self, instance):

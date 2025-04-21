@@ -110,13 +110,14 @@ const Controller = () => {
           <Menu.Item
             key={item.title}
             onClick={() => openModal({ ...item.config, form: data, key: 'controller' })}
+            className="!p-0"
           >
             <PermissionWrapper
               key={item.title}
-              requiredPermissions={["AddPacket"]}
+              requiredPermissions={[item.role]}
               className="!block"
             >
-              <Button type="text" size="small">
+              <Button type="text" className="w-full" >
                 {t(`node-manager.collector.${item.title}`)}
               </Button>
             </PermissionWrapper>
