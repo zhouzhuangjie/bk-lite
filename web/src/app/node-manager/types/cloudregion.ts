@@ -86,6 +86,7 @@ interface ConfigDate {
   configinfo: string;
   nodes: string[];
   nodesList?: ListItem;
+  operating_system?: string;
 }
 
 interface SubRef {
@@ -96,6 +97,7 @@ interface SubProps {
   cancel: () => void;
   edit: (item: IConfiglistprops) => void;
   nodeData: ConfigDate;
+  collectors: TableDataItem[];
 }
 
 interface cloudRegionItem {
@@ -149,6 +151,14 @@ interface ControllerInstallProps {
   config?: any;
 }
 
+interface ConfigParams {
+  name: string;
+  collector_id: string;
+  cloud_region_id?: number;
+  config_template: string;
+  nodes?: string[];
+}
+
 export type {
   ConfigHookParams,
   VariableProps,
@@ -169,4 +179,5 @@ export type {
   ControllerInstallProps,
   NodeItem,
   SubConfigHookParams,
+  ConfigParams,
 };

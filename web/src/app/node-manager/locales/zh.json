@@ -126,7 +126,9 @@
         "parameterdes": "参数说明",
         "varconfig": "这些变量可用于配置中",
         "subconfiguration": "子配置",
-        "configurationList": "配置文件列表"
+        "configurationList": "配置文件列表",
+        "collectionType": "采集类型",
+        "configurationType": "配置类型"
       },
       "variable": {
         "value": "数值",

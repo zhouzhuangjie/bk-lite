@@ -65,7 +65,7 @@ const SubConfiguration = forwardRef<SubRef, SubProps>(
     };
 
     return (
-      <>
+      <div className="w-[calc(100vw-280px)]">
         <div className="flex justify-between">
           <div className="flex items-center">
             <ArrowLeftOutlined
@@ -92,7 +92,7 @@ const SubConfiguration = forwardRef<SubRef, SubProps>(
             scroll={{ y: 'calc(100vh - 400px)', x: 'calc(100vw - 432px)' }}
           />
         </div>
-      </>
+      </div>
     );
   }
 );

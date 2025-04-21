@@ -126,7 +126,9 @@
         "parameterdes": "Parameter description",
         "varconfig": "These variables are available in the configuration",
         "subconfiguration": "Subconfiguration",
-        "configurationList": "Configuration List"
+        "configurationList": "Configuration List",
+        "collectionType": "Collection type",
+        "configurationType": "Configuration type"
       },
       "variable": {
         "value": "Value",
