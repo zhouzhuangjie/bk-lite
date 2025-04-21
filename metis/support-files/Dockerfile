@@ -12,4 +12,6 @@ ADD . .
 RUN pip install -r ./requirements/requirements.in
 RUN pip install -r ./requirements/requirements-dev.in
 
+ADD ./support-files/service.conf /etc/supervisor/conf.d/service.conf
+
 CMD ["supervisord", "-n"]
