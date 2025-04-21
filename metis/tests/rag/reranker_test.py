@@ -3,8 +3,7 @@ import os
 
 import requests
 from dotenv import load_dotenv
-
-load_dotenv()
+from loguru import logger
 
 
 def test_vllm_reranker():
@@ -22,4 +21,4 @@ def test_vllm_reranker():
     }
     response = requests.post(
         f"{os.getenv('TEST_INFERENCE_BASE_URL')}/rerank", headers=headers, json=data)
-    print(json.dumps(response.json(), indent=2))
+    logger.info(json.dumps(response.json(), indent=2))

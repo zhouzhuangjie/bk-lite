@@ -1,5 +1,6 @@
 from typing import List
 from langchain_core.documents import Document
+from loguru import logger
 from pptx import Presentation
 from tqdm import tqdm
 from langchain_core.document_loaders import BaseLoader
@@ -10,6 +11,7 @@ class PPTLoader(BaseLoader):
         self.file_path = file_path
 
     def load(self) -> List[Document]:
+        logger.info(f"解析PPT文件[{self.file_path}]")
         docs = []
         prs = Presentation(self.file_path)
         for slide_number, slide in tqdm(enumerate(prs.slides, start=1), desc=f"解析[{self.file_path}]的幻灯片"):

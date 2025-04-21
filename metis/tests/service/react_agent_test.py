@@ -3,12 +3,11 @@ from typing import List
 
 import pytest
 from dotenv import load_dotenv
+from loguru import logger
 
 from src.core.entity.mcp_server import MCPServer
 from src.service.react_agent.entity.react_agent_request import ReActAgentRequest
 from src.service.react_agent.graph.react_agent_graph import ReActAgentGraph
-
-load_dotenv()
 
 
 @pytest.mark.asyncio
@@ -28,4 +27,4 @@ async def test_react_agent_without_tools():
     )
     graph = ReActAgentGraph()
     result = await graph.execute(request)
-    print(result)
+    logger.info(result)

@@ -27,6 +27,7 @@ from src.rag.native_rag.entity.elasticsearch_document_count_request import Elast
 from src.rag.native_rag.entity.elasticsearch_document_delete_request import ElasticSearchDocumentDeleteRequest
 from src.rag.native_rag.entity.elasticsearch_document_list_request import ElasticSearchDocumentListRequest
 from src.rag.native_rag.entity.elasticsearch_index_delete_request import ElasticSearchIndexDeleteRequest
+from src.rag.native_rag.entity.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
 from src.rag.native_rag.entity.elasticsearch_store_request import ElasticSearchStoreRequest
 from src.rag.native_rag.rag.elasticsearch_rag import ElasticSearchRag
 from sanic.log import logger
@@ -41,23 +42,7 @@ def get_file_loader(file_path, file_extension, request=None):
     """
     # 初始化OCR
     ocr = None
-    ocr_type = request.form.get('ocr_type')
-
-    if ocr_type == 'pp_ocr':
-        ocr = PPOcr()
-
-    elif ocr_type == 'olm_ocr':
-        base_url = request.form.get('olm_base_url')
-        api_key = request.form.get('olm_api_key')
-        model = request.form.get(
-            'olm_model', "allenai/olmOCR-7B-0225-preview")
-        ocr = OlmOcr(base_url=base_url, api_key=api_key, model=model)
-
-    elif ocr_type == 'azure_ocr':
-        # 初始化azure_ocr
-        azure_api_key = request.form.get('azure_api_key')
-        azure_endpoint = request.form.get('azure_endpoint')
-        ocr = AzureOCR(api_key=azure_api_key, endpoint=azure_endpoint)
+    ocr = load_ocr(ocr, request)
 
     if file_extension in ['docx', 'doc']:
         return DocLoader(file_path, ocr)
@@ -75,6 +60,28 @@ def get_file_loader(file_path, file_extension, request=None):
         return MarkdownLoader(file_path)
     else:
         raise ValueError(f"不支持的文件类型: {file_extension}")
+
+
+def load_ocr(ocr, request):
+    ocr = None
+    ocr_type = request.form.get('ocr_type')
+
+    if ocr_type == 'pp_ocr':
+        ocr = PPOcr()
+
+    if ocr_type == 'olm_ocr':
+        base_url = request.form.get('olm_base_url')
+        api_key = request.form.get('olm_api_key')
+        model = request.form.get(
+            'olm_model', "allenai/olmOCR-7B-0225-preview")
+        ocr = OlmOcr(base_url=base_url, api_key=api_key, model=model)
+
+    if ocr_type == 'azure_ocr':
+        azure_api_key = request.form.get('azure_api_key')
+        azure_endpoint = request.form.get('azure_endpoint')
+        ocr = AzureOCR(api_key=azure_api_key, endpoint=azure_endpoint)
+
+    return ocr
 
 
 def get_chunker(chunk_mode, request=None):
@@ -132,6 +139,24 @@ def serialize_documents(docs):
             "metadata": doc.metadata
         })
     return serialized_docs
+
+
+@rag_api_router.post("/naive_rag_test")
+@auth.login_required
+@validate(json=ElasticSearchRetrieverRequest)
+def naive_rag_test(request, body: ElasticSearchRetrieverRequest):
+    """
+    测试RAG
+    :param request:
+    :param body:
+    :return:
+    """
+    try:
+        rag = ElasticSearchRag()
+        documents = rag.search(body)
+        return json({"status": "success", "message": "", "documents": [doc.dict() for doc in documents]})
+    except Exception as e:
+        return json({"status": "error", "message": str(e)})
 
 
 @rag_api_router.post("/count_index_document")
