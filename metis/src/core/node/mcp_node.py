@@ -7,6 +7,7 @@ from langgraph.prebuilt import ToolNode
 from pydantic import BaseModel
 
 from src.core.node.basic_node import BasicNode
+from src.tools.tools_loader import ToolsLoader
 
 
 class McpNodes(BasicNode):
@@ -28,6 +29,10 @@ class McpNodes(BasicNode):
         self.mcp_client = MultiServerMCPClient(self.mcp_config)
         await self.mcp_client.__aenter__()  # 手动打开连接
         self.tools = self.mcp_client.get_tools()
+
+        if request.langchain_tools:
+            for tool_protocol in request.langchain_tools:
+                self.tools.append(ToolsLoader.load_tools(tool_protocol))
 
     async def agent_node(self, state: TypedDict, config: RunnableConfig) -> TypedDict:
         # 获取完整的消息历史
