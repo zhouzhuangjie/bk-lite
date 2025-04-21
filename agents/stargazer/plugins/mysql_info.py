@@ -201,7 +201,7 @@ class MysqlInfo:
                 "log_error": self.info["settings"]["log_error"],
                 "wait_timeout": self.info["settings"]["wait_timeout"],
             }
-            result = convert_to_prometheus_format({"mysql_info": [model_data]})
+            result = convert_to_prometheus_format({"mysql": [model_data]})
             return result
         except Exception as err:
             import traceback

@@ -103,6 +103,15 @@ SUBORDINATE_MODEL = "subordinate_model"
 # 加密的属性列表
 ENCRYPTED_KEY = {"password", "secret_key", "encryption_key"}
 
+# ===================
+
+OPERATOR_INSTANCE = "资产实例"
+OPERATOR_MODEL = "模型管理"
+OPERATOR_COLLECT_TASK = "采集任务"
+
+
+# ===================
+
 
 # ====== 配置采集 ======
 
@@ -209,7 +218,15 @@ COLLECT_OBJ_TREE = [
             {"id": "network_topo", "model_id": "network_topo", "name": "网络拓扑", "task_type": CollectPluginTypes.SNMP,
              "type": CollectDriverTypes.PROTOCOL}
         ],
-    }
+    },
+    {
+        "id": "databases",
+        "name": "数据库",
+        "children": [
+            {"id": "mysql", "model_id": "mysql", "name": "Mysql", "task_type": CollectPluginTypes.PROTOCOL,
+             "type": CollectDriverTypes.PROTOCOL}
+        ],
+    },
 
 ]
 

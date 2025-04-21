@@ -236,10 +236,9 @@ const Attributes = () => {
         </div>
         <CustomTable
           size="middle"
-          scroll={{ y: 'calc(100vh - 430px)' }}
+          scroll={{ y: 'calc(100vh - 380px)' }}
           columns={columns}
           dataSource={tableData}
-          pagination={pagination}
           loading={loading}
           rowKey="attr_id"
           onChange={handleTableChange}

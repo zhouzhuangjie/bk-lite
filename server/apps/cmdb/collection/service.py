@@ -19,7 +19,7 @@ from apps.cmdb.collection.constants import (
     REPLICAS_METRICS, K8S_STATEFULSET_REPLICAS, K8S_REPLICASET_REPLICAS, K8S_DEPLOYMENT_REPLICAS, ANNOTATIONS_METRICS,
     K8S_DEPLOYMENT_ANNOTATIONS, K8S_REPLICASET_ANNOTATIONS, K8S_STATEFULSET_ANNOTATIONS, K8S_DAEMONSET_ANNOTATIONS,
     K8S_JOB_ANNOTATIONS, K8S_CRONJOB_ANNOTATIONS, POD_NODE_RELATION, VMWARE_CLUSTER, VMWARE_COLLECT_MAP,
-    NETWORK_COLLECT, NETWORK_INTERFACES_RELATIONS,
+    NETWORK_COLLECT, NETWORK_INTERFACES_RELATIONS, PROTOCOL_METRIC_MAP,
 )
 from apps.cmdb.constants import INSTANCE
 from apps.cmdb.graph.neo4j import Neo4jClient
@@ -983,3 +983,87 @@ class CollectNetworkMetrics(CollectBase):
         if mac.startswith("0x"):
             mac = mac[2:]  # 去掉 "0x"
         return ":".join(mac[i:i + 2] for i in range(0, len(mac), 2)).lower()
+
+
+class ProtocolCollectMetrics(CollectBase):
+    def __init__(self, inst_name, inst_id, task_id, *args, **kwargs):
+        super().__init__(inst_name, inst_id, task_id, *args, **kwargs)
+
+    @property
+    def _metrics(self):
+        data = PROTOCOL_METRIC_MAP[self.model_id]
+        return data
+
+    def prom_sql(self):
+        sql = " or ".join(m for m in self._metrics)
+        return sql
+
+    @staticmethod
+    def set_mysql_inst_name(data, *args, **kwargs):
+        # {ip}-mysql-{port}
+        inst_name = f"{data['ip_addr']}-mysql-{data['port']}"
+        return inst_name
+
+    @property
+    def model_field_mapping(self):
+        mapping = {
+            "mysql": {
+                "ip_addr": "ip_addr",
+                "port": "port",
+                "version": "version",
+                "enable_binlog": "enable_binlog",
+                "sync_binlog": "sync_binlog",
+                "max_conn": "max_conn",
+                "max_mem": "max_mem",
+                "basedir": "basedir",
+                "datadir": "datadir",
+                "socket": "socket",
+                "bind_address": "bind_address",
+                "slow_query_log": "slow_query_log",
+                "slow_query_log_file": "slow_query_log_file",
+                "log_error": "log_error",
+                "wait_timeout": "wait_timeout",
+                "inst_name": self.set_mysql_inst_name
+            },
+
+        }
+
+        return mapping
+
+    def format_data(self, data):
+        """格式化数据"""
+        for index_data in data["result"]:
+            metric_name = index_data["metric"]["__name__"]
+            value = index_data["value"]
+            _time, value = value[0], value[1]
+            if not self.timestamp_gt:
+                if timestamp_gt_one_day_ago(_time):
+                    break
+                else:
+                    self.timestamp_gt = True
+
+            index_dict = dict(
+                index_key=metric_name,
+                index_value=value,
+                **index_data["metric"],
+            )
+
+            self.collection_metrics_dict[metric_name].append(index_dict)
+
+    def format_metrics(self):
+        """格式化数据"""
+        for metric_key, metrics in self.collection_metrics_dict.items():
+            result = []
+            mapping = self.model_field_mapping.get(self.model_id, {})
+            for index_data in metrics:
+                data = {}
+                for field, key_or_func in mapping.items():
+                    if isinstance(key_or_func, tuple):
+                        data[field] = key_or_func[0](index_data[key_or_func[1]])
+                    elif callable(key_or_func):
+                        data[field] = key_or_func(index_data)
+                    else:
+                        data[field] = index_data.get(key_or_func, "")
+                if data:
+                    result.append(data)
+            self.result[self.model_id] = result

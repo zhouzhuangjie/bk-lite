@@ -27,11 +27,8 @@ import { useConfigModalColumns } from '@/app/node-manager/hooks/configuration';
 import { cloneDeep } from 'lodash';
 
 const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
-  const {
-    updatecollector,
-    getvariablelist,
-    updatechildconfig
-  } = useApiCloudRegion();
+  const { updatecollector, getvariablelist, updatechildconfig } =
+    useApiCloudRegion();
   const cloudid = useCloudId();
   const { t } = useTranslation();
   const columns = useConfigModalColumns();
@@ -47,8 +44,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
   useImperativeHandle(ref, () => ({
     showModal: ({ type, form }) => {
       const _form = cloneDeep(form) as TableDataItem;
-      setOptions(_form?.nodes);
-      _form.nodes = _form?.nodes[0]?.value;
+      setOptions(_form?.nodesList || []);
       setConfigVisible(true);
       setType(type);
       setEditeConfigId(_form?.key);
@@ -67,7 +63,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
         name: item.key,
         description: item.description || '--',
       }));
-      setVardataSource(tempdata)
+      setVardataSource(tempdata);
     };
 
     configformRef.current?.resetFields();
@@ -97,29 +93,33 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
       name,
       config_template: configinfo,
       collector_id: collector,
-    }).then(() => {
-      handleSuccess();
-      message.success(t('common.updateSuccess'));
-    });
+    })
+      .then(() => {
+        handleSuccess();
+        message.success(t('common.updateSuccess'));
+      })
+      .finally(() => {
+        setConfirmLoading(false);
+      });
   };
 
   const handleChildUpdate = (configinfo: string) => {
-    const {
-      id,
-      collect_type,
-      config_type,
-      collector_config
-    } = configForm as TableDataItem;
+    const { id, collect_type, config_type, collector_config } =
+      configForm as TableDataItem;
 
     updatechildconfig(id as string, {
       collect_type,
       config_type,
       collector_config,
       content: configinfo,
-    }).then(() => {
-      handleSuccess();
-      message.success(t('common.updateSuccess'));
-    });
+    })
+      .then(() => {
+        handleSuccess();
+        message.success(t('common.updateSuccess'));
+      })
+      .finally(() => {
+        setConfirmLoading(false);
+      });
   };
 
   //处理配置编辑和子配置编辑的确定事件
@@ -190,7 +190,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
     return (
       <Form
         ref={configformRef}
-        initialValues={{nodes: options[0]?.value}}
+        initialValues={{ nodes: [] }}
         layout="vertical"
         colon={false}
       >
@@ -217,7 +217,12 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
               },
             ]}
           >
-            <Select disabled options={options} />
+            <Select
+              disabled
+              mode="tags"
+              maxTagCount="responsive"
+              options={options}
+            />
           </Form.Item>
           <Form.Item
             name="collector"

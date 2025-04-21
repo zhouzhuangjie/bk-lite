@@ -27,6 +27,7 @@ import ControllerInstall from './controllerInstall';
 import ControllerUninstall from './controllerUninstall';
 import CollectorInstallTable from './controllerTable';
 import { useRouter, useSearchParams } from 'next/navigation';
+import PermissionWrapper from '@/components/permission';
 import {
   OPERATE_SYSTEMS,
   useSidecaritems,
@@ -336,17 +337,15 @@ const Node = () => {
                   onChange={(e) => setSearchText(e.target.value)}
                   onSearch={onSearch}
                 />
-                <ReloadOutlined
-                  className="mr-[8px]"
-                  onClick={() => getNodes('refresh')}
-                />
-                <Button
-                  type="primary"
-                  className="mr-[8px]"
-                  onClick={handleInstallController}
-                >
-                  {t('node-manager.cloudregion.node.installController')}
-                </Button>
+                <PermissionWrapper requiredPermissions={["InstallController"]}>
+                  <Button
+                    type="primary"
+                    className="mr-[8px]"
+                    onClick={handleInstallController}
+                  >
+                    {t('node-manager.cloudregion.node.installController')}
+                  </Button>
+                </PermissionWrapper>
                 <Dropdown
                   className="mr-[8px]"
                   menu={SidecarmenuProps}
@@ -371,6 +370,7 @@ const Node = () => {
                     </Space>
                   </Button>
                 </Dropdown>
+                <ReloadOutlined onClick={() => getNodes('refresh')} />
               </div>
             </div>
             <div className="tablewidth">
@@ -390,7 +390,7 @@ const Node = () => {
             />
             <ControllerUninstall
               ref={controllerRef}
-              config={{ os: system }}
+              config={{ os: system, work_node: name }}
               onSuccess={(config) => {
                 handleCollector(config);
               }}

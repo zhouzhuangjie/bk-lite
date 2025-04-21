@@ -142,6 +142,16 @@
             "Edit",
             "Delete"
           ]
+        },
+        {
+          "name": "operation_log",
+          "display_name": "Operation Log",
+          "operation": [
+            "View",
+            "Add",
+            "Edit",
+            "Delete"
+          ]
         }
       ]
     }
