@@ -6,6 +6,7 @@ const useMenuItem = () => {
   return useMemo(() => [
     {
       key: 'edit',
+      role: 'Edit',
       title: 'edit',
       config: {
         title: 'editCollector', type: 'edit'
@@ -13,6 +14,7 @@ const useMenuItem = () => {
     },
     {
       key: 'upload',
+      role: 'AddPacket',
       title: 'uploadPackage',
       config: {
         title: 'uploadPackage', type: 'upload'
@@ -20,6 +22,7 @@ const useMenuItem = () => {
     },
     {
       key: 'delete',
+      role: 'Delete',
       title: 'delete',
       config: {
         title: 'deleteCollector', type: 'delete'

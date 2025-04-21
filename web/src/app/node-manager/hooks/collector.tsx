@@ -2,7 +2,7 @@ import { ColumnItem } from '@/types';
 import { useTranslation } from '@/utils/i18n';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import { Button, Popconfirm } from 'antd';
-// import Permission from '@/components/permission';
+import Permission from '@/components/permission';
 
 export const useDetailColumns = ({
   handleDelete,
@@ -51,33 +51,15 @@ export const useDetailColumns = ({
       width: 120,
       fixed: 'right',
       render: (_, { id }) => (
-        // <>
-        //   <Permission requiredPermissions={['Operate']}>
-        //     <Popconfirm
-        //       title={t(`node-manager.collector.delete`)}
-        //       description={t(`node-manager.collector.deleteInfo`)}
-        //       okText={t("common.confirm")}
-        //       cancelText={t("common.cancel")}
-        //       onConfirm={() => {
-        //         deletePackage(record?.id)
-        //       }}
-        //     >
-        //       <Button
-        //         type="link"
-        //         disabled={record.status !== 'new'}
-        //       >
-        //         {t('common.delete')}
-        //       </Button>
-        //     </Popconfirm>
-        //   </Permission>
-        // </>
-        <>
+        <Permission requiredPermissions={['Delete']}>
           <Popconfirm
             title={t(`node-manager.collector.delete`)}
             description={t(`node-manager.collector.deleteInfo`)}
             okText={t("common.confirm")}
             cancelText={t("common.cancel")}
-            onConfirm={() => handleDelete(id)}
+            onConfirm={() => {
+              handleDelete(id)
+            }}
           >
             <Button
               type="link"
@@ -85,7 +67,7 @@ export const useDetailColumns = ({
               {t('common.delete')}
             </Button>
           </Popconfirm>
-        </>
+        </Permission>
       ),
     },
   ];
