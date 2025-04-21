@@ -54,7 +54,7 @@
           "metric_group": "Status",
           "name": "docker_container_status",
           "display_name": "Status",
-          "instance_id_keys": ["instance_id"],
+          "instance_id_keys": ["instance_id", "container_name"],
           "data_type": "Enum",
           "unit": "[{\"name\":\"正常\",\"id\":0},{\"name\":\"异常\",\"id\":1}]",
           "dimensions": [],
