@@ -8,8 +8,8 @@ import pandas as pd
 from langchain_core.documents import Document
 from tabula.io import read_pdf
 from tqdm import tqdm
-from sanic.log import logger
 from src.ocr.base_ocr import BaseOCR
+from loguru import logger
 
 
 class PDFLoader:
@@ -49,6 +49,8 @@ class PDFLoader:
             return False
 
     def load(self) -> List[Document]:
+        logger.info(f"解析PDF文件：{self.file_path}")
+
         docs = []
 
         with fitz.open(self.file_path) as pdf:

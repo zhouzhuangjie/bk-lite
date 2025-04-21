@@ -42,16 +42,19 @@ class BasicNode:
             return state
 
         naive_rag_request = config["configurable"]["graph_request"].naive_rag_request
-        elasticsearch_rag = ElasticSearchRag()
-        rag_result = elasticsearch_rag.search(naive_rag_request)
+        if len(naive_rag_request)==0:
+            return state
 
-        rag_message = "以下是提供给你参考的背景信息：\n"
-        for r in rag_result:
-            rag_message += f"""
-                Title: {r.metadata['_source']['metadata']['knowledge_title']}
-                Chunk: {r.page_content}
-            """
-        state["messages"].append(HumanMessage(content=rag_message))
+        for rag_search_request in naive_rag_request:
+            elasticsearch_rag = ElasticSearchRag()
+            rag_result = elasticsearch_rag.search(rag_search_request)
+            rag_message = "以下是提供给你参考的背景信息：\n"
+            for r in rag_result:
+                rag_message += f"""
+                    Title: {r.metadata['_source']['metadata']['knowledge_title']}
+                    Chunk: {r.page_content}
+                """
+            state["messages"].append(HumanMessage(content=rag_message))
         return state
 
     def user_message_node(self, state: TypedDict, config: RunnableConfig) -> TypedDict:
