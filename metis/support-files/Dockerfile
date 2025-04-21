@@ -8,7 +8,8 @@ RUN apt-get update && \
 WORKDIR /app
 
 ADD . .
-ADD
 
 RUN pip install -r ./requirements/requirements.in
+RUN pip install -r ./requirements/requirements-dev.in
+
 CMD ["supervisord", "-n"]
