@@ -27,6 +27,7 @@ from src.rag.native_rag.entity.elasticsearch_document_count_request import Elast
 from src.rag.native_rag.entity.elasticsearch_document_delete_request import ElasticSearchDocumentDeleteRequest
 from src.rag.native_rag.entity.elasticsearch_document_list_request import ElasticSearchDocumentListRequest
 from src.rag.native_rag.entity.elasticsearch_index_delete_request import ElasticSearchIndexDeleteRequest
+from src.rag.native_rag.entity.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
 from src.rag.native_rag.entity.elasticsearch_store_request import ElasticSearchStoreRequest
 from src.rag.native_rag.rag.elasticsearch_rag import ElasticSearchRag
 from sanic.log import logger
@@ -133,6 +134,23 @@ def serialize_documents(docs):
         })
     return serialized_docs
 
+
+@rag_api_router.post("/naive_rag_test")
+@auth.login_required
+@validate(json=ElasticSearchRetrieverRequest)
+def naive_rag_test(request, body: ElasticSearchRetrieverRequest):
+    """
+    测试RAG
+    :param request:
+    :param body:
+    :return:
+    """
+    try:
+        rag = ElasticSearchRag()
+        documents = rag.search(body)
+        return json({"status": "success", "message": "", "documents": [doc.dict() for doc in documents]})
+    except Exception as e:
+        return json({"status": "error", "message": str(e)})
 
 @rag_api_router.post("/count_index_document")
 @auth.login_required

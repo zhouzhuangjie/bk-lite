@@ -22,6 +22,6 @@ class BasicLLMReuqest(BaseModel):
     thread_id: Optional[str] = ''
 
     enable_naive_rag: bool = False
-    naive_rag_request: Optional[ElasticSearchRetrieverRequest] = None
+    naive_rag_request: List[ElasticSearchRetrieverRequest] = []
 
     rag_stage: str = 'naive-rag'

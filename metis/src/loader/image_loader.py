@@ -1,4 +1,5 @@
 from langchain_core.documents import Document
+from loguru import logger
 
 from src.ocr.base_ocr import BaseOCR
 
@@ -9,6 +10,7 @@ class ImageLoader:
         self.ocr = ocr
 
     def load(self):
+        logger.info(f"解析图片: {self.path}")
         docs = []
         result = self.ocr.predict(self.path)
         doc = Document(page_content=result, metadata={"format": "image"})

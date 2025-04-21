@@ -1,5 +1,6 @@
 from typing import List
 from langchain_core.documents import Document
+from loguru import logger
 
 
 class MarkdownLoader:
@@ -7,6 +8,7 @@ class MarkdownLoader:
         self.path = path
 
     def load(self) -> List[Document]:
+        logger.info(f"解析MarkDown文件: {self.path}")
         docs: List[Document] = []
         with open(self.path, 'r', encoding='utf-8') as file:
             content = file.read()
