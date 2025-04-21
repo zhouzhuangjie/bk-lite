@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Input } from 'antd';
+import { Input, Button, message } from 'antd';
 import type { GetProps } from 'antd';
 import { ColumnFilterItem } from 'antd/es/table/interface';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -37,7 +37,8 @@ const Configration = () => {
   ).id;
   const cloudregionId = searchParams.get('cloud_region_id') || '';
   const name = searchParams.get('name') || '';
-  const { getconfiglist, getnodelist } = useApiCloudRegion();
+  const { getconfiglist, getnodelist, batchdeletecollector } =
+    useApiCloudRegion();
   const { getCollectorlist } = useApiCollector();
   const [loading, setLoading] = useState<boolean>(true);
   const [configData, setConfigData] = useState<ConfigDate[]>([]);
@@ -55,6 +56,7 @@ const Configration = () => {
   const [collectorIds, setCollectorIds] = useState<string[]>([]);
   const [originNodes, setOriginNodes] = useState<TableDataItem[]>([]);
   const [originConfigs, setOriginConfigs] = useState<IConfiglistprops[]>([]);
+  const [originCollectors, setOriginCollectors] = useState<TableDataItem[]>([]);
 
   const showConfigurationModal = (type: string, form: any) => {
     configurationRef.current?.showModal({
@@ -93,11 +95,22 @@ const Configration = () => {
     );
   };
 
+  //批量删除的确定的弹窗
+  const modifydeleteconfirm = async (id: string) => {
+    setLoading(true);
+    await batchdeletecollector({
+      ids: [id],
+    });
+    message.success(t('common.deleteSuccess'));
+    getConfigData();
+  };
+
   const { columns } = useConfigColumns({
     configurationClick,
     filter: filters,
     openSub,
     nodeClick,
+    modifydeleteconfirm,
   });
 
   useEffect(() => {
@@ -178,14 +191,14 @@ const Configration = () => {
   };
 
   // 根据采集器列表过滤数据
-  const setFilterConfig = (data: TableDataItem) => {
+  const setFilterConfig = (data: TableDataItem[]) => {
+    const collectors = data.filter((item: any) => !item.controller_default_run);
+    setOriginCollectors(collectors);
     const filters = new Map();
-    const collectorIds = data
-      .filter((item: any) => !item.controller_default_run)
-      .map((item: any) => {
-        filters.set(item.name, { text: item.name, value: item.name });
-        return item.id;
-      });
+    const collectorIds = collectors.map((item: any) => {
+      filters.set(item.name, { text: item.name, value: item.name });
+      return item.id;
+    });
     setFilters(Array.from(filters.values()) as ColumnFilterItem[]);
     setCollectorIds(collectorIds);
   };
@@ -216,6 +229,13 @@ const Configration = () => {
         {!showSub ? (
           <>
             <div className="flex justify-end mb-4">
+              <Button
+                className="mr-[8px]"
+                type="primary"
+                onClick={() => showConfigurationModal('add', {})}
+              >
+                + {t('common.add')}
+              </Button>
               <Search
                 className="w-64 mr-[8px]"
                 placeholder={t('common.search')}
@@ -235,13 +255,18 @@ const Configration = () => {
         ) : (
           <SubConfiguration
             ref={subConfiguration}
+            collectors={originCollectors}
             cancel={() => handleCBack()}
             edit={hanldeSubEditClick}
             nodeData={nodeData}
           />
         )}
         {/* 弹窗组件（添加，编辑，应用）用于刷新页面 */}
-        <ConfigModal ref={configurationRef} onSuccess={onSuccess}></ConfigModal>
+        <ConfigModal
+          ref={configurationRef}
+          config={{ collectors: originCollectors }}
+          onSuccess={onSuccess}
+        ></ConfigModal>
       </div>
     </Mainlayout>
   );

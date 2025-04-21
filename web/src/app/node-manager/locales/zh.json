@@ -12,6 +12,7 @@
     "refSuccess": "刷新成功",
     "success": "成功",
     "quesuccess": "查询成功",
+    "deleteSuccess": "删除成功！",
     "applysuccess": "应用成功!",
     "unapply": "解绑",
     "search": "搜索...",
@@ -126,7 +127,9 @@
         "parameterdes": "参数说明",
         "varconfig": "这些变量可用于配置中",
         "subconfiguration": "子配置",
-        "configurationList": "配置文件列表"
+        "configurationList": "配置文件列表",
+        "collectionType": "采集类型",
+        "configurationType": "配置类型"
       },
       "variable": {
         "value": "数值",

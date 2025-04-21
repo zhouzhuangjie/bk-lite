@@ -3,6 +3,7 @@ import type {
   updateConfigReq,
   ControllerInstallFields,
   NodeItem,
+  ConfigParams,
 } from '@/app/node-manager/types/cloudregion';
 
 const useApiCloudRegion = () => {
@@ -144,12 +145,7 @@ const useApiCloudRegion = () => {
   };
 
   //创建一个配置文件
-  const createconfig = async (data: {
-    name: string;
-    collector_id: string;
-    cloud_region_id: number;
-    config_template: string;
-  }) => {
+  const createconfig = async (data: ConfigParams) => {
     return await post('/node_mgmt/api/configuration/', data);
   };
 
@@ -177,14 +173,7 @@ const useApiCloudRegion = () => {
   };
 
   //部分更新采集器
-  const updatecollector = async (
-    id: string,
-    data: {
-      name: string;
-      config_template?: string;
-      collector_id: string;
-    }
-  ) => {
+  const updatecollector = async (id: string, data: ConfigParams) => {
     return await patch(`/node_mgmt/api/configuration/${id}/`, data);
   };
 
