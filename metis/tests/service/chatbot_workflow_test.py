@@ -1,13 +1,12 @@
 import os
 
 from dotenv import load_dotenv
+from loguru import logger
 
 from src.core.entity.chat_history import ChatHistory
 from src.rag.native_rag.entity.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
 from src.service.chatbot_workflow.entity.chatbot_workflow_request import ChatBotWorkflowRequest
 from src.service.chatbot_workflow.graph.chatbot_workflow_graph import ChatBotWorkflowGraph
-
-load_dotenv()
 
 
 def test_chat():
@@ -22,7 +21,7 @@ def test_chat():
     )
     workflow = ChatBotWorkflowGraph()
     result = workflow.execute(request)
-    print(result)
+    logger.info(result)
 
 
 def test_chat_with_naiverag():

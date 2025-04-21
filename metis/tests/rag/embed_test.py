@@ -2,13 +2,12 @@ import os
 
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings
-
-load_dotenv()
+from loguru import logger
 
 
 def test_vllm_embed():
     client = OpenAIEmbeddings(
-        model='bce-embedding-base_v1',
+        model=os.getenv('TEST_BCE_EMBED_MODEL'),
         api_key=os.getenv('TEST_INFERENCE_TOKEN'),
         base_url=os.getenv('TEST_INFERENCE_BASE_URL'),
     )
@@ -16,4 +15,4 @@ def test_vllm_embed():
         "介绍"
     ])
 
-    print(responses)
+    logger.info(responses)
