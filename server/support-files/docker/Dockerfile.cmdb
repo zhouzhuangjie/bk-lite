@@ -11,7 +11,7 @@ ADD ./support-files/supervisor/beat.conf  /etc/supervisor/conf.d/beat.conf
 ADD . .
 
 RUN pip install -r ./requirements/requirements-core.txt
-RUN pip install -r ./requirements/requirements-monitor.txt
+RUN pip install -r ./requirements/requirements-cmdb.txt
 
 RUN chmod +x ./support-files/docker/cmdb.sh
 ENTRYPOINT ["/bin/bash","/apps/support-files/docker/cmdb.sh"]
