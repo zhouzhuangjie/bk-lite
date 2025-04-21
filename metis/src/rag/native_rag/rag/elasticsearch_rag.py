@@ -6,6 +6,7 @@ from langchain_core.documents import Document
 from langchain_elasticsearch import ElasticsearchRetriever
 from langchain_openai import OpenAIEmbeddings
 
+from src.embed.embed_builder import EmbedBuilder
 from src.rag.native_rag.entity.elasticsearch_document_count_request import ElasticSearchDocumentCountRequest
 from src.rag.native_rag.entity.elasticsearch_document_delete_request import ElasticSearchDocumentDeleteRequest
 from src.rag.native_rag.entity.elasticsearch_document_list_request import ElasticSearchDocumentListRequest
@@ -37,21 +38,21 @@ class ElasticSearchRag:
         # Build the query with metadata filter
         query = {
             "query": {
-            "bool": {
-                "filter": metadata_filter
-            }
+                "bool": {
+                    "filter": metadata_filter
+                }
             }
         }
-        
+
         # Add match_phrase query if req.query is not empty
         if req.query:
             if not query["query"]["bool"].get("must"):
                 query["query"]["bool"]["must"] = []
                 query["query"]["bool"]["must"].append({
-                "match_phrase": {
-                    "text": req.query
-                }
-            })
+                    "match_phrase": {
+                        "text": req.query
+                    }
+                })
 
         count = self.es.count(index=req.index_name, body=query)
         return count['count']
@@ -135,11 +136,14 @@ class ElasticSearchRag:
         if req.index_mode == 'overwrite' and self.es.indices.exists(index=req.index_name):
             self.es.indices.delete(index=req.index_name)
 
-        embedding = OpenAIEmbeddings(
-            model=req.embed_model_name,
-            api_key=req.embed_model_api_key,
-            base_url=req.embed_model_base_url,
-        )
+        if req.embed_model_base_url.startswith('local:'):
+            embedding = EmbedBuilder.get_embed(req.embed_model_base_url)
+        else:
+            embedding = OpenAIEmbeddings(
+                model=req.embed_model_name,
+                api_key=req.embed_model_api_key,
+                base_url=req.embed_model_base_url,
+            )
         db = ElasticsearchStore.from_documents(
             req.docs, embedding=embedding,
             es_connection=self.es, index_name=req.index_name,
