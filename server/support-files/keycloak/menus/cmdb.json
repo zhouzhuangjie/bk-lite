@@ -144,8 +144,8 @@
           ]
         },
         {
-          "name": "operation_log",
-          "display_name": "Operation Log",
+          "id": "operation_log",
+          "name": "Operation Log",
           "operation": [
             "View",
             "Add",
