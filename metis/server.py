@@ -30,7 +30,7 @@ def verify_password(username, password):
 
     if username in users:
         encrypted_password = users.get(username)
-        return crypto.decrypt(encrypted_password) == password
+        return crypto.decrypt(encrypted_password) == crypto.decrypt(password)
     return False
 
 # 配置启动钩子
@@ -55,6 +55,7 @@ if __name__ == "__main__":
 
     logger.info("start server")
     app.run(
+        access_log=True,
         host="0.0.0.0",
         port=int(os.getenv('APP_PORT', 18083)),
         workers=1

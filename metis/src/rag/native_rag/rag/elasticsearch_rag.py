@@ -10,6 +10,8 @@ from src.embed.embed_builder import EmbedBuilder
 from src.rag.native_rag.entity.elasticsearch_document_count_request import ElasticSearchDocumentCountRequest
 from src.rag.native_rag.entity.elasticsearch_document_delete_request import ElasticSearchDocumentDeleteRequest
 from src.rag.native_rag.entity.elasticsearch_document_list_request import ElasticSearchDocumentListRequest
+from src.rag.native_rag.entity.elasticsearch_document_metadata_update_request import \
+    ElasticsearchDocumentMetadataUpdateRequest
 from src.rag.native_rag.entity.elasticsearch_index_delete_request import ElasticSearchIndexDeleteRequest
 from src.rag.native_rag.entity.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
 from src.rag.native_rag.entity.elasticsearch_store_request import ElasticSearchStoreRequest
@@ -22,6 +24,60 @@ class ElasticSearchRag:
     def __init__(self):
         self.es = elasticsearch.Elasticsearch(hosts=[os.getenv('ELASTICSEARCH_URL')],
                                               basic_auth=("elastic", os.getenv('ELASTICSEARCH_PASSWORD')))
+
+    def update_metadata(self, req: ElasticsearchDocumentMetadataUpdateRequest):
+        """
+        根据过滤条件更新文档的元数据
+
+        Args:
+            req: 包含索引名称、元数据过滤条件和新元数据的请求对象
+
+        Returns:
+            更新的文档数量
+        """
+        # 构建过滤条件
+        metadata_filter = []
+        for key, value in req.metadata_filter.items():
+            # 检查值是否为逗号分隔的字符串
+            if isinstance(value, str) and ',' in value:
+                # 按逗号分割并去除空白
+                values = [v.strip() for v in value.split(',')]
+                metadata_filter.append(
+                    {"terms": {f"metadata.{key}.keyword": values}}
+                )
+            else:
+                metadata_filter.append(
+                    {"term": {f"metadata.{key}.keyword": value}}
+                )
+
+        # 构建查询
+        query = {
+            "query": {
+                "bool": {
+                    "filter": metadata_filter
+                }
+            }
+        }
+
+        # 构建更新脚本
+        script_parts = []
+        for key, value in req.metadata.items():
+            script_parts.append(f'ctx._source.metadata.{key} = params.{key}')
+
+        update_script = {
+            "script": {
+                "source": "; ".join(script_parts),
+                "params": req.metadata
+            }
+        }
+
+        # 执行更新
+        result = self.es.update_by_query(
+            index=req.index_name,
+            body={**query, **update_script}
+        )
+        self.es.indices.refresh(index=req.index_name)
+
 
     def count_index_document(self, req: ElasticSearchDocumentCountRequest):
         if not req.metadata_filter:
@@ -176,7 +232,7 @@ class ElasticSearchRag:
         search_result = self._process_search_result(search_result)
 
         # 重排序处理
-        if req.enable_rerank:
+        if req.enable_rerank and search_result:
             headers = {
                 "accept": "application/json", "Content-Type": "application/json",
                 "Authorization": f"Bearer {req.rerank_model_api_key}"
@@ -193,6 +249,7 @@ class ElasticSearchRag:
             }
             response = requests.post(
                 req.rerank_model_base_url, headers=headers, json=data)
+
             rerank_result = response.json()['results']
 
             # 对rerank_result进行排序并获取topk
