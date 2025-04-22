@@ -132,7 +132,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
     //处理配置编辑和子配置编辑的确定事件
     const handleConfirm = () => {
       configformRef.current?.validateFields().then((values) => {
-        const { name, collector, configinfo } = values;
+        const { name, collector_id: collector, configinfo } = values;
         if (['edit', 'add'].includes(type)) {
           const params: ConfigParams = {
             name,
@@ -264,7 +264,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
                   options={OPERATE_SYSTEMS}
                   onChange={() =>
                     configformRef.current?.setFieldsValue({
-                      collector: null,
+                      collector_id: null,
                     })
                   }
                 />
@@ -283,7 +283,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
                   );
                   return (
                     <Form.Item
-                      name="collector"
+                      name="collector_id"
                       label={t(
                         'node-manager.cloudregion.Configuration.sidecar'
                       )}

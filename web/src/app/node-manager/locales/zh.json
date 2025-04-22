@@ -26,7 +26,8 @@
     "download": "下载",
     "successfulDownloaded": "下载成功！",
     "operationSuccessful": "操作成功！",
-    "name": "名称"
+    "name": "名称",
+    "bulkOperation": "批量操作"
   },
   "node-manager": {
     "cloudregion": {

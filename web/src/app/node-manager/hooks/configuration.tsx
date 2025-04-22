@@ -9,10 +9,8 @@ import { TableDataItem } from '@/app/node-manager/types/index';
 
 export const useApplyColumns = ({
   handleApply,
-  nodes,
 }: {
-  handleApply: (key: string) => void;
-  nodes: string[];
+  handleApply: (row: TableDataItem) => void;
 }): TableColumnsType => {
   const { t } = useTranslation();
   //数据
@@ -51,8 +49,13 @@ export const useApplyColumns = ({
       render: (key: string, sidecarinfo) => {
         return (
           <div>
-            {nodes.includes(sidecarinfo.key) ? (
-              <Button type="link" onClick={() => {}}>
+            {sidecarinfo.isRelated ? (
+              <Button
+                type="link"
+                onClick={() => {
+                  handleApply(sidecarinfo);
+                }}
+              >
                 {t('common.unapply')}
               </Button>
             ) : (
@@ -60,7 +63,7 @@ export const useApplyColumns = ({
                 disabled={sidecarinfo.sidecar != 'Running'}
                 type="link"
                 onClick={() => {
-                  handleApply(key);
+                  handleApply(sidecarinfo);
                 }}
               >
                 {t('common.apply')}
@@ -79,6 +82,7 @@ export const useConfigColumns = ({
   openSub,
   nodeClick,
   modifydeleteconfirm,
+  applyconfigurationClick,
   filter,
 }: ConfigHookParams) => {
   const { t } = useTranslation();
@@ -102,11 +106,8 @@ export const useConfigColumns = ({
                 className="text-blue-500 hover:text-blue-700"
                 onClick={() => nodeClick()}
               >
-                {record.nodesList
-                  .filter((item: TableDataItem) =>
-                    record.nodes.includes(item.value)
-                  )
-                  .map((item: TableDataItem) => item.label)
+                {(record.nodes || [])
+                  .map((item: TableDataItem) => item.ip)
                   .join(',')}
               </Button>
             ) : (
@@ -141,6 +142,15 @@ export const useConfigColumns = ({
       width: 180,
       render: (key, item) => (
         <div className="flex justify-center">
+          <Button
+            color="primary"
+            variant="link"
+            onClick={() => {
+              applyconfigurationClick(item);
+            }}
+          >
+            {t('common.apply')}
+          </Button>
           <Button
             color="primary"
             variant="link"
