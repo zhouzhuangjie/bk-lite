@@ -55,6 +55,7 @@ if __name__ == "__main__":
 
     logger.info("start server")
     app.run(
+        access_log=True,
         host="0.0.0.0",
         port=int(os.getenv('APP_PORT', 18083)),
         workers=1
