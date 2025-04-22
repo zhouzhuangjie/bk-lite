@@ -26,7 +26,8 @@
     "download": "download",
     "successfulDownloaded": "Download successful !",
     "operationSuccessful": "Operation successful !",
-    "name": "Name"
+    "name": "Name",
+    "bulkOperation": "Bulk Operation"
   },
   "node-manager": {
     "cloudregion": {
