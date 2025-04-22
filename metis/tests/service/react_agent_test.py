@@ -15,7 +15,8 @@ from src.service.react_agent.graph.react_agent_graph import ReActAgentGraph
 @pytest.mark.asyncio
 async def test_react_agent_without_tools():
     tools_servers: List[ToolsServer] = [
-        ToolsServer(name="demo",url='langchain:current_time')
+        ToolsServer(name="time",url='langchain:current_time'),
+        ToolsServer(name="duckduckgo", url='langchain:duckduckgo')
         # MCPServer(name="time mcp", url="http://127.0.0.1:17000/sse"),
     ]
     request = ReActAgentRequest(
@@ -23,9 +24,9 @@ async def test_react_agent_without_tools():
         openai_api_base=os.getenv("OPENAI_BASE_URL"),
         openai_api_key=os.getenv("OPENAI_API_KEY"),
         user_message=f"""
-            1. 现在几点
+            今天有什么AI相关的新闻
         """,
-        user_id="1",
+        user_id="umr",
         thread_id="2",
         tools_servers=tools_servers,
     )

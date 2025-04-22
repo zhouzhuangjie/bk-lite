@@ -17,11 +17,6 @@ class ToolsNodes(BasicNode):
         self.mcp_config = {}
 
     async def setup(self, request: BaseModel):
-        # 初始化LangChain工具
-        for server in request.tools_servers:
-            if server.url.startswith("langchain:") is True:
-                self.tools.append(ToolsLoader.load_tools(server.url))
-
         # 初始化MCP客户端配置
         for server in request.tools_servers:
             if server.url.startswith("langchain:") is False:
@@ -32,6 +27,12 @@ class ToolsNodes(BasicNode):
         self.mcp_client = MultiServerMCPClient(self.mcp_config)
         await self.mcp_client.__aenter__()  # 手动打开连接
         self.tools = self.mcp_client.get_tools()
+
+        # 初始化LangChain工具
+        for server in request.tools_servers:
+            if server.url.startswith("langchain:") is True:
+                self.tools.append(ToolsLoader.load_tools(server.url))
+
 
     async def agent_node(self, state: TypedDict, config: RunnableConfig) -> TypedDict:
         # 获取完整的消息历史
