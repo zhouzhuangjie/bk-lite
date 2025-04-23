@@ -21,9 +21,9 @@ class CollectorConfigurationService:
             collector_configuration.nodes.add(node)
             collector_configuration.save()
         except Node.DoesNotExist:
-            return False, "节点不存在"
+            return False, f"节点{node_id}不存在"
         except CollectorConfiguration.DoesNotExist:
-            return False, "采集器配置不存在"
+            return False, f"采集器配置{collector_configuration_id}不存在"
         return True, ""
 
     @staticmethod

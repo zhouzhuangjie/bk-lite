@@ -79,6 +79,8 @@ class PackageMgmtView(
             version=request.data['version'],
             name=uploaded_file.name,
             description=request.data.get('description', ''),
+            created_by=request.user.username,
+            updated_by=request.user.username,
         )
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
