@@ -1,5 +1,5 @@
 import { useTranslation } from '@/utils/i18n';
-import { Button, Tag } from 'antd';
+import { Button, Tag, Popconfirm } from 'antd';
 import type { TableColumnsType } from 'antd';
 import {
   ConfigHookParams,
@@ -9,10 +9,8 @@ import { TableDataItem } from '@/app/node-manager/types/index';
 
 export const useApplyColumns = ({
   handleApply,
-  nodes,
 }: {
-  handleApply: (key: string) => void;
-  nodes: string[];
+  handleApply: (row: TableDataItem) => void;
 }): TableColumnsType => {
   const { t } = useTranslation();
   //数据
@@ -51,8 +49,13 @@ export const useApplyColumns = ({
       render: (key: string, sidecarinfo) => {
         return (
           <div>
-            {nodes.includes(sidecarinfo.key) ? (
-              <Button type="link" onClick={() => {}}>
+            {sidecarinfo.isRelated ? (
+              <Button
+                type="link"
+                onClick={() => {
+                  handleApply(sidecarinfo);
+                }}
+              >
                 {t('common.unapply')}
               </Button>
             ) : (
@@ -60,7 +63,7 @@ export const useApplyColumns = ({
                 disabled={sidecarinfo.sidecar != 'Running'}
                 type="link"
                 onClick={() => {
-                  handleApply(key);
+                  handleApply(sidecarinfo);
                 }}
               >
                 {t('common.apply')}
@@ -78,6 +81,8 @@ export const useConfigColumns = ({
   configurationClick,
   openSub,
   nodeClick,
+  modifydeleteconfirm,
+  applyconfigurationClick,
   filter,
 }: ConfigHookParams) => {
   const { t } = useTranslation();
@@ -101,11 +106,8 @@ export const useConfigColumns = ({
                 className="text-blue-500 hover:text-blue-700"
                 onClick={() => nodeClick()}
               >
-                {record.nodesList
-                  .filter((item: TableDataItem) =>
-                    record.nodes.includes(item.value)
-                  )
-                  .map((item: TableDataItem) => item.label)
+                {(record.nodes || [])
+                  .map((item: TableDataItem) => item.ip)
                   .join(',')}
               </Button>
             ) : (
@@ -144,6 +146,15 @@ export const useConfigColumns = ({
             color="primary"
             variant="link"
             onClick={() => {
+              applyconfigurationClick(item);
+            }}
+          >
+            {t('common.apply')}
+          </Button>
+          <Button
+            color="primary"
+            variant="link"
+            onClick={() => {
               configurationClick(key);
             }}
           >
@@ -158,6 +169,19 @@ export const useConfigColumns = ({
           >
             {t('node-manager.cloudregion.Configuration.subconfiguration')}
           </Button>
+          <Popconfirm
+            title={t('common.prompt')}
+            description={t(
+              'node-manager.cloudregion.Configuration.modifydelinfo'
+            )}
+            okText={t('common.confirm')}
+            cancelText={t('common.cancel')}
+            onConfirm={() => modifydeleteconfirm(item.key)}
+          >
+            <Button variant="link" color="primary">
+              {t('common.delete')}
+            </Button>
+          </Popconfirm>
         </div>
       ),
     },
@@ -175,15 +199,12 @@ export const useSubConfigColumns = ({
   const { t } = useTranslation();
   const columns: TableColumnsType<TableDataItem> = [
     {
-      title: t('common.name'),
-      dataIndex: 'name',
-      fixed: 'left',
-      className: 'text-center',
-      align: 'center',
-      width: 300,
-      render: (_: any, record: any) => {
-        return <span>{record.name || '--'}</span>;
-      },
+      title: t('node-manager.cloudregion.Configuration.collectionType'),
+      dataIndex: 'collect_type',
+    },
+    {
+      title: t('node-manager.cloudregion.Configuration.configurationType'),
+      dataIndex: 'config_type',
     },
     {
       title: t('common.actions'),
@@ -203,6 +224,7 @@ export const useSubConfigColumns = ({
                 collector: nodeData.collector,
                 nodesList: nodeData.nodesList,
                 configinfo: record.content,
+                operating_system: nodeData.operating_system,
               });
             }}
           >

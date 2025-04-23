@@ -167,9 +167,15 @@
       div {
         width: 100%;
       }
-      >span {
+      .ant-dropdown-menu-title-content {
         width: 100%;
         display: flex;
+        > span {
+          width: 100%;
+          button {
+            justify-content: flex-start;
+          }
+        }
       }
     }
   }

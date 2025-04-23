@@ -83,11 +83,28 @@ export const useSkillApi = () => {
   const executeLlm = async (payload: any): Promise<any> => {
     return post('/opspilot/model_provider_mgmt/llm/execute/', payload);
   };
+
   /**
    * Fetches the list of skill tools.
    */
   const fetchSkillTools = async (): Promise<any[]> => {
     return get('/opspilot/model_provider_mgmt/skill_tools/');
+  };
+
+  /**
+   * Fetches the list of skill templates.
+   * @param params - Query parameters including is_template.
+   */
+  const fetchSkillTemplates = async (params: { is_template: 0 | 1 }): Promise<any[]> => {
+    return get('/opspilot/model_provider_mgmt/llm/', { params });
+  };
+
+  /**
+   * Creates a new skill.
+   * @param payload - Data to be sent in the request.
+   */
+  const createSkill = async (payload: { name: string; introduction: string; team: any[]; skill_type: number }): Promise<any> => {
+    return post('/opspilot/model_provider_mgmt/llm/', payload);
   };
 
   return {
@@ -102,5 +119,7 @@ export const useSkillApi = () => {
     saveSkillDetail,
     executeLlm,
     fetchSkillTools,
+    fetchSkillTemplates,
+    createSkill,
   };
 };

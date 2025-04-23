@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
 
-class MCPServer(BaseModel):
+class ToolsServer(BaseModel):
     name: str
     url: str

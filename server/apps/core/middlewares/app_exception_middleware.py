@@ -50,7 +50,7 @@ class AppExceptionMiddleware(MiddlewareMixin):
             )
         )
 
-        return WebUtils.response_error(error_message="系统异常,请联系管理员处理", status_code=exception.STATUS_CODE)
+        return WebUtils.response_error(error_message="系统异常,请联系管理员处理", status_code=500)
 
     def get_check_functions(self):
         """获取需要判断的函数列表"""

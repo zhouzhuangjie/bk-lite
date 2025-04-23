@@ -7,8 +7,6 @@ import ipaddress
 import urllib.parse
 from abc import abstractmethod, ABCMeta
 
-from apps.cmdb.constants import STARGAZER_URL
-
 
 class BaseNodeParams(metaclass=ABCMeta):
     PLUGIN_MAP = {}
@@ -27,7 +25,7 @@ class BaseNodeParams(metaclass=ABCMeta):
         self.instance = instance
         self.model_id = instance.model_id
         self.credential = self.instance.credential
-        self.base_path = f"{STARGAZER_URL}/api/collect/collect_info"
+        self.base_path = "${STARGAZER_URL}/api/collect/collect_info"
         self.host_field = "host"  # 默认的 ip字段 若不一样重新定义
 
     def get_host_ip_addr(self, host):

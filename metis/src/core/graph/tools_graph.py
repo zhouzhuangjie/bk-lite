@@ -9,7 +9,7 @@ from src.core.entity.basic_llm_request import BasicLLMReuqest
 from src.core.graph.basic_graph import BasicGraph
 
 
-class McpGraph(BasicGraph):
+class ToolsGraph(BasicGraph):
 
     def should_continue(self, state: MessagesState):
         messages = state["messages"]
