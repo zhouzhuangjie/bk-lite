@@ -24,6 +24,7 @@ from apps.opspilot.quota_rule_mgmt.quota_utils import get_quota_client
 
 class LLMFilter(FilterSet):
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
+    is_template = filters.NumberFilter(field_name="is_template", lookup_expr="exact")
 
 
 class LLMViewSet(AuthViewSet):
