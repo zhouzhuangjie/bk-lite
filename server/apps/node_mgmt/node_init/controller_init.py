@@ -3,12 +3,12 @@ from apps.node_mgmt.models import Controller
 CONTROLLER = [
     {
         "os": "linux",
-        "name": "Controller Linux",
+        "name": "Controller",
         "description": "The Controller is primarily used to manage various types of collectors, composed of Sidecarand NAS Executor, enabling automated deployment, resource coordination, and task execution on servers.",
     },
     {
         "os": "windows",
-        "name": "Controller Windows",
+        "name": "Controller",
         "description": "The Controller is primarily used to manage various types of collectors, composed of Sidecarand NAS Executor, enabling automated deployment, resource coordination, and task execution on servers.",
     },
 ]

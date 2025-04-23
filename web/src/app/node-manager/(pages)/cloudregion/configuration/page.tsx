@@ -24,6 +24,7 @@ import { useConfigColumns } from '@/app/node-manager/hooks/configuration';
 import { useConfigBtachItems } from '@/app/node-manager/constants/configuration';
 import ConfigModal from './configModal';
 import ApplyModal from './applyModal';
+import PermissionWrapper from '@/components/permission';
 type SearchProps = GetProps<typeof Input.Search>;
 const { Search } = Input;
 const { confirm } = Modal;
@@ -295,15 +296,18 @@ const Configration = () => {
         {!showSub ? (
           <>
             <div className="flex justify-end mb-4">
-              <Button
-                className="mr-[8px]"
-                type="primary"
-                onClick={() => showConfigurationModal('add', {})}
-              >
-                + {t('common.add')}
-              </Button>
+              <PermissionWrapper requiredPermissions={['Add']}>
+                <Button
+                  className="mr-[8px]"
+                  type="primary"
+                  onClick={() => showConfigurationModal('add', {})}
+                >
+                  + {t('common.add')}
+                </Button>
+              </PermissionWrapper>
               <Dropdown
                 className="mr-[8px]"
+                overlayClassName="customMenu"
                 menu={ConfigBtachProps}
                 disabled={!selectedconfigurationRowKeys.length}
               >

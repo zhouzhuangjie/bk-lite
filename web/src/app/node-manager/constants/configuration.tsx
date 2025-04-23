@@ -9,10 +9,11 @@ const useConfigBtachItems = (): MenuProps['items'] => {
     () => [
       {
         label: (
-          <PermissionWrapper requiredPermissions={['Delete']}>
-            <div style={{ whiteSpace: 'nowrap' }}>
-              {t('common.delete')}
-            </div>
+          <PermissionWrapper
+            className="customMenuItem"
+            requiredPermissions={['Delete']}
+          >
+            {t('common.delete')}
           </PermissionWrapper>
         ),
         key: 'delete',
