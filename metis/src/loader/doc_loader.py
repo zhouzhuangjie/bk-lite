@@ -3,6 +3,7 @@ import tempfile
 
 import docx
 from langchain_core.documents import Document
+from loguru import logger
 from tqdm import tqdm
 
 from src.ocr.base_ocr import BaseOCR
@@ -30,6 +31,7 @@ class DocLoader:
         return re.sub(r'\\u[fF]{1}[0-9a-fA-F]{3}', '', text)
 
     def load(self):
+        logger.info(f"开始解析[{self.file_path}]的文档,解析模式为[{self.mode}]")
         docs = []
         try:
             document = docx.Document(self.file_path)

@@ -178,6 +178,7 @@
       "toolsType": "基础工具类",
       "toolsTypeDesc": "具备推理和调动工具的智能体，该智能体可以引用私域知识，灵活选择执行工具，适合比较复杂的智能场景。"
     },
+    "useTemp": "使用该模板",
     "chatEnhancement": "聊天增强",
     "chatHistory": "聊天历史",
     "chatHistoryTip": "聊天历史数量指的是系用户与机器人之间互动的对话轮次或消息总数。这一数量可以帮助机器人理解上下文，并增强回复的相关性和连贯性。",
@@ -247,7 +248,7 @@
     "name": "名称",
     "label": "标签",
     "description": "描述",
-    "mcpUrl": "MCP链接",
+    "mcpUrl": "链接",
     "general": "通用",
     "search": "搜索",
     "maintenance": "运维",

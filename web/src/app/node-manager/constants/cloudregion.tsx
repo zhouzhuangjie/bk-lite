@@ -1,6 +1,7 @@
 import { useTranslation } from '@/utils/i18n';
 import { useMemo } from 'react';
 import { SegmentedItem } from '@/app/node-manager/types';
+import PermissionWrapper from '@/components/permission';
 import type { MenuProps } from 'antd';
 
 const useTelegrafMap = (): Record<string, Record<string, string>> => {
@@ -87,19 +88,47 @@ const useCollectoritems = (): MenuProps['items'] => {
   return useMemo(
     () => [
       {
-        label: t('node-manager.cloudregion.node.installCollector'),
+        label: (
+          <PermissionWrapper
+            className="customMenuItem"
+            requiredPermissions={['OperateCollector']}
+          >
+            {t('node-manager.cloudregion.node.installCollector')}
+          </PermissionWrapper>
+        ),
         key: 'installCollector',
       },
       {
-        label: t('node-manager.cloudregion.node.startCollector'),
+        label: (
+          <PermissionWrapper
+            className="customMenuItem"
+            requiredPermissions={['OperateCollector']}
+          >
+            {t('node-manager.cloudregion.node.startCollector')}
+          </PermissionWrapper>
+        ),
         key: 'startCollector',
       },
       {
-        label: t('node-manager.cloudregion.node.restartCollector'),
+        label: (
+          <PermissionWrapper
+            className="customMenuItem"
+            requiredPermissions={['OperateCollector']}
+          >
+            {t('node-manager.cloudregion.node.restartCollector')}
+          </PermissionWrapper>
+        ),
         key: 'restartCollector',
       },
       {
-        label: t('node-manager.cloudregion.node.stopCollector'),
+        label: (
+          <PermissionWrapper
+            className="customMenuItem"
+            requiredPermissions={['OperateCollector']}
+          >
+            {t('node-manager.cloudregion.node.stopCollector')}
+          </PermissionWrapper>
+        ),
         key: 'stopCollector',
       },
       //   {
@@ -125,9 +154,12 @@ const useSidecaritems = (): MenuProps['items'] => {
       //   },
       {
         label: (
-          <div style={{ whiteSpace: 'nowrap' }}>
+          <PermissionWrapper
+            className="customMenuItem"
+            requiredPermissions={['UninstallController']}
+          >
             {t('node-manager.cloudregion.node.uninstallSidecar')}
-          </div>
+          </PermissionWrapper>
         ),
         key: 'uninstallSidecar',
       },

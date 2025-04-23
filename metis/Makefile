@@ -11,5 +11,5 @@ setup:
 	$(PIP) install pip-tools
 
 install: 
-	$(PIP_COMPILE) ./requirements/requirements.in -v --output-file ./requirements.txt
+	$(PIP_COMPILE) ./requirements/requirements.in ./requirements/requirements-dev.in -v --output-file ./requirements.txt
 	$(PIP_SYNC) -v

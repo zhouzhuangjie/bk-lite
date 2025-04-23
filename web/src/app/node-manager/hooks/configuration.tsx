@@ -1,15 +1,17 @@
 import { useTranslation } from '@/utils/i18n';
-import { Button, Tag } from 'antd';
+import { Button, Tag, Popconfirm } from 'antd';
 import type { TableColumnsType } from 'antd';
-import { ConfigHookParams, SubConfigHookParams } from '@/app/node-manager/types/cloudregion';
+import PermissionWrapper from '@/components/permission';
+import {
+  ConfigHookParams,
+  SubConfigHookParams,
+} from '@/app/node-manager/types/cloudregion';
 import { TableDataItem } from '@/app/node-manager/types/index';
 
 export const useApplyColumns = ({
   handleApply,
-  nodes,
 }: {
-  handleApply: (key: string) => void;
-  nodes: string[];
+  handleApply: (row: TableDataItem) => void;
 }): TableColumnsType => {
   const { t } = useTranslation();
   //数据
@@ -48,8 +50,13 @@ export const useApplyColumns = ({
       render: (key: string, sidecarinfo) => {
         return (
           <div>
-            {nodes.includes(sidecarinfo.key) ? (
-              <Button type="link" onClick={() => { }}>
+            {sidecarinfo.isRelated ? (
+              <Button
+                type="link"
+                onClick={() => {
+                  handleApply(sidecarinfo);
+                }}
+              >
                 {t('common.unapply')}
               </Button>
             ) : (
@@ -57,7 +64,7 @@ export const useApplyColumns = ({
                 disabled={sidecarinfo.sidecar != 'Running'}
                 type="link"
                 onClick={() => {
-                  handleApply(key);
+                  handleApply(sidecarinfo);
                 }}
               >
                 {t('common.apply')}
@@ -75,7 +82,9 @@ export const useConfigColumns = ({
   configurationClick,
   openSub,
   nodeClick,
-  filter
+  modifydeleteconfirm,
+  applyconfigurationClick,
+  filter,
 }: ConfigHookParams) => {
   const { t } = useTranslation();
   const columns: TableColumnsType<TableDataItem> = [
@@ -90,21 +99,31 @@ export const useConfigColumns = ({
       dataIndex: 'nodes',
       width: 150,
       render: (_, record) => {
-        return(<>
-          <Button
-            type="link"
-            className="text-blue-500 hover:text-blue-700"
-            onClick={() => nodeClick()}>
-            {record.nodes.map((item: any) => item.label).join(',')}
-          </Button>
-        </>)
+        return (
+          <>
+            {record.nodes?.length ? (
+              <Button
+                type="link"
+                className="text-blue-500 hover:text-blue-700"
+                onClick={() => nodeClick()}
+              >
+                {(record.nodes || [])
+                  .map((item: TableDataItem) => item.ip)
+                  .join(',')}
+              </Button>
+            ) : (
+              '--'
+            )}
+          </>
+        );
       },
     },
     {
       title: t('node-manager.cloudregion.node.system'),
       dataIndex: 'operatingsystem',
       width: 150,
-      render: (_,record) => t(`node-manager.cloudregion.Configuration.${record.operatingsystem}`),
+      render: (_, record) =>
+        t(`node-manager.cloudregion.Configuration.${record.operatingsystem}`),
     },
     {
       title: t('node-manager.cloudregion.Configuration.sidecar'),
@@ -113,7 +132,7 @@ export const useConfigColumns = ({
       filters: filter,
       width: 150,
       onFilter: (value, record) => {
-        return record?.collector_name === value
+        return record?.collector_name === value;
       },
     },
     {
@@ -124,24 +143,54 @@ export const useConfigColumns = ({
       width: 180,
       render: (key, item) => (
         <div className="flex justify-center">
-          <Button
-            color="primary"
-            variant="link"
-            onClick={() => {
-              configurationClick(key);
-            }}
-          >
-            {t('common.edit')}
-          </Button>
-          <Button
-            color="primary"
-            variant="link"
-            onClick={() => {
-              openSub(key, item);
-            }}
-          >
-            {t('node-manager.cloudregion.Configuration.subconfiguration')}
-          </Button>
+          <PermissionWrapper requiredPermissions={['Apply']}>
+            <Button
+              color="primary"
+              variant="link"
+              onClick={() => {
+                applyconfigurationClick(item);
+              }}
+            >
+              {t('common.apply')}
+            </Button>
+          </PermissionWrapper>
+          <PermissionWrapper requiredPermissions={['Edit']}>
+            <Button
+              color="primary"
+              variant="link"
+              onClick={() => {
+                configurationClick(key);
+              }}
+            >
+              {t('common.edit')}
+            </Button>
+          </PermissionWrapper>
+          <PermissionWrapper requiredPermissions={['SubConfiguration']}>
+            <Button
+              color="primary"
+              variant="link"
+              onClick={() => {
+                openSub(key, item);
+              }}
+            >
+              {t('node-manager.cloudregion.Configuration.subconfiguration')}
+            </Button>
+          </PermissionWrapper>
+          <PermissionWrapper requiredPermissions={['Delete']}>
+            <Popconfirm
+              title={t('common.prompt')}
+              description={t(
+                'node-manager.cloudregion.Configuration.modifydelinfo'
+              )}
+              okText={t('common.confirm')}
+              cancelText={t('common.cancel')}
+              onConfirm={() => modifydeleteconfirm(item.key)}
+            >
+              <Button variant="link" color="primary">
+                {t('common.delete')}
+              </Button>
+            </Popconfirm>
+          </PermissionWrapper>
         </div>
       ),
     },
@@ -154,22 +203,17 @@ export const useConfigColumns = ({
 
 export const useSubConfigColumns = ({
   nodeData,
-  edit
+  edit,
 }: SubConfigHookParams) => {
   const { t } = useTranslation();
   const columns: TableColumnsType<TableDataItem> = [
     {
-      title: t('common.name'),
-      dataIndex: 'name',
-      fixed: 'left',
-      className: 'text-center',
-      align: 'center',
-      width: 300,
-      render: (_: any, record: any) => {
-        return (
-          <span>{record.name || '--'}</span>
-        )
-      }
+      title: t('node-manager.cloudregion.Configuration.collectionType'),
+      dataIndex: 'collect_type',
+    },
+    {
+      title: t('node-manager.cloudregion.Configuration.configurationType'),
+      dataIndex: 'config_type',
     },
     {
       title: t('common.actions'),
@@ -185,9 +229,11 @@ export const useSubConfigColumns = ({
             onClick={() => {
               edit({
                 ...record,
-                nodes: nodeData.nodes || '--',
+                nodes: nodeData.nodes || [],
                 collector: nodeData.collector,
-                configinfo: record.content
+                nodesList: nodeData.nodesList,
+                configinfo: record.content,
+                operating_system: nodeData.operating_system,
               });
             }}
           >
@@ -199,9 +245,9 @@ export const useSubConfigColumns = ({
   ];
 
   return {
-    columns
-  }
-}
+    columns,
+  };
+};
 
 export const useConfigModalColumns = () => {
   const { t } = useTranslation();

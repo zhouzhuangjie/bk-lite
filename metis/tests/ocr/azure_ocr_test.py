@@ -1,12 +1,11 @@
 import os
 from dotenv import load_dotenv
-from src.ocr.azure_ocr import AzureOCR
+from loguru import logger
 
-load_dotenv()
+from src.ocr.azure_ocr import AzureOCR
 
 
 def test_azure_ocr():
-
     azure_ocr = AzureOCR(
         os.getenv("TEST_AZURE_VISION_URL"),
         os.getenv("TEST_AZURE_VISION_TOKEN"),
@@ -14,4 +13,4 @@ def test_azure_ocr():
 
     image_path = "./tests/assert/umr.jpeg"
     result = azure_ocr.predict(image_path)
-    print(f"Result: {result}")
+    logger.info(result)

@@ -11,7 +11,7 @@ const AutoDiscoveryLayout = ({ children }: { children: React.ReactNode }) => {
         ['--custom-height' as string]: 'calc(100vh - 150px)',
       }}
     >
-      <WithSideMenuLayout showBackButton={false}>{children}</WithSideMenuLayout>
+      <WithSideMenuLayout showBackButton={false} pagePathName="/cmdb/assetManage/autoDiscovery/collection">{children}</WithSideMenuLayout>
     </div>
   );
 };

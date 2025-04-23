@@ -1,11 +1,12 @@
 'use client';
-import React, { useEffect, useRef, useState } from 'react';
-import { Input } from 'antd';
-import type { GetProps } from 'antd';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Input, Button, message, Dropdown, Space, Modal } from 'antd';
+import type { GetProps, TableProps } from 'antd';
+import { DownOutlined } from '@ant-design/icons';
 import { ColumnFilterItem } from 'antd/es/table/interface';
 import { useRouter, useSearchParams } from 'next/navigation';
 import CustomTable from '@/components/custom-table';
-import { ModalRef } from '@/app/node-manager/types/index';
+import { ModalRef, TableDataItem } from '@/app/node-manager/types/index';
 import { useTranslation } from '@/utils/i18n';
 import useApiClient from '@/utils/request';
 import type {
@@ -20,13 +21,18 @@ import Mainlayout from '../mainlayout/layout';
 import configstyle from './index.module.scss';
 import SubConfiguration from './subconfiguration';
 import { useConfigColumns } from '@/app/node-manager/hooks/configuration';
+import { useConfigBtachItems } from '@/app/node-manager/constants/configuration';
 import ConfigModal from './configModal';
+import ApplyModal from './applyModal';
+import PermissionWrapper from '@/components/permission';
 type SearchProps = GetProps<typeof Input.Search>;
 const { Search } = Input;
+const { confirm } = Modal;
 
 const Configration = () => {
   const subConfiguration = useRef<SubRef>(null);
   const configurationRef = useRef<ModalRef>(null);
+  const applyRef = useRef<ModalRef>(null);
   const cloudid = useCloudId();
   const router = useRouter();
   const { t } = useTranslation();
@@ -37,34 +43,71 @@ const Configration = () => {
   ).id;
   const cloudregionId = searchParams.get('cloud_region_id') || '';
   const name = searchParams.get('name') || '';
-  const { getconfiglist, getnodelist } = useApiCloudRegion();
+  const { getconfiglist, getnodelist, batchdeletecollector } =
+    useApiCloudRegion();
   const { getCollectorlist } = useApiCollector();
+  const configBtachItems = useConfigBtachItems();
   const [loading, setLoading] = useState<boolean>(true);
-  const [configdata, setConfigdata] = useState<ConfigDate[]>([]);
-  const [tableData, setTableData] = useState<ConfigDate[]>([]);
+  const [configData, setConfigData] = useState<ConfigDate[]>([]);
   const [showSub, setShowSub] = useState<boolean>(false);
   const [filters, setFilters] = useState<ColumnFilterItem[]>([]);
   const [nodeData, setNodeData] = useState<ConfigDate>({
     key: '',
     name: '',
-    collector: '',
+    collector_id: '',
     operatingsystem: '',
     nodecount: 0,
     configinfo: '',
     nodes: [],
   });
-  const [collectorId, setCollectorId] = useState<string[]>([]);
+  const [collectorIds, setCollectorIds] = useState<string[]>([]);
+  const [originNodes, setOriginNodes] = useState<TableDataItem[]>([]);
+  const [originConfigs, setOriginConfigs] = useState<IConfiglistprops[]>([]);
+  const [originCollectors, setOriginCollectors] = useState<TableDataItem[]>([]);
+  const [selectedconfigurationRowKeys, setSelectedconfigurationRowKeys] =
+    useState<React.Key[]>([]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    initPage();
+    return () => {
+      sessionStorage.removeItem('cloudRegionInfo');
+    };
+  }, [isLoading]);
 
   const showConfigurationModal = (type: string, form: any) => {
     configurationRef.current?.showModal({
       type,
       form,
-    })
+    });
+  };
+
+  const showApplyModal = (form: TableDataItem) => {
+    applyRef.current?.showModal({
+      type: 'apply',
+      form,
+    });
+  };
+
+  const handleMenuClick = () => {
+    confirm({
+      title: t('common.prompt'),
+      content: t('node-manager.cloudregion.variable.deleteinfo'),
+      centered: true,
+      onOk() {
+        modifydeleteconfirm();
+      },
+    });
+  };
+
+  const ConfigBtachProps = {
+    items: configBtachItems,
+    onClick: handleMenuClick,
   };
 
   //点击编辑配置文件的触发事件
   const configurationClick = (key: string) => {
-    const configurationformdata = configdata.find((item) => item.key === key);
+    const configurationformdata = configData.find((item) => item.key === key);
     showConfigurationModal('edit', configurationformdata);
   };
 
@@ -74,12 +117,40 @@ const Configration = () => {
   };
 
   const openSub = (key: string, item?: any) => {
-    setNodeData(item);
+    if (item) {
+      setNodeData({
+        ...item,
+        nodesList: originNodes.map((item) => ({
+          label: item?.ip,
+          value: item?.id,
+        })),
+      });
+    }
     setShowSub(true);
   };
 
   const nodeClick = () => {
-    router.push(`/node-manager/cloudregion/node?cloudregion_id=${cloudregionId}&name=${name}`);
+    router.push(
+      `/node-manager/cloudregion/node?cloudregion_id=${cloudregionId}&name=${name}`
+    );
+  };
+
+  //批量删除的确定的弹窗
+  const modifydeleteconfirm = async (id?: string) => {
+    setLoading(true);
+    const ids = id ? [id] : selectedconfigurationRowKeys;
+    await batchdeletecollector({
+      ids: ids as string[],
+    });
+    if (!id) {
+      setSelectedconfigurationRowKeys([]);
+    }
+    message.success(t('common.deleteSuccess'));
+    getConfigData();
+  };
+
+  const applyconfigurationClick = (row: TableDataItem) => {
+    showApplyModal(row);
   };
 
   const { columns } = useConfigColumns({
@@ -87,98 +158,136 @@ const Configration = () => {
     filter: filters,
     openSub,
     nodeClick,
+    modifydeleteconfirm,
+    applyconfigurationClick,
   });
 
-  useEffect(() => {
-    if (isLoading) return;
-    setLoading(true);
-    Promise.all([getConfiglist(nodeId || ''), getCollectorList()])
-      .then(() => {
-        setLoading(false);
+  const tableData = useMemo(() => {
+    if (!collectorIds.length) return configData;
+    if (configData.length && collectorIds.length) {
+      return configData.filter((item) => {
+        return collectorIds.includes(item.collector_id as string);
       });
-    return () => {
-      sessionStorage.removeItem('cloudRegionInfo');
-    };
-  }, [isLoading])
-
-  useEffect(() => {
-    if(!collectorId.length && !configdata.length) return;
-    if(!loading) setLoading(true);
-    Promise.resolve().then(() => {
-      setTableData(configdata.filter((item) => {
-        return collectorId.includes(item.collector);
-      }));
-      setLoading(false);
-    });
-  }, [collectorId,configdata])
+    }
+    return [];
+  }, [collectorIds, configData]);
 
   //获取配置文件列表
-  const getConfiglist = async (search: string) => {
-    const res = await Promise.all([getconfiglist(Number(cloudid), search), getnodelist({ cloud_region_id: Number(cloudid) })]);
-    const configlist = res[0];
-    const nodeList = res[1];
-    const data = configlist.map((item: IConfiglistprops) => {
-      const nodes = item.nodes?.map((node: string) => {
-        const nodeItem = nodeList.find((nodeData: any) => nodeData.id === node);
-        return {
-          label: nodeItem?.ip,
-          value: nodeItem?.id,
-        };
+  const initPage = async () => {
+    setLoading(true);
+    try {
+      const res = await Promise.all([
+        getconfiglist({
+          cloud_region_id: Number(cloudid),
+          node_id: nodeId || '',
+        }),
+        getnodelist({ cloud_region_id: Number(cloudid) }),
+        getCollectorlist({}),
+      ]);
+      const configlist = res[0] || [];
+      const nodeList = res[1] || [];
+      const collectorList = res[2] || [];
+      setFilterConfig(collectorList);
+      setOriginConfigs(configlist);
+      setOriginNodes(nodeList);
+      dealConfigData({
+        configlist,
+        nodeList,
+        collectorList,
       });
-      const config = {
-        key: item.id,
-        name: item.name,
-        collector: item.collector as string,
-        collector_name: item.collector_name,
-        operatingsystem: item.operating_system,
-        nodecount: item.node_count,
-        configinfo: item.config_template,
-        nodes: nodes?.length ? nodes : '--',
-      };
-      return config;
-    });
-    setConfigdata(data);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // 获取采集器列表
-  const getCollectorList = async () => {
-    const res = await getCollectorlist({});
+  const dealConfigData = (
+    config = {
+      configlist: originConfigs,
+      nodeList: originNodes,
+      collectorList: originCollectors,
+    }
+  ) => {
+    const nodes = config.nodeList.map((item) => ({
+      label: item?.ip,
+      value: item?.id,
+    }));
+    const data: any = config.configlist.map((item: IConfiglistprops) => {
+      return {
+        ...item,
+        key: item.id,
+        operatingsystem: item.operating_system,
+        configinfo: item.config_template,
+        nodesList: nodes || [],
+        collector_name: config.collectorList.find(
+          (tex) => tex.id === item.collector_id
+        )?.name,
+      };
+    });
+    setConfigData(data);
+  };
+
+  const getConfigData = async (search = '') => {
+    setLoading(true);
+    try {
+      const data = await getconfiglist({
+        cloud_region_id: Number(cloudid),
+        node_id: nodeId || '',
+        name: search,
+      });
+      dealConfigData({
+        configlist: data,
+        nodeList: originNodes,
+        collectorList: originCollectors,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 根据采集器列表过滤数据
+  const setFilterConfig = (data: TableDataItem[]) => {
+    const collectors = data.filter((item: any) => !item.controller_default_run);
+    setOriginCollectors(collectors);
     const filters = new Map();
-    const collectorId =
-      res
-        .filter((item: any) => !item.controller_default_run)
-        .map((item: any) => {
-          filters.set(item.name, { text: item.name, value: item.name });
-          return item.id;
-        });
+    const collectorIds = collectors.map((item: any) => {
+      filters.set(item.name, { text: item.name, value: item.name });
+      return item.id;
+    });
     setFilters(Array.from(filters.values()) as ColumnFilterItem[]);
-    setCollectorId(collectorId);
+    setCollectorIds(collectorIds);
   };
 
   //搜索框的触发事件
   const onSearch: SearchProps['onSearch'] = (value) => {
-    setLoading(true);
-    getConfiglist(value).then(() => {
-      setLoading(false);
-    })
+    getConfigData(value);
   };
 
   // 子配置返回配置页面事件
   const handleCBack = () => {
-    getConfiglist('');
+    getConfigData();
     setShowSub(false);
   };
 
   // 弹窗确认成功后的回调
   const onSuccess = () => {
     if (!showSub) {
-      setLoading(true);
-      getConfiglist('').then(() => {
-        setLoading(false);
-      })
+      getConfigData();
       return;
     }
     subConfiguration.current?.getChildConfig();
+  };
+
+  //处理多选触发的事件逻辑
+  const rowSelection: TableProps<TableProps>['rowSelection'] = {
+    onChange: (selectedRowKeys: React.Key[]) => {
+      setSelectedconfigurationRowKeys(selectedRowKeys);
+    },
+    //禁止选中
+    getCheckboxProps: (record: any) => {
+      return {
+        disabled: !!record.nodes?.length,
+      };
+    },
   };
 
   return (
@@ -187,6 +296,28 @@ const Configration = () => {
         {!showSub ? (
           <>
             <div className="flex justify-end mb-4">
+              <PermissionWrapper requiredPermissions={['Add']}>
+                <Button
+                  className="mr-[8px]"
+                  type="primary"
+                  onClick={() => showConfigurationModal('add', {})}
+                >
+                  + {t('common.add')}
+                </Button>
+              </PermissionWrapper>
+              <Dropdown
+                className="mr-[8px]"
+                overlayClassName="customMenu"
+                menu={ConfigBtachProps}
+                disabled={!selectedconfigurationRowKeys.length}
+              >
+                <Button>
+                  <Space>
+                    {t('common.bulkOperation')}
+                    <DownOutlined />
+                  </Space>
+                </Button>
+              </Dropdown>
               <Search
                 className="w-64 mr-[8px]"
                 placeholder={t('common.search')}
@@ -200,12 +331,14 @@ const Configration = () => {
                 scroll={{ y: 'calc(100vh - 400px)', x: 'max-content' }}
                 columns={columns}
                 dataSource={tableData}
+                rowSelection={rowSelection}
               />
             </div>
           </>
         ) : (
           <SubConfiguration
             ref={subConfiguration}
+            collectors={originCollectors}
             cancel={() => handleCBack()}
             edit={hanldeSubEditClick}
             nodeData={nodeData}
@@ -214,9 +347,14 @@ const Configration = () => {
         {/* 弹窗组件（添加，编辑，应用）用于刷新页面 */}
         <ConfigModal
           ref={configurationRef}
-
+          config={{ collectors: originCollectors }}
           onSuccess={onSuccess}
         ></ConfigModal>
+        <ApplyModal
+          ref={applyRef}
+          config={{ nodes: originNodes }}
+          onSuccess={() => getConfigData()}
+        />
       </div>
     </Mainlayout>
   );

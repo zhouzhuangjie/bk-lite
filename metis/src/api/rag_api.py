@@ -1,10 +1,11 @@
+import traceback
 import uuid
 
 from langchain_openai import OpenAIEmbeddings
 from sanic import Blueprint, json
 import tempfile
 import os
-
+import json as js
 from sanic_ext import validate
 from src.chunk.full_chunk import FullChunk
 from src.chunk.semantic_chunk import SemanticChunk
@@ -26,7 +27,10 @@ from src.ocr.pp_ocr import PPOcr
 from src.rag.native_rag.entity.elasticsearch_document_count_request import ElasticSearchDocumentCountRequest
 from src.rag.native_rag.entity.elasticsearch_document_delete_request import ElasticSearchDocumentDeleteRequest
 from src.rag.native_rag.entity.elasticsearch_document_list_request import ElasticSearchDocumentListRequest
+from src.rag.native_rag.entity.elasticsearch_document_metadata_update_request import \
+    ElasticsearchDocumentMetadataUpdateRequest
 from src.rag.native_rag.entity.elasticsearch_index_delete_request import ElasticSearchIndexDeleteRequest
+from src.rag.native_rag.entity.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
 from src.rag.native_rag.entity.elasticsearch_store_request import ElasticSearchStoreRequest
 from src.rag.native_rag.rag.elasticsearch_rag import ElasticSearchRag
 from sanic.log import logger
@@ -41,23 +45,7 @@ def get_file_loader(file_path, file_extension, request=None):
     """
     # 初始化OCR
     ocr = None
-    ocr_type = request.form.get('ocr_type')
-
-    if ocr_type == 'pp_ocr':
-        ocr = PPOcr()
-
-    elif ocr_type == 'olm_ocr':
-        base_url = request.form.get('olm_base_url')
-        api_key = request.form.get('olm_api_key')
-        model = request.form.get(
-            'olm_model', "allenai/olmOCR-7B-0225-preview")
-        ocr = OlmOcr(base_url=base_url, api_key=api_key, model=model)
-
-    elif ocr_type == 'azure_ocr':
-        # 初始化azure_ocr
-        azure_api_key = request.form.get('azure_api_key')
-        azure_endpoint = request.form.get('azure_endpoint')
-        ocr = AzureOCR(api_key=azure_api_key, endpoint=azure_endpoint)
+    ocr = load_ocr(ocr, request)
 
     if file_extension in ['docx', 'doc']:
         return DocLoader(file_path, ocr)
@@ -75,6 +63,28 @@ def get_file_loader(file_path, file_extension, request=None):
         return MarkdownLoader(file_path)
     else:
         raise ValueError(f"不支持的文件类型: {file_extension}")
+
+
+def load_ocr(ocr, request):
+    ocr = None
+    ocr_type = request.form.get('ocr_type')
+
+    if ocr_type == 'pp_ocr':
+        ocr = PPOcr()
+
+    if ocr_type == 'olm_ocr':
+        base_url = request.form.get('olm_base_url')
+        api_key = request.form.get('olm_api_key')
+        model = request.form.get(
+            'olm_model', "allenai/olmOCR-7B-0225-preview")
+        ocr = OlmOcr(base_url=base_url, api_key=api_key, model=model)
+
+    if ocr_type == 'azure_ocr':
+        azure_api_key = request.form.get('azure_api_key')
+        azure_endpoint = request.form.get('azure_endpoint')
+        ocr = AzureOCR(api_key=azure_api_key, endpoint=azure_endpoint)
+
+    return ocr
 
 
 def get_chunker(chunk_mode, request=None):
@@ -134,6 +144,25 @@ def serialize_documents(docs):
     return serialized_docs
 
 
+@rag_api_router.post("/naive_rag_test")
+@auth.login_required
+@validate(json=ElasticSearchRetrieverRequest)
+def naive_rag_test(request, body: ElasticSearchRetrieverRequest):
+    """
+    测试RAG
+    :param request:
+    :param body:
+    :return:
+    """
+    try:
+        rag = ElasticSearchRag()
+        documents = rag.search(body)
+        return json({"status": "success", "message": "", "documents": [doc.dict() for doc in documents]})
+    except Exception as e:
+        traceback.print_exc()
+        return json({"status": "error", "message": str(e)})
+
+
 @rag_api_router.post("/count_index_document")
 @auth.login_required
 @validate(json=ElasticSearchDocumentCountRequest)
@@ -153,7 +182,7 @@ async def custom_content_ingest(request):
         content = request.form.get('content')
         chunk_mode = request.form.get('chunk_mode')
         is_preview = request.form.get('preview', 'false').lower() == 'true'
-
+        metadata = js.loads(request.form.get('metadata','{}'))
         # 加载自定义内容
         loader = RawLoader(content)
         docs = loader.load()
@@ -181,7 +210,8 @@ async def custom_content_ingest(request):
             knowledge_base_id=request.form.get('knowledge_base_id'),
             embed_model_base_url=request.form.get('embed_model_base_url'),
             embed_model_api_key=request.form.get('embed_model_api_key'),
-            embed_model_name=request.form.get('embed_model_name')
+            embed_model_name=request.form.get('embed_model_name'),
+            metadata=metadata
         )
 
         return json({"status": "success", "message": ""})
@@ -198,6 +228,7 @@ async def website_ingest(request):
         max_depth = int(request.form.get('max_depth', 1))
         chunk_mode = request.form.get('chunk_mode')
         is_preview = request.form.get('preview', 'false').lower() == 'true'
+        metadata = js.loads(request.form.get('metadata','{}'))
 
         # 加载网站内容
         loader = WebSiteLoader(url, max_depth)
@@ -227,7 +258,8 @@ async def website_ingest(request):
             knowledge_base_id=request.form.get('knowledge_base_id'),
             embed_model_base_url=request.form.get('embed_model_base_url'),
             embed_model_api_key=request.form.get('embed_model_api_key'),
-            embed_model_name=request.form.get('embed_model_name')
+            embed_model_name=request.form.get('embed_model_name'),
+            metadata=metadata
         )
 
         return json({"status": "success", "message": ""})
@@ -251,6 +283,7 @@ async def file_ingest(request):
 
     is_preview = request.form.get('preview', 'false').lower() == 'true'
     chunk_mode = request.form.get('chunk_mode')
+    metadata = js.loads(request.form.get('metadata','{}'))
 
     try:
         with tempfile.NamedTemporaryFile(delete=True, suffix=f'.{file_extension}') as temp_file:
@@ -290,7 +323,8 @@ async def file_ingest(request):
                 knowledge_base_id=request.form.get('knowledge_base_id'),
                 embed_model_base_url=request.form.get('embed_model_base_url'),
                 embed_model_api_key=request.form.get('embed_model_api_key'),
-                embed_model_name=request.form.get('embed_model_name')
+                embed_model_name=request.form.get('embed_model_name'),
+                metadata=metadata
             )
 
         return json({"status": "success", "message": ""})
@@ -342,7 +376,7 @@ def perform_chunking(docs, chunk_mode, request, is_preview, content_type):
 
 
 def store_documents_to_es(chunked_docs, knowledge_base_id, embed_model_base_url,
-                          embed_model_api_key, embed_model_name):
+                          embed_model_api_key, embed_model_name, metadata={}):
     """
     将文档存储到ElasticSearch
 
@@ -353,12 +387,16 @@ def store_documents_to_es(chunked_docs, knowledge_base_id, embed_model_base_url,
         embed_model_api_key: 嵌入模型API密钥
         embed_model_name: 嵌入模型名称
     """
+    if metadata:
+        for doc in chunked_docs:
+            doc.metadata.update(metadata)
+
     elasticsearch_store_request = ElasticSearchStoreRequest(
         index_name=knowledge_base_id,
         docs=chunked_docs,
         embed_model_base_url=embed_model_base_url,
         embed_model_api_key=embed_model_api_key,
-        embed_model_name=embed_model_name
+        embed_model_name=embed_model_name,
     )
     rag = ElasticSearchRag()
     rag.ingest(elasticsearch_store_request)
@@ -406,4 +444,16 @@ async def list_rag_document(request, body: ElasticSearchDocumentListRequest):
         documents = rag.list_index_document(body)
         return json({"status": "success", "message": "", "documents": [doc.dict() for doc in documents]})
     except Exception as e:
+        return json({"status": "error", "message": str(e)})
+
+@rag_api_router.post("/update_rag_document_metadata")
+@auth.login_required
+@validate(json=ElasticsearchDocumentMetadataUpdateRequest)
+async def update_rag_document_metadata(request, body: ElasticsearchDocumentMetadataUpdateRequest):
+    try:
+        rag = ElasticSearchRag()
+        rag.update_metadata(body)
+        return json({"status": "success", "message": "文档元数据更新成功"})
+    except Exception as e:
+        logger.error(f"更新文档元数据错误: {str(e)}")
         return json({"status": "error", "message": str(e)})

@@ -291,13 +291,15 @@ const AssetManage = () => {
                           <HolderOutlined
                             className={`${assetManageStyle.dragHander} cursor-move`}
                           />
-                          <Image
-                            src={getIconUrl(model)}
-                            className="block w-auto h-10"
-                            alt={t('picture')}
-                            width={100}
-                            height={40}
-                          />
+                          <div style={{width: 40}}>
+                            <Image
+                              src={getIconUrl(model)}
+                              className="block w-auto h-10"
+                              alt={t('picture')}
+                              width={40}
+                              height={40}
+                            />
+                          </div>
                           <div className="flex flex-col pl-[10px]">
                             <span className="text-[14px] pb-[4px] font-[600]">
                               {model.model_name}

@@ -1,4 +1,4 @@
-from apps.cmdb.constants import INSTANCE, INSTANCE_ASSOCIATION
+from apps.cmdb.constants import INSTANCE, INSTANCE_ASSOCIATION, OPERATOR_INSTANCE
 from apps.cmdb.graph.neo4j import Neo4jClient
 from apps.cmdb.models.change_record import CREATE_INST, CREATE_INST_ASST, DELETE_INST, DELETE_INST_ASST, UPDATE_INST
 from apps.cmdb.models.show_field import ShowField
@@ -86,6 +86,8 @@ class InstanceManage(object):
             CREATE_INST,
             after_data=result,
             operator=operator,
+            model_object=OPERATOR_INSTANCE,
+            message=f"创建模型实例. 模型:{result['model_id']} 实例:{result.get('inst_name') or result.get('ip_addr', '')}",
         )
         return result
 
@@ -127,6 +129,8 @@ class InstanceManage(object):
             before_data=inst_info,
             after_data=result[0],
             operator=operator,
+            model_object=OPERATOR_INSTANCE,
+            message=f"修改模型实例属性. 模型:{model_info['model_name']} 实例:{result[0]['inst_name']}",
         )
 
         return result[0]
@@ -175,6 +179,8 @@ class InstanceManage(object):
                 model_id=i["model_id"],
                 before_data=i,
                 after_data=after_dict.get(i["_id"]),
+                model_object=OPERATOR_INSTANCE,
+                message=f"修改模型实例属性. 模型:{model_info['model_name']} 实例:{i.get('inst_name') or i.get('ip_addr', '')}",
             )
             for i in inst_list
         ]
@@ -190,12 +196,16 @@ class InstanceManage(object):
         if not inst_list:
             raise BaseAppException("实例不存在！")
 
+        model_info = ModelManage.search_model_info(inst_list[0]["model_id"])
+
         InstanceManage.check_instances_permission(token, inst_list, inst_list[0]["model_id"])
 
         with Neo4jClient() as ag:
             ag.batch_delete_entity(INSTANCE, inst_ids)
 
-        change_records = [dict(inst_id=i["_id"], model_id=i["model_id"], before_data=i) for i in inst_list]
+        change_records = [dict(inst_id=i["_id"], model_id=i["model_id"], before_data=i, model_object=OPERATOR_INSTANCE,
+                               message=f"删除模型实例. 模型:{model_info['model_name']} 实例:{i.get('inst_name') or i.get('ip_addr', '')}")
+                          for i in inst_list]
         batch_create_change_record(INSTANCE, DELETE_INST, change_records, operator=operator)
 
     @staticmethod
@@ -324,8 +334,9 @@ class InstanceManage(object):
                     raise BaseAppException("instance association repetition")
 
         asso_info = InstanceManage.instance_association_by_asso_id(edge["_id"])
-
-        create_change_record_by_asso(INSTANCE_ASSOCIATION, CREATE_INST_ASST, asso_info, operator=operator)
+        message = f"创建模型关联关系. 原模型: {asso_info['src']['model_id']} 原模型实例: {asso_info['src']['inst_name']}  目标模型ID: {asso_info['dst']['model_id']} 目标模型实例: {asso_info['dst'].get('inst_name') or asso_info['dst'].get('ip_addr', '')}"
+        create_change_record_by_asso(INSTANCE_ASSOCIATION, CREATE_INST_ASST, asso_info, message=message,
+                                     operator=operator)
 
         return edge
 
@@ -338,7 +349,9 @@ class InstanceManage(object):
         with Neo4jClient() as ag:
             ag.delete_edge(asso_id)
 
-        create_change_record_by_asso(INSTANCE_ASSOCIATION, DELETE_INST_ASST, asso_info, operator=operator)
+        message = f"删除模型关联关系. 原模型: {asso_info['src']['model_id']} 原模型实例: {asso_info['src'].get('inst_name') or asso_info['src'].get('ip_addr', '')}  目标模型ID: {asso_info['dst']['model_id']} 目标模型实例: {asso_info['dst'].get('inst_name') or asso_info['dst'].get('ip_addr', '')}"
+        create_change_record_by_asso(INSTANCE_ASSOCIATION, DELETE_INST_ASST, asso_info, message=message,
+                                     operator=operator)
 
     @staticmethod
     def instance_association_by_asso_id(asso_id: int):
@@ -371,6 +384,8 @@ class InstanceManage(object):
     def inst_import(model_id: str, file_stream: bytes, operator: str):
         """实例导入"""
         attrs = ModelManage.search_model_attr_v2(model_id)
+        model_info = ModelManage.search_model_info(model_id)
+
         with Neo4jClient() as ag:
             exist_items, _ = ag.query_entity(INSTANCE, [{"field": "model_id", "type": "str=", "value": model_id}])
         results = Import(model_id, attrs, exist_items, operator).import_inst_list(file_stream)
@@ -380,6 +395,8 @@ class InstanceManage(object):
                 inst_id=i["data"]["_id"],
                 model_id=i["data"]["model_id"],
                 before_data=i["data"],
+                model_object=OPERATOR_INSTANCE,
+                message=f"导入模型实例. 模型:{model_info['model_name']} 实例:{i['data'].get('inst_name') or i['data'].get('ip_addr', '')}",
             )
             for i in results
             if i["success"]
