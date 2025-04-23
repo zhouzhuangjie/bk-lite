@@ -220,7 +220,7 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
             .split('-')?.[0]
             ?.replace('trap', '') || '';
         break;
-      case 'VWWare':
+      case 'VMWare':
         Object.assign(formData, extractVmvareUrl(formData.urls?.[0] || ''));
         break;
       default:
