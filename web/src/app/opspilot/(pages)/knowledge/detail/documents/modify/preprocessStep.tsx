@@ -4,12 +4,14 @@ import styles from './modify.module.scss';
 import type { StaticImageData } from 'next/image';
 import Icon from '@/components/icon';
 import { useTranslation } from '@/utils/i18n';
+import { useLocale } from '@/context/locale';
 import ContentDrawer from '@/components/content-drawer';
 import useContentDrawer from '@/app/opspilot/hooks/useContentDrawer';
 import { PreviewData } from '@/app/opspilot/types/knowledge';
 import fixedImg from '@/app/opspilot/img/fixed_chunk.png';
 import overlapImg from '@/app/opspilot/img/overlap_chunk.png';
-import semanticImg from '@/app/opspilot/img/semantic_chunk.png';
+import semanticImgEn from '@/app/opspilot/img/semantic_chunk-en.png';
+import semanticImgZh from '@/app/opspilot/img/semantic_chunk-zh.png';
 import noneImg from '@/app/opspilot/img/none_chunk.png';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
 
@@ -22,6 +24,7 @@ const PreprocessStep: React.FC<{
   initialConfig: any;
 }> = ({ knowledgeSourceType, knowledgeDocumentIds, onConfigChange, initialConfig }) => {
   const { t } = useTranslation();
+  const { locale } = useLocale();
 
   const chunkTypes: Array<{
     key: keyof typeof chunkImages;
@@ -76,7 +79,7 @@ const PreprocessStep: React.FC<{
   const chunkImages = {
     fixed_size: fixedImg,
     recursive: overlapImg,
-    semantic: semanticImg,
+    semantic: locale === 'en' ? semanticImgEn : semanticImgZh,
     none: noneImg,
   };
 
@@ -151,7 +154,7 @@ const PreprocessStep: React.FC<{
       });
 
       const processedData = data.map((content: string, index: number) => ({
-        id: index + 1,
+        id: index,
         content,
         characters: content.length,
       }));
