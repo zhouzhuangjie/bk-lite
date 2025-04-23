@@ -46,9 +46,9 @@ class KnowledgeBase(MaintainerInfo, TimeInfo):
         return f"knowledge_base_{self.id}"
 
     def delete(self, *args, **kwargs):
-        es_client = get_es_client()
-        es_client.indices.delete(index=self.knowledge_index_name())
-        es_client.transport.close()
+        from apps.opspilot.knowledge_mgmt.services.knowledge_search_service import KnowledgeSearchService
+
+        KnowledgeSearchService.delete_es_index(self.knowledge_index_name())
         super().delete(*args, **kwargs)
 
     def recreate_es_index(self):

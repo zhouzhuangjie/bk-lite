@@ -21,6 +21,7 @@ class RerankProvider(models.Model, EncryptMixin):
     )
     enabled = models.BooleanField(default=True, verbose_name="是否启用")
     team = models.JSONField(default=list)
+    is_build_in = models.BooleanField(default=False, verbose_name="是否内置")
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
