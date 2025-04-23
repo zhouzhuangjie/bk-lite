@@ -87,7 +87,7 @@ class InstanceManage(object):
             after_data=result,
             operator=operator,
             model_object=OPERATOR_INSTANCE,
-            message=f"创建模型实例. 模型:{result['model_id']} 实例:{result['inst_name']}",
+            message=f"创建模型实例. 模型:{result['model_id']} 实例:{result.get('inst_name') or result.get('ip_addr', '')}",
         )
         return result
 
@@ -180,7 +180,7 @@ class InstanceManage(object):
                 before_data=i,
                 after_data=after_dict.get(i["_id"]),
                 model_object=OPERATOR_INSTANCE,
-                message=f"修改模型实例属性. 模型:{model_info['model_name']} 实例:{i['inst_name']}",
+                message=f"修改模型实例属性. 模型:{model_info['model_name']} 实例:{i.get('inst_name') or i.get('ip_addr', '')}",
             )
             for i in inst_list
         ]
@@ -204,7 +204,7 @@ class InstanceManage(object):
             ag.batch_delete_entity(INSTANCE, inst_ids)
 
         change_records = [dict(inst_id=i["_id"], model_id=i["model_id"], before_data=i, model_object=OPERATOR_INSTANCE,
-                               message=f"删除模型实例. 模型:{model_info['model_name']} 实例:{i['inst_name']}")
+                               message=f"删除模型实例. 模型:{model_info['model_name']} 实例:{i.get('inst_name') or i.get('ip_addr', '')}")
                           for i in inst_list]
         batch_create_change_record(INSTANCE, DELETE_INST, change_records, operator=operator)
 
@@ -334,7 +334,7 @@ class InstanceManage(object):
                     raise BaseAppException("instance association repetition")
 
         asso_info = InstanceManage.instance_association_by_asso_id(edge["_id"])
-        message = f"创建模型关联关系. 原模型: {asso_info['src']['model_id']} 原模型实例: {asso_info['src']['inst_name']}  目标模型ID: {asso_info['dst']['model_id']} 目标模型实例: {asso_info['dst']['inst_name']}"
+        message = f"创建模型关联关系. 原模型: {asso_info['src']['model_id']} 原模型实例: {asso_info['src']['inst_name']}  目标模型ID: {asso_info['dst']['model_id']} 目标模型实例: {asso_info['dst'].get('inst_name') or asso_info['dst'].get('ip_addr', '')}"
         create_change_record_by_asso(INSTANCE_ASSOCIATION, CREATE_INST_ASST, asso_info, message=message,
                                      operator=operator)
 
@@ -349,7 +349,7 @@ class InstanceManage(object):
         with Neo4jClient() as ag:
             ag.delete_edge(asso_id)
 
-        message = f"删除模型关联关系. 原模型: {asso_info['src']['model_id']} 原模型实例: {asso_info['src']['inst_name']}  目标模型ID: {asso_info['dst']['model_id']} 目标模型实例: {asso_info['dst']['inst_name']}"
+        message = f"删除模型关联关系. 原模型: {asso_info['src']['model_id']} 原模型实例: {asso_info['src'].get('inst_name') or asso_info['src'].get('ip_addr', '')}  目标模型ID: {asso_info['dst']['model_id']} 目标模型实例: {asso_info['dst'].get('inst_name') or asso_info['dst'].get('ip_addr', '')}"
         create_change_record_by_asso(INSTANCE_ASSOCIATION, DELETE_INST_ASST, asso_info, message=message,
                                      operator=operator)
 
@@ -396,7 +396,7 @@ class InstanceManage(object):
                 model_id=i["data"]["model_id"],
                 before_data=i["data"],
                 model_object=OPERATOR_INSTANCE,
-                message=f"导入模型实例. 模型:{model_info['model_name']} 实例:{i['data']['inst_name']}",
+                message=f"导入模型实例. 模型:{model_info['model_name']} 实例:{i['data'].get('inst_name') or i['data'].get('ip_addr', '')}",
             )
             for i in results
             if i["success"]
