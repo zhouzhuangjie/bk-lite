@@ -178,6 +178,7 @@
       "toolsType": "Basic Tool",
       "toolsTypeDesc": "An intelligent agent with reasoning and tool invocation capabilities. This agent can reference private domain knowledge and flexibly choose execution tools, making it suitable for more complex intelligent scenarios."
     },
+    "useTemp": "Use This Template",
     "chatEnhancement": "Chat Enhancement",
     "chatHistory": "Chat History",
     "chatHistoryTip": "The chat history count refers to the total number of interaction turns or messages between the user and the robot. This count can help the robot understand the context and enhance the relevance and coherence of its responses.",
@@ -247,7 +248,7 @@
     "name": "Name",
     "label": "Label",
     "description": "Description",
-    "mcpUrl": "MCP URL",
+    "mcpUrl": "URL",
     "general": "General",
     "search": "Search",
     "maintenance": "Maintenance",

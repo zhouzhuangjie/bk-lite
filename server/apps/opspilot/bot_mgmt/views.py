@@ -96,7 +96,7 @@ def validate_openai_token(token):
     user = UserAPISecret.objects.filter(api_secret=token).first()
     if not user:
         return False, {"choices": [{"message": {"role": "assistant", "content": "No authorization"}}]}
-    return True, user.team
+    return True, user
 
 
 def get_skill_and_params(kwargs, team):
@@ -107,7 +107,7 @@ def get_skill_and_params(kwargs, team):
     if not skill_obj:
         return None, None, {"choices": [{"message": {"role": "assistant", "content": "No skill"}}]}
     num = kwargs.get("conversation_window_size") or skill_obj.conversation_window_size
-    chat_history = [{"text": i["content"], "event": i["role"]} for i in kwargs.get("messages", [])[-1 * num :]]
+    chat_history = [{"message": i["content"], "event": i["role"]} for i in kwargs.get("messages", [])[-1 * num :]]
 
     params = {
         "llm_model": skill_obj.llm_model_id,
@@ -124,6 +124,7 @@ def get_skill_and_params(kwargs, team):
         "enable_rag_knowledge_source": skill_obj.enable_rag_knowledge_source,
         "show_think": skill_obj.show_think,
         "tools": skill_obj.tools,
+        "skill_type": skill_obj.skill_type,
     }
 
     return skill_obj, params, None
@@ -151,16 +152,16 @@ def get_knowledge_sources(content, skill_obj, doc_map=None, title_map=None):
 
 def invoke_chat(params, skill_obj, kwargs, current_ip, user_message):
     data, doc_map, title_map = llm_service.invoke_chat(params)
-    content = format_knowledge_sources(data["content"], skill_obj, doc_map, title_map)
+    content = format_knowledge_sources(data["message"], skill_obj, doc_map, title_map)
     return_data = {
         "id": skill_obj.name,
         "object": "chat.completion",
         "created": int(time.time()),
         "model": kwargs["model"],
         "usage": {
-            "prompt_tokens": data["input_tokens"],
-            "completion_tokens": data["output_tokens"],
-            "total_tokens": data["input_tokens"] + data["output_tokens"],
+            "prompt_tokens": data["prompt_tokens"],
+            "completion_tokens": data["completion_tokens"],
+            "total_tokens": data["prompt_tokens"] + data["completion_tokens"],
             "completion_tokens_details": {
                 "reasoning_tokens": 0,
                 "accepted_prediction_tokens": 0,
@@ -195,8 +196,8 @@ def openai_completions(request):
             return generate_stream_error(msg["choices"][0]["message"]["content"])
         else:
             return JsonResponse(msg)
-    team = msg
-    skill_obj, params, error = get_skill_and_params(kwargs, team)
+    user = msg
+    skill_obj, params, error = get_skill_and_params(kwargs, user.team)
     if error:
         if skill_obj:
             user_message = params.get("user_message")
@@ -205,6 +206,7 @@ def openai_completions(request):
             return generate_stream_error(error["choices"][0]["message"]["content"])
         else:
             return JsonResponse(error)
+    params["user_id"] = user.username
     user_message = params.get("user_message")
     if not stream_mode:
         return invoke_chat(params, skill_obj, kwargs, current_ip, user_message)
