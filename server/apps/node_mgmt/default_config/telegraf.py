@@ -5,7 +5,7 @@ from apps.node_mgmt.models import Collector, CollectorConfiguration
 logger = logging.getLogger("app")
 
 
-default_sidecar_mode = os.getenv("SIDECAR_INPUT_MODE", "telegraf")
+default_sidecar_mode = os.getenv("SIDECAR_INPUT_MODE", "nats")
 TELEGRAF_CONFIG = """
 [global_tags]
     agent_id="${node.ip}-${node.cloud_region}"
