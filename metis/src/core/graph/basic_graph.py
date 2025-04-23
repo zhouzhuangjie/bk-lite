@@ -42,5 +42,9 @@ class BasicGraph:
     def parse_basic_response(self, result):
         response = BasicLLMResponse(message=result["messages"][-1].content,
                                     total_tokens=result["messages"][-1].response_metadata['token_usage'][
-                                        'total_tokens'])
+                                        'total_tokens'],
+                                    prompt_tokens=result["messages"][-1].response_metadata['token_usage'][
+                                        'prompt_tokens'],
+                                    completion_tokens=result["messages"][-1].response_metadata['token_usage'][
+                                        'completion_tokens'])
         return response

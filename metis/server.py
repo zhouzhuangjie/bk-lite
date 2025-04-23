@@ -6,8 +6,11 @@ from src.api import api
 from src.core.web.api_auth import auth
 from src.core.web.config import YamlConfig
 from src.core.web.crypto import PasswordCrypto
-from sanic.log import logger
+from loguru import logger
 from langgraph.checkpoint.postgres import PostgresSaver
+
+from sanic_fire import cmd
+from sanic_fire.core import command_class, command_func
 
 # 加载环境变量和配置
 load_dotenv()
@@ -19,6 +22,7 @@ crypto = PasswordCrypto(os.getenv("SECRET_KEY"))
 users = {
     "admin": crypto.encrypt(os.getenv("ADMIN_PASSWORD")),
 }
+
 
 # 配置认证
 
@@ -33,6 +37,7 @@ def verify_password(username, password):
         return crypto.decrypt(encrypted_password) == crypto.decrypt(password)
     return False
 
+
 # 配置启动钩子
 
 
@@ -41,22 +46,30 @@ async def show_banner(app, loop):
     with open(f"src/asserts/banner.txt") as f:
         print(f.read())
 
+
 # 注册路由
 app.blueprint(api)
 
-if __name__ == "__main__":
 
-    logger.info("setup langgraph checkpoint")
+@command_func
+def sync_db():
     try:
         with PostgresSaver.from_conn_string(os.getenv('DB_URI')) as checkpointer:
             checkpointer.setup()
     except Exception as e:
         pass
+    logger.info("setup langgraph checkpoint finished")
 
+
+@command_func
+def startup():
     logger.info("start server")
     app.run(
-        access_log=True,
         host="0.0.0.0",
         port=int(os.getenv('APP_PORT', 18083)),
         workers=1
     )
+
+
+if __name__ == "__main__":
+    cmd()
