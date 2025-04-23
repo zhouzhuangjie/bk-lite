@@ -159,7 +159,9 @@
       "deleteInfo": "Are you sure to delete this Collector?",
       "single": "Single choice Windows/Linux",
       "updatedBy": "Updated By",
-      "updatedAt": "Updated At"
+      "updatedAt": "Updated At",
+      "executeFilePath": "Execute file path",
+      "executeParameters": "Execution parameters"
     }
   }
 }
