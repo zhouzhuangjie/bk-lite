@@ -89,7 +89,7 @@ class KnowledgeSearchService:
             knowledge_base_folder, query, embed_mode_config, rerank_model, kwargs, score_threshold
         )
 
-        url = f"{settings.CHAT_SERVER_URL}/api/rag/naive_rag_test"
+        url = f"{settings.METIS_SERVER_URL}/api/rag/naive_rag_test"
         result = ChatServerHelper.post_chat_server(params, url)
 
         # 处理搜索结果
@@ -113,7 +113,7 @@ class KnowledgeSearchService:
 
     @staticmethod
     def change_chunk_enable(index_name, chunk_id, enabled):
-        url = f"{settings.CHAT_SERVER_URL}/api/rag/update_rag_document_metadata"
+        url = f"{settings.METIS_SERVER_URL}/api/rag/update_rag_document_metadata"
         kwargs = {
             "index_name": index_name,
             "metadata_filter": {"chunk_id": str(chunk_id)},
@@ -123,7 +123,7 @@ class KnowledgeSearchService:
 
     @staticmethod
     def delete_es_content(index_name, doc_id, doc_name="", is_chunk=False):
-        url = f"{settings.CHAT_SERVER_URL}/api/rag/delete_doc"
+        url = f"{settings.METIS_SERVER_URL}/api/rag/delete_doc"
         key = "knowledge_id" if not is_chunk else "chunk_id"
         kwargs = {"index_name": index_name, "metadata_filter": {key: str(doc_id)}}
         try:
@@ -137,7 +137,7 @@ class KnowledgeSearchService:
 
     @staticmethod
     def delete_es_index(index_name):
-        url = f"{settings.CHAT_SERVER_URL}/api/rag/delete_index"
+        url = f"{settings.METIS_SERVER_URL}/api/rag/delete_index"
         kwargs = {"index_name": index_name}
         try:
             ChatServerHelper.post_chat_server(kwargs, url)

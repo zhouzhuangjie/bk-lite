@@ -93,9 +93,9 @@ def invoke_one_document(document, is_show=False):
         "web_page": format_web_page_invoke_kwargs,
     }
     remote_url_map = {
-        "file": f"{settings.CHAT_SERVER_URL}/api/rag/file_ingest",
-        "web_page": f"{settings.CHAT_SERVER_URL}/api/rag/website_ingest",
-        "manual": f"{settings.CHAT_SERVER_URL}/api/rag/custom_content_ingest",
+        "file": f"{settings.METIS_SERVER_URL}/api/rag/file_ingest",
+        "web_page": f"{settings.METIS_SERVER_URL}/api/rag/website_ingest",
+        "manual": f"{settings.METIS_SERVER_URL}/api/rag/custom_content_ingest",
     }
     knowledge_docs = []
     source_type = document.knowledge_source_type
