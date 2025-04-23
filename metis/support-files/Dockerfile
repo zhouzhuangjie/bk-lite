@@ -1,7 +1,9 @@
 FROM python:3.12
 
 RUN apt-get update && \
-    apt-get install -y libhdf5-dev vim  unzip curl pkg-config libssl-dev libffi-dev supervisor && \
+    apt-get install -y libhdf5-dev vim  unzip curl pkg-config libssl-dev libffi-dev supervisor \
+    libnss3 libnspr4 libdbus-1-3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libxcomposite1 libxdamage1 libxfixes3\
+    libxrandr2 libgbm1 libxkbcommon0 libasound2 libatspi2.0-0&& \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
