@@ -161,7 +161,9 @@
       "editInfo": "您确定要修改此采集器吗？",
       "single": "单选Windows/Linux",
       "updatedBy": "更新人",
-      "updatedAt": "更新时间"
+      "updatedAt": "更新时间",
+      "executeFilePath": "执行文件路径",
+      "executeParameters": "执行参数"
     }
   }
 }
