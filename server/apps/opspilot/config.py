@@ -2,6 +2,7 @@ import os
 
 # REMOTE_SERVICE
 FILE_CHUNK_SERVICE_URL = os.getenv("FILE_CHUNK_SERVICE_URL", "http://chunk-server/file_chunk")
+CHAT_SERVER_URL = os.getenv("CHAT_SERVER_URL", "http://rag-server-api/")
 MANUAL_CHUNK_SERVICE_URL = os.getenv("MANUAL_CHUNK_SERVICE_URL", "http://chunk-server/manual_chunk")
 WEB_PAGE_CHUNK_SERVICE_URL = os.getenv("WEB_PAGE_CHUNK_SERVICE_URL", "http://chunk-server/webpage_chunk")
 OPENAI_CHAT_SERVICE_URL = os.getenv("OPENAI_CHAT_SERVICE_URL", "http://chat-server/openai")
@@ -30,3 +31,4 @@ ELASTICSEARCH_PASSWORD = os.getenv("ELASTICSEARCH_PASSWORD")
 # MINIO 配置
 MINIO_PRIVATE_BUCKETS = ["munchkin-private"]
 MINIO_PUBLIC_BUCKETS = ["munchkin-public"]
+KUBE_CONFIG_FILE = ""
