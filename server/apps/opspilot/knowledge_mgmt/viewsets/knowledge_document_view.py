@@ -88,8 +88,8 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
     @action(methods=["GET"], detail=True)
     def get_detail(self, request, *args, **kwargs):
         instance: KnowledgeDocument = self.get_object()
-        url = f"{settings.CHAT_SERVER_URL}/api/rag/list_rag_document"
-        count_url = f"{settings.CHAT_SERVER_URL}/api/rag/count_index_document"
+        url = f"{settings.METIS_SERVER_URL}/api/rag/list_rag_document"
+        count_url = f"{settings.METIS_SERVER_URL}/api/rag/count_index_document"
         search_text = request.GET.get("search_text", "")
         page = int(request.GET.get("page", 1))
         page_size = int(request.GET.get("page_size", 10))

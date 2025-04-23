@@ -6,7 +6,6 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from apps.core.decorators.api_perminssion import HasRole
-from apps.core.utils.elasticsearch_utils import get_es_client
 from apps.core.utils.viewset_utils import AuthViewSet
 from apps.opspilot.knowledge_mgmt.models.knowledge_document import DocumentStatus
 from apps.opspilot.knowledge_mgmt.serializers import KnowledgeBaseSerializer
@@ -41,12 +40,8 @@ class KnowledgeBaseViewSet(AuthViewSet):
             params["rag_num_candidates"] = 50
         serializer = self.get_serializer(data=params)
         serializer.is_valid(raise_exception=True)
-        es_client = get_es_client()
         with atomic():
             self.perform_create(serializer)
-            index = f"knowledge_base_{serializer.data.get('id')}"
-            if not es_client.indices.exists(index=index):
-                es_client.indices.create(index=index)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
