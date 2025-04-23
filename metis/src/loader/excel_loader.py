@@ -1,5 +1,6 @@
 import pandas as pd
 from langchain_core.documents import Document
+from loguru import logger
 
 
 class ExcelLoader():
@@ -35,7 +36,7 @@ class ExcelLoader():
         result = []
 
         for sheet_name, df in sheets.items():
-            print(f"Excel文件[{self.path}]的Sheet[{sheet_name}]的首行将被解析为表头")
+            logger.info(f"Excel文件[{self.path}]的Sheet[{sheet_name}]的首行将被解析为表头")
 
             # 遍历每一行
             for index, row in df.iterrows():
@@ -49,7 +50,7 @@ class ExcelLoader():
 
                 # 将这一行的结果添加到总结果中
                 result.append(Document(row_result.strip(), metadata={
-                              "format": "table", "sheet": sheet_name}))
+                    "format": "table", "sheet": sheet_name}))
 
         # 返回结果
         return result
@@ -71,7 +72,7 @@ class ExcelLoader():
         result = []
 
         for sheet_name, df in sheets.items():
-            print(f"Excel文件[{self.path}]的Sheet[{sheet_name}]的全内容将被解析")
+            logger.info(f"Excel文件[{self.path}]的Sheet[{sheet_name}]的全内容将被解析")
 
             # 读取Excel 的全内容
             full_content = self.dataframe_to_excel_format_string(df)

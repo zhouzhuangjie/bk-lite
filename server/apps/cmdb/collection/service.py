@@ -526,6 +526,7 @@ class CollectK8sMetrics:
                 kubelet_version=inst_index_info.get("kubelet_version"),
                 container_runtime_version=inst_index_info.get("container_runtime_version"),
                 pod_cidr=inst_index_info.get("pod_cidr"),
+                self_cluster=self.cluster_name,
                 assos=[
                     {
                         "model_id": "k8s_cluster",
