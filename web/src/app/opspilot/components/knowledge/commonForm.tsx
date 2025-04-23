@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
-import { Form, Input, Select } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Form, Input, Select, Tooltip } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { useUserInfoContext } from '@/context/userInfo';
+import Icon from '@/components/icon';
 
 const { Option } = Select;
 
@@ -18,6 +19,23 @@ const CommonForm: React.FC<CommonFormProps> = ({ form, modelOptions, initialValu
   const { t } = useTranslation();
   const { groups, selectedGroup } = useUserInfoContext();
 
+  const [selectedType, setSelectedType] = useState<number>(2);
+
+  const typeOptions = [
+    { 
+      key: 2, 
+      title: t('skill.form.qaType'), 
+      desc: t('skill.form.qaTypeDesc'), 
+      icon: 'liaotian' 
+    },
+    { 
+      key: 1, 
+      title: t('skill.form.toolsType'), 
+      desc: t('skill.form.toolsTypeDesc'), 
+      icon: 'gongju'
+    },
+  ];
+
   useEffect(() => {
     if (!visible) return;
 
@@ -33,8 +51,35 @@ const CommonForm: React.FC<CommonFormProps> = ({ form, modelOptions, initialValu
     }
   }, [initialValues, form, modelOptions, formType, visible]);
 
+  const handleTypeSelection = (typeKey: number) => {
+    setSelectedType(typeKey);
+    form.setFieldsValue({ skill_type: typeKey });
+  };
+
   return (
     <Form form={form} layout="vertical" name={`${formType}_form`}>
+      {formType === 'skill' && (
+        <Form.Item name="skill_type" initialValue={typeOptions[0].key}>
+          <div className="grid grid-cols-2 gap-4">
+            {typeOptions.map((type) => (
+              <Tooltip key={type.key} title={type.desc}>
+                <div
+                  className={`p-4 rounded-lg cursor-pointer ${
+                    selectedType === type.key ? 'border-2 bg-[var(--color-primary-bg-active)] border-[var(--color-primary)]' : 'border'
+                  }`}
+                  onClick={() => handleTypeSelection(type.key)}
+                >
+                  <div className="flex items-center mb-2">
+                    <Icon type={type.icon} className="text-2xl mr-2" />
+                    <h3 className="text-sm font-semibold">{type.title}</h3>
+                  </div>
+                  <p className="text-xs text-[var(--color-text-3)] line-clamp-3">{type.desc}</p>
+                </div>
+              </Tooltip>
+            ))}
+          </div>
+        </Form.Item>
+      )}
       <Form.Item
         name="name"
         label={t(`${formType}.form.name`)}

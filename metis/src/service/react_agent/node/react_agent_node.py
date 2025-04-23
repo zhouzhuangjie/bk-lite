@@ -1,5 +1,5 @@
-from src.core.node.mcp_node import McpNodes
+from src.core.node.tools_node import ToolsNodes
 
 
-class ReActAgentNode(McpNodes):
+class ReActAgentNode(ToolsNodes):
     pass

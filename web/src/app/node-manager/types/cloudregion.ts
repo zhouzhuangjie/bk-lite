@@ -7,6 +7,8 @@ interface ConfigHookParams {
   configurationClick: (key: string) => void;
   openSub: (key: string, item?: any) => void;
   nodeClick: () => void;
+  modifydeleteconfirm: (key: string) => void;
+  applyconfigurationClick: (item: TableDataItem) => void;
   filter: ColumnFilterItem[];
 }
 // 子配置页面table的列定义
@@ -25,6 +27,7 @@ interface IConfiglistprops {
   id: string;
   name: string;
   collector_name: string;
+  collector_id?: string;
   operating_system: string;
   node_count: string;
   config_template?: string;
@@ -80,12 +83,14 @@ interface mappedNodeItem {
 interface ConfigDate {
   key: string;
   name: string;
-  collector: string;
+  collector?: string;
+  collector_id?: string;
   operatingsystem: string;
   nodecount: number;
   configinfo: string;
   nodes: string[];
   nodesList?: ListItem;
+  operating_system?: string;
 }
 
 interface SubRef {
@@ -96,6 +101,7 @@ interface SubProps {
   cancel: () => void;
   edit: (item: IConfiglistprops) => void;
   nodeData: ConfigDate;
+  collectors: TableDataItem[];
 }
 
 interface cloudRegionItem {
@@ -149,6 +155,21 @@ interface ControllerInstallProps {
   config?: any;
 }
 
+interface ConfigParams {
+  name: string;
+  collector_id: string;
+  cloud_region_id?: number;
+  config_template: string;
+  nodes?: string[];
+}
+
+interface ConfigListParams {
+  cloud_region_id?: number;
+  name?: string;
+  node_id?: string;
+  ids?:string[];
+}
+
 export type {
   ConfigHookParams,
   VariableProps,
@@ -169,4 +190,6 @@ export type {
   ControllerInstallProps,
   NodeItem,
   SubConfigHookParams,
+  ConfigParams,
+  ConfigListParams,
 };

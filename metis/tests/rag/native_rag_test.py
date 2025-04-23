@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from loguru import logger
 
 from src.rag.native_rag.entity.elasticsearch_document_delete_request import ElasticSearchDocumentDeleteRequest
+from src.rag.native_rag.entity.elasticsearch_document_metadata_update_request import \
+    ElasticsearchDocumentMetadataUpdateRequest
 from src.rag.native_rag.entity.elasticsearch_index_delete_request import ElasticSearchIndexDeleteRequest
 from src.rag.native_rag.entity.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
 from src.rag.native_rag.entity.elasticsearch_store_request import ElasticSearchStoreRequest
@@ -45,6 +47,18 @@ def test_native_rag_ingest():
     rag = ElasticSearchRag()
 
     rag.ingest(get_sample_request())
+
+    metadata_update_request= ElasticsearchDocumentMetadataUpdateRequest(
+        index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX'),
+        metadata_filter={
+            'knowledge_id': "8"
+        },
+        metadata={
+            'knowledge_id': "8",
+            'demo': '1111'
+        }
+    )
+    rag.update_metadata(metadata_update_request)
 
     delete_req = ElasticSearchDocumentDeleteRequest(
         index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX'),

@@ -27,8 +27,7 @@ const Collectordetail = () => {
     if (!isLoading) {
       getTableData();
     }
-  }, [isLoading])
-
+  }, [isLoading]);
 
   const getTableData = async () => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -38,7 +37,10 @@ const Collectordetail = () => {
     };
     try {
       setTableLoading(true);
-      const getPackage = getPackageList({ object: info.name, os: info.system[0] });
+      const getPackage = getPackageList({
+        object: info.name,
+        os: info.system[0],
+      });
       const res = await Promise.all([getPackage]);
       const packageInfo = res[0];
       setTableData(packageInfo || []);
@@ -55,30 +57,34 @@ const Collectordetail = () => {
 
   const handleDelete = (id: number) => {
     setTableLoading(true);
-    deletePackage(id).then(() => {
-      getTableData();
-      message.success(t('common.delSuccess'));
-    }).catch((e) => {
-      console.log(e);
-    }).finally(() => {
-      setTableLoading(false);
-    })
+    deletePackage(id)
+      .then(() => {
+        getTableData();
+        message.success(t('common.delSuccess'));
+      })
+      .catch((e) => {
+        console.log(e);
+      })
+      .finally(() => {
+        setTableLoading(false);
+      });
   };
 
-  const handleTableChange = (pagination: any) => {
+  const handleTableChange = (pageConfig: any) => {
+    console.log(pagination);
     setPagination((prev: Pagination) => ({
       total: prev.total,
-      ...pagination
+      ...pageConfig,
     }));
   };
 
   return (
     <div className="w-full h-full">
       <CustomTable
-        scroll={{ y: 'calc(100vh - 440px)', x: 'calc(100vw - 320px)' }}
+        scroll={{ y: 'calc(100vh - 330px)', x: 'calc(100vw - 320px)' }}
         columns={columns}
         dataSource={tableData}
-        pagination={pagination}
+        pagination={false}
         loading={tableLoading}
         rowKey="id"
         onChange={handleTableChange}

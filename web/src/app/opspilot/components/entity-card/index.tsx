@@ -22,6 +22,7 @@ interface EntityCardProps {
   index: number;
   online?: boolean;
   modelName?: string;
+  skillType?: string;
   onMenuClick: (action: string, entity: any) => void;
   redirectUrl: string;
   iconTypeMapping: [string, string];
@@ -37,6 +38,7 @@ const EntityCard: React.FC<EntityCardProps> = ({
   index,
   online,
   modelName,
+  skillType,
   onMenuClick,
   redirectUrl,
   iconTypeMapping
@@ -97,6 +99,9 @@ const EntityCard: React.FC<EntityCardProps> = ({
                   )}
                   {modelName !== undefined && modelName && (
                     <Tag className="font-mini px-[2px] leading-inherit mr-2" color="blue">{modelName}</Tag>
+                  )}
+                  {skillType !== undefined && skillType && (
+                    <Tag className="font-mini px-[2px] leading-inherit mr-2" color="purple">{skillType}</Tag>
                   )}
                 </div>
                 <div className="flex items-end justify-end text-[var(--color-text-4)] font-mini w-full text-right overflow-hidden">

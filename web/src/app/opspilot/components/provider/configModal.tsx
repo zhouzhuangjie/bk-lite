@@ -3,8 +3,9 @@ import { Form, Input as AntdInput, Switch, message, Select } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { useUserInfoContext } from '@/context/userInfo';
 import { Model, ModelConfig } from '@/app/opspilot/types/provider';
-import { MODEL_TYPE_OPTIONS } from '@/app/opspilot/constants/provider';
+import { MODEL_TYPE_OPTIONS, CONFIG_MAP } from '@/app/opspilot/constants/provider';
 import OperateModal from '@/components/operate-modal';
+import EditablePasswordField from '@/components/dynamic-form/editPasswordField';
 
 interface ProviderModalProps {
   visible: boolean;
@@ -32,8 +33,8 @@ const ProviderModal: React.FC<ProviderModalProps> = ({
   React.useEffect(() => {
     if (!visible) return;
     if (mode === 'edit' && model) {
-      const configField = getConfigField(filterType);
-      const config = model[configField] as ModelConfig | undefined;
+      const configField = CONFIG_MAP[filterType];
+      const config = model[configField as keyof Model] as ModelConfig | undefined;
       form.setFieldsValue({
         name: model.name || '',
         modelName: model.llm_config?.model || '',
@@ -52,16 +53,6 @@ const ProviderModal: React.FC<ProviderModalProps> = ({
       });
     }
   }, [visible]);
-
-  const getConfigField = (type: string) => {
-    const configMap: Record<string, keyof Model> = {
-      llm_model: 'llm_config',
-      embed_provider: 'embed_config',
-      rerank_provider: 'rerank_config',
-      ocr_provider: 'ocr_config',
-    };
-    return configMap[type];
-  };
 
   const handleOk = () => {
     form.validateFields()
@@ -124,7 +115,10 @@ const ProviderModal: React.FC<ProviderModalProps> = ({
           label={t('provider.form.key')}
           rules={[{ required: true, message: `${t('common.inputMsg')}${t('provider.form.key')}` }]}
         >
-          <AntdInput.Password visibilityToggle={false} />
+          <EditablePasswordField
+            value={form.getFieldValue('apiKey')}
+            onChange={(value) => form.setFieldsValue({ apiKey: value })}
+          />
         </Form.Item>
         <Form.Item
           name="enabled"

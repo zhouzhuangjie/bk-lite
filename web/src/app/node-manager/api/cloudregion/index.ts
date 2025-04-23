@@ -3,6 +3,8 @@ import type {
   updateConfigReq,
   ControllerInstallFields,
   NodeItem,
+  ConfigParams,
+  ConfigListParams,
 } from '@/app/node-manager/types/cloudregion';
 
 const useApiCloudRegion = () => {
@@ -124,10 +126,14 @@ const useApiCloudRegion = () => {
 
   //配置文件的模块
   //获取配置文件列表
-  const getconfiglist = async (cloud_region_id: number, search?: string) => {
-    return await get('/node_mgmt/api/configuration/', {
-      params: { cloud_region_id, search },
-    });
+  const getconfiglist = async (params: ConfigListParams) => {
+    return await post('/node_mgmt/api/configuration/config_node_asso/', params);
+  };
+
+  //配置文件的模块
+  //查询节点信息以及关联的配置
+  const getAssoNodes = async (params: ConfigListParams) => {
+    return await post('/node_mgmt/api/configuration/config_node_asso/', params);
   };
 
   // 获取子配置文件列表
@@ -144,12 +150,7 @@ const useApiCloudRegion = () => {
   };
 
   //创建一个配置文件
-  const createconfig = async (data: {
-    name: string;
-    collector_id: string;
-    cloud_region_id: number;
-    config_template: string;
-  }) => {
+  const createconfig = async (data: ConfigParams) => {
     return await post('/node_mgmt/api/configuration/', data);
   };
 
@@ -177,14 +178,7 @@ const useApiCloudRegion = () => {
   };
 
   //部分更新采集器
-  const updatecollector = async (
-    id: string,
-    data: {
-      name: string;
-      config_template?: string;
-      collector_id: string;
-    }
-  ) => {
+  const updatecollector = async (id: string, data: ConfigParams) => {
     return await patch(`/node_mgmt/api/configuration/${id}/`, data);
   };
 
@@ -195,13 +189,27 @@ const useApiCloudRegion = () => {
 
   //应用指定采集器配置文件到指定节点
   const applyconfig = async (
-    id: string,
     data: {
-      node_id: string;
-      collector_configuration_id: string;
-    }
+      node_id?: string;
+      collector_configuration_id?: string;
+    }[]
   ) => {
-    return await post('/node_mgmt/api/configuration/apply_to_node/', data);
+    return await post(
+      '/node_mgmt/api/configuration/apply_to_node/',
+      JSON.stringify(data)
+    );
+  };
+
+  // 解绑应用
+
+  const cancelApply = async (data: {
+    node_id?: string;
+    collector_configuration_id?: string;
+  }) => {
+    return await post(
+      '/node_mgmt/api/configuration/cancel_apply_to_node/',
+      data
+    );
   };
 
   //批量删除采集器配置
@@ -271,6 +279,8 @@ const useApiCloudRegion = () => {
     installCollector,
     getCollectorNodes,
     getInstallCommand,
+    getAssoNodes,
+    cancelApply,
   };
 };
 export default useApiCloudRegion;
