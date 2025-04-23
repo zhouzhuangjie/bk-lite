@@ -14,4 +14,4 @@ RUN pip install -r ./requirements/requirements-dev.in
 RUN playwright install chromium
 ADD ./support-files/service.conf /etc/supervisor/conf.d/service.conf
 
-CMD ["supervisord", "-n"]
+ENTRYPOINT ["/bin/bash","/apps/support-files/startup.sh"]

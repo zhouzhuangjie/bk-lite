@@ -1,6 +1,5 @@
 import paddle
 from loguru import logger
-from paddle.base.log_helper import get_logger
 from paddleocr import PaddleOCR
 
 from src.ocr.base_ocr import BaseOCR

@@ -38,3 +38,4 @@ fastembed==0.6.1
 duckduckgo-search==7.2.1
 
 playwright==1.51.0
+sanic-fire==0.1
