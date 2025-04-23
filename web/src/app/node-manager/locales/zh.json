@@ -27,7 +27,11 @@
     "successfulDownloaded": "下载成功！",
     "operationSuccessful": "操作成功！",
     "name": "名称",
-    "bulkOperation": "批量操作"
+    "bulkOperation": "批量操作",
+    "createdBy": "创建者",
+    "createdAt": "创建时间",
+    "updatedBy": "更新人",
+    "updatedAt": "更新时间"
   },
   "node-manager": {
     "cloudregion": {
@@ -108,7 +112,9 @@
         "restartSidecarTips": "确定重启这些sidecar吗？",
         "version": "版本号",
         "downloadPackage": "下载安装包",
-        "downloadTemplate": "下载模板"
+        "downloadTemplate": "下载模板",
+        "telegrafConfigTips": "开启Telegraf探针时，自动初始化并绑定对应配置文件，后续如需修改，请前往“配置列表”中修改。",
+        "configuration": "配置文件"
       },
       "Configuration": {
         "system": "操作系统",
@@ -158,8 +164,8 @@
       "deleteInfo": "您确定要删除此采集器吗？",
       "editInfo": "您确定要修改此采集器吗？",
       "single": "单选Windows/Linux",
-      "updatedBy": "更新人",
-      "updatedAt": "更新时间"
+      "executeFilePath": "执行文件路径",
+      "executeParameters": "执行参数"
     }
   }
 }
