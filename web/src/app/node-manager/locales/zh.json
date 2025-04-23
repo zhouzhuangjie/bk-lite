@@ -108,7 +108,9 @@
         "restartSidecarTips": "确定重启这些sidecar吗？",
         "version": "版本号",
         "downloadPackage": "下载安装包",
-        "downloadTemplate": "下载模板"
+        "downloadTemplate": "下载模板",
+        "telegrafConfigTips": "开启Telegraf探针时，自动初始化并绑定对应配置文件，后续如需修改，请前往“配置列表”中修改。",
+        "configuration": "配置文件"
       },
       "Configuration": {
         "system": "操作系统",

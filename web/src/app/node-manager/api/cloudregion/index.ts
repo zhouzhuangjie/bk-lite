@@ -188,11 +188,16 @@ const useApiCloudRegion = () => {
   };
 
   //应用指定采集器配置文件到指定节点
-  const applyconfig = async (data: {
-    node_id?: string;
-    collector_configuration_id?: string;
-  }) => {
-    return await post('/node_mgmt/api/configuration/apply_to_node/', data);
+  const applyconfig = async (
+    data: {
+      node_id?: string;
+      collector_configuration_id?: string;
+    }[]
+  ) => {
+    return await post(
+      '/node_mgmt/api/configuration/apply_to_node/',
+      JSON.stringify(data)
+    );
   };
 
   // 解绑应用

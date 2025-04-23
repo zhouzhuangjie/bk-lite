@@ -108,7 +108,9 @@
         "restartSidecarTips": "Are you sure to restart these sidecars ?",
         "version": "Version",
         "downloadPackage": "Download package",
-        "downloadTemplate": "Download Template"
+        "downloadTemplate": "Download Template",
+        "telegrafConfigTips": "When opening the Telegraf probe, it automatically initializes and binds the corresponding configuration file. If you need to modify it later, please go to the 'Configuration List' to make changes.",
+        "configuration": "Configuration"
       },
       "Configuration": {
         "system": "Operating System",

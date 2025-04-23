@@ -39,10 +39,14 @@ const ApplyModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
   const handleApply = async (row: TableDataItem) => {
     setLoading(true);
     const request = row.isRelated ? cancelApply : applyconfig;
-    await request({
+    let params: any = {
       node_id: row.key,
       collector_configuration_id: configForm?.key,
-    });
+    };
+    if (!row.isRelated) {
+      params = [params];
+    }
+    await request(params);
     message.success(t('common.operationSuccessful'));
     onSuccess();
     getApplydata({
