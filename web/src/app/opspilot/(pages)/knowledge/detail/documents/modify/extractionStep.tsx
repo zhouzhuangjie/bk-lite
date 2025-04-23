@@ -106,6 +106,70 @@ const ExtractionStep: React.FC<{
     }
   }, [extractionConfig]);
 
+  // Extracted data generation logic into a function
+  const generateData = () => {
+    if (extractionConfig?.knowledge_document_list) {
+      return extractionConfig.knowledge_document_list.map((doc) => {
+        const extension = doc.name?.split('.').pop()?.toLowerCase() || 'text';
+        return {
+          key: doc.id,
+          name: doc.name,
+          method: extractionMethods[doc.parse_type as keyof typeof extractionMethods]?.label || extractionMethods[getDefaultExtractionMethod(extension) as keyof typeof extractionMethods]?.label,
+          defaultMethod: doc.parse_type || 'fullText',
+        };
+      });
+    }
+
+    if (type === 'web_page' && webLinkData) {
+      return [{
+        key: knowledgeDocumentIds[0] || 0,
+        name: webLinkData.name,
+        method: extractionMethods['fullText'].label,
+        defaultMethod: 'fullText',
+      }];
+    }
+
+    if (type === 'manual' && manualData) {
+      return [{
+        key: knowledgeDocumentIds[0] || 0,
+        name: manualData.name,
+        method: extractionMethods['fullText'].label,
+        defaultMethod: 'fullText',
+      }];
+    }
+
+    return fileList.map((file, index) => {
+      const extension = file.name.split('.').pop()?.toLowerCase() || 'text';
+      const defaultMethod = getDefaultExtractionMethod(extension);
+      return {
+        key: knowledgeDocumentIds[index] || index,
+        name: file.name,
+        method: extractionMethods[defaultMethod as keyof typeof extractionMethods].label,
+        defaultMethod,
+      };
+    });
+  };
+
+  const data = generateData(); // Use the extracted function
+
+  const [knowledgeDocumentList, setKnowledgeDocumentList] = useState<any[]>(
+    extractionConfig?.knowledge_document_list
+      ? extractionConfig.knowledge_document_list.map((doc) => ({
+        id: doc.id,
+        name: doc.name || '',
+        enable_ocr_parse: doc.enable_ocr_parse,
+        ocr_model: doc.ocr_model,
+        parse_type: doc.parse_type,
+      }))
+      : generateData().map((item) => ({
+        id: item.key,
+        name: item.name,
+        enable_ocr_parse: false,
+        ocr_model: null,
+        parse_type: item.defaultMethod,
+      }))
+  );
+
   const columns = [
     {
       title: t('knowledge.documents.name'),
@@ -127,59 +191,6 @@ const ExtractionStep: React.FC<{
       ),
     },
   ];
-
-  const data = extractionConfig?.knowledge_document_list
-    ? extractionConfig.knowledge_document_list.map((doc) => {
-      const extension = (doc as any)?.name?.split('.').pop()?.toLowerCase() || 'text';
-      return {
-        key: doc.id,
-        name: (doc as any)?.name,
-        method: extractionMethods[doc.parse_type as keyof typeof extractionMethods]?.label || extractionMethods[getDefaultExtractionMethod(extension) as keyof typeof extractionMethods]?.label,
-        defaultMethod: doc.parse_type || 'fullText',
-      };
-    })
-    : type === 'web_page' && webLinkData
-      ? [{
-        key: knowledgeDocumentIds[0] || 0,
-        name: webLinkData.name,
-        method: extractionMethods['fullText'].label,
-        defaultMethod: 'fullText'
-      }]
-      : type === 'manual' && manualData
-        ? [{
-          key: knowledgeDocumentIds[0] || 0,
-          name: manualData.name,
-          method: extractionMethods['fullText'].label,
-          defaultMethod: 'fullText'
-        }]
-        : fileList.map((file, index) => {
-          const extension = file.name.split('.').pop()?.toLowerCase() || 'text';
-          const defaultMethod = getDefaultExtractionMethod(extension);
-          return {
-            key: knowledgeDocumentIds[index] || index,
-            name: file.name,
-            method: extractionMethods[defaultMethod as keyof typeof extractionMethods].label,
-            defaultMethod,
-          };
-        });
-
-  const [knowledgeDocumentList, setKnowledgeDocumentList] = useState<any[]>(
-    extractionConfig?.knowledge_document_list
-      ? extractionConfig.knowledge_document_list.map((doc) => ({
-        id: doc.id,
-        name: doc.name || '',
-        enable_ocr_parse: doc.enable_ocr_parse,
-        ocr_model: doc.ocr_model,
-        parse_type: doc.parse_type,
-      }))
-      : data.map((item) => ({
-        id: item.key,
-        name: item.name,
-        enable_ocr_parse: false,
-        ocr_model: null,
-        parse_type: item.defaultMethod,
-      }))
-  );
 
   const handleConfigure = (record: { defaultMethod: keyof typeof extractionMethods; [key: string]: any }, index: number) => {
     const documentConfig = knowledgeDocumentList[index];
@@ -215,7 +226,7 @@ const ExtractionStep: React.FC<{
   const handleConfirm = () => {
     const updatedConfig = {
       id: knowledgeDocumentList[selectedDocument.index]?.id,
-      name: knowledgeDocumentList[selectedDocument.index]?.name, // Ensure name is included
+      name: knowledgeDocumentList[selectedDocument.index]?.name,
       enable_ocr_parse: ocrEnabled,
       ocr_model: ocrEnabled ? selectedOcrModel : null,
       parse_type: selectedMethod || 'fullText',
