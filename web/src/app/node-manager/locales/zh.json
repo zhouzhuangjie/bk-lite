@@ -27,7 +27,11 @@
     "successfulDownloaded": "下载成功！",
     "operationSuccessful": "操作成功！",
     "name": "名称",
-    "bulkOperation": "批量操作"
+    "bulkOperation": "批量操作",
+    "createdBy": "创建者",
+    "createdAt": "创建时间",
+    "updatedBy": "更新人",
+    "updatedAt": "更新时间"
   },
   "node-manager": {
     "cloudregion": {
@@ -160,8 +164,6 @@
       "deleteInfo": "您确定要删除此采集器吗？",
       "editInfo": "您确定要修改此采集器吗？",
       "single": "单选Windows/Linux",
-      "updatedBy": "更新人",
-      "updatedAt": "更新时间",
       "executeFilePath": "执行文件路径",
       "executeParameters": "执行参数"
     }
