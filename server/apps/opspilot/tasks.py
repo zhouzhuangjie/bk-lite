@@ -115,7 +115,8 @@ def invoke_one_document(document, is_show=False):
         remote_docs = res.get("documents", [])
         if not remote_docs:
             logger.error(f"获取不到文档，返回结果为： {res}")
-        document.chunk_size = len(remote_docs)
+        document.chunk_size = res.get("chunks_size", 0)
+        print("分块数量 ： " + str(document.chunk_size))
         knowledge_docs.extend(remote_docs)
     except Exception as e:
         logger.exception(e)
@@ -177,7 +178,7 @@ def format_invoke_kwargs(knowledge_document: KnowledgeDocument, preview=False):
         "knowledge_id": str(knowledge_document.id),
         "embed_model_base_url": embed_config.get("base_url", ""),
         "embed_model_api_key": embed_config.get("api_key", ""),
-        "embed_model_name": embed_model_name,
+        "embed_model_name": embed_config.get("model", embed_model_name),
         "chunk_mode": knowledge_document.chunk_type,
         "chunk_size": knowledge_document.general_parse_chunk_size,
         "chunk_overlap": knowledge_document.general_parse_chunk_overlap,
@@ -186,7 +187,7 @@ def format_invoke_kwargs(knowledge_document: KnowledgeDocument, preview=False):
         if semantic_embed_config.get("base_url", "")
         else [],
         "semantic_chunk_model_api_key": semantic_embed_config.get("api_key", ""),
-        "semantic_chunk_model": semantic_embed_model_name,
+        "semantic_chunk_model": semantic_embed_config.get("model", semantic_embed_model_name),
         "preview": "true" if preview else "false",
         "metadata": json.dumps({"enabled": True}),
     }
