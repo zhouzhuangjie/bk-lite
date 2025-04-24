@@ -12,6 +12,9 @@ from langgraph.checkpoint.postgres import PostgresSaver
 from sanic_fire import cmd
 from sanic_fire.core import command_class, command_func
 
+from src.embed.embed_builder import EmbedBuilder
+from src.ocr.pp_ocr import PPOcr
+
 # 加载环境变量和配置
 load_dotenv()
 config = YamlConfig(path="config.yml")
@@ -69,6 +72,14 @@ def startup():
         port=int(os.getenv('APP_PORT', 18083)),
         workers=1
     )
+
+@command_func
+def download_models():
+    logger.info("download FastEmbed")
+    EmbedBuilder().get_embed('local:text_embedding:BAAI/bge-small-zh-v1.5')
+
+    logger.info("download PaddleOCR")
+    PPOcr()
 
 
 if __name__ == "__main__":
