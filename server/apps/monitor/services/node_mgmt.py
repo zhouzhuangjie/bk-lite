@@ -81,6 +81,9 @@ class InstanceConfigService:
             if "interval" not in instance:
                 instance["interval"] = 10
 
+        # 删除逻辑删除的实例，避免影响现有逻辑
+        MonitorInstance.objects.filter(id__in=[instance["instance_id"] for instance in data["instances"]], is_deleted=True).delete()
+
         # 过滤已存在的实例
         objs = MonitorInstance.objects.filter(id__in=[instance["instance_id"] for instance in data["instances"]])
         instance_set = {obj.id for obj in objs}
