@@ -348,6 +348,7 @@ const Node = () => {
                 </PermissionWrapper>
                 <Dropdown
                   className="mr-[8px]"
+                  overlayClassName="customMenu"
                   menu={SidecarmenuProps}
                   disabled={enableOperateSideCar}
                 >
@@ -360,6 +361,7 @@ const Node = () => {
                 </Dropdown>
                 <Dropdown
                   className="mr-[8px]"
+                  overlayClassName="customMenu"
                   menu={CollectormenuProps}
                   disabled={enableOperateCollecter}
                 >

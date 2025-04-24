@@ -1,7 +1,7 @@
 import { useTranslation } from '@/utils/i18n';
 import { useMemo } from 'react';
 import { SegmentedItem } from '@/app/node-manager/types';
-import PermissionWrapper from '@/components/permission'
+import PermissionWrapper from '@/components/permission';
 import type { MenuProps } from 'antd';
 
 const useTelegrafMap = (): Record<string, Record<string, string>> => {
@@ -89,7 +89,10 @@ const useCollectoritems = (): MenuProps['items'] => {
     () => [
       {
         label: (
-          <PermissionWrapper requiredPermissions={["OperateCollector"]}>
+          <PermissionWrapper
+            className="customMenuItem"
+            requiredPermissions={['OperateCollector']}
+          >
             {t('node-manager.cloudregion.node.installCollector')}
           </PermissionWrapper>
         ),
@@ -97,7 +100,10 @@ const useCollectoritems = (): MenuProps['items'] => {
       },
       {
         label: (
-          <PermissionWrapper requiredPermissions={["OperateCollector"]}>
+          <PermissionWrapper
+            className="customMenuItem"
+            requiredPermissions={['OperateCollector']}
+          >
             {t('node-manager.cloudregion.node.startCollector')}
           </PermissionWrapper>
         ),
@@ -105,7 +111,10 @@ const useCollectoritems = (): MenuProps['items'] => {
       },
       {
         label: (
-          <PermissionWrapper requiredPermissions={["OperateCollector"]}>
+          <PermissionWrapper
+            className="customMenuItem"
+            requiredPermissions={['OperateCollector']}
+          >
             {t('node-manager.cloudregion.node.restartCollector')}
           </PermissionWrapper>
         ),
@@ -113,7 +122,10 @@ const useCollectoritems = (): MenuProps['items'] => {
       },
       {
         label: (
-          <PermissionWrapper requiredPermissions={["OperateCollector"]}>
+          <PermissionWrapper
+            className="customMenuItem"
+            requiredPermissions={['OperateCollector']}
+          >
             {t('node-manager.cloudregion.node.stopCollector')}
           </PermissionWrapper>
         ),
@@ -142,10 +154,11 @@ const useSidecaritems = (): MenuProps['items'] => {
       //   },
       {
         label: (
-          <PermissionWrapper requiredPermissions={["UninstallController"]}>
-            <div style={{ whiteSpace: 'nowrap' }}>
-              {t('node-manager.cloudregion.node.uninstallSidecar')}
-            </div>
+          <PermissionWrapper
+            className="customMenuItem"
+            requiredPermissions={['UninstallController']}
+          >
+            {t('node-manager.cloudregion.node.uninstallSidecar')}
           </PermissionWrapper>
         ),
         key: 'uninstallSidecar',
