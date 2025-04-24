@@ -132,6 +132,7 @@ const DocumentsPage: React.FC = () => {
           'fixed_size': t('knowledge.documents.fixedChunk'),
           'recursive': t('knowledge.documents.overlapChunk'),
           'semantic': t('knowledge.documents.semanticChunk'),
+          'full': t('knowledge.documents.noChunk'),
         };
         const text = chunkMap[chunk_type] || t('knowledge.documents.fixedChunk');
         return <span>{text}</span>;
