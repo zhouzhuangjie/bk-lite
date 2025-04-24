@@ -9,7 +9,7 @@ from apps.opspilot.bot_mgmt.serializers import BotSerializer
 from apps.opspilot.enum import ChannelChoices
 from apps.opspilot.models import Bot, BotChannel, Channel, LLMSkill
 from apps.opspilot.quota_rule_mgmt.quota_utils import get_quota_client
-from apps.opspilot.utils.kubernetes_client import KubernetesClient
+from apps.opspilot.utils.pilot_client import PilotClient
 
 
 class BotViewSet(AuthViewSet):
@@ -72,7 +72,7 @@ class BotViewSet(AuthViewSet):
         obj.updated_by = request.user.username
         obj.save()
         if is_publish:
-            client = KubernetesClient()
+            client = PilotClient()
             try:
                 client.start_pilot(obj)
             except Exception as e:
@@ -112,7 +112,7 @@ class BotViewSet(AuthViewSet):
         return JsonResponse({"result": True})
 
     def destroy(self, request, *args, **kwargs):
-        client = KubernetesClient()
+        client = PilotClient()
         obj: Bot = self.get_object()
         if obj.online:
             client.stop_pilot(obj.id)
@@ -128,7 +128,7 @@ class BotViewSet(AuthViewSet):
     def start_pilot(self, request):
         bot_ids = request.data.get("bot_ids")
         bots = Bot.objects.filter(id__in=bot_ids)
-        client = KubernetesClient()
+        client = PilotClient()
         for bot in bots:
             if not bot.api_token:
                 bot.api_token = bot.get_api_token()
@@ -142,7 +142,7 @@ class BotViewSet(AuthViewSet):
     def stop_pilot(self, request):
         bot_ids = request.data.get("bot_ids")
         bots = Bot.objects.filter(id__in=bot_ids)
-        client = KubernetesClient()
+        client = PilotClient()
         for bot in bots:
             client.stop_pilot(bot.id)
             bot.api_token = ""

@@ -3,6 +3,7 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.core.models.maintainer_info import MaintainerInfo
 from apps.core.models.time_info import TimeInfo
+from apps.opspilot.enum import SkillTypeChoices
 
 
 class ActionChoice(object):
@@ -31,6 +32,10 @@ class LLMSkill(MaintainerInfo):
     tools = models.JSONField(default=list)
 
     temperature = models.FloatField(default=0.7, verbose_name="温度")
+    skill_type = models.IntegerField(
+        choices=SkillTypeChoices.choices, default=SkillTypeChoices.BASIC_TOOL, verbose_name="技能类型"
+    )
+    is_template = models.BooleanField(default=False, verbose_name="是否模板")
 
     def __str__(self):
         return self.name
@@ -39,7 +44,6 @@ class LLMSkill(MaintainerInfo):
         verbose_name = "LLM技能管理"
         verbose_name_plural = verbose_name
         db_table = "model_provider_mgmt_llmskill"
-        constraints = [models.UniqueConstraint(fields=["created_by", "name"], name="unique_owner_name")]
 
 
 class SkillRule(MaintainerInfo, TimeInfo):

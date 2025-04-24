@@ -833,7 +833,7 @@ class CollectNetworkMetrics(CollectBase):
                 oid = index_data["metric"]["sysobjectid"]
                 oid_data = self.oid_map.get(oid, "")
                 if not oid_data:
-                    logger.info("==OID不存在，此实例数据跳过 OID={}==".format(oid))
+                    logger.info("==OID does not exist, this instance data is skipped OID={}==".format(oid))
                     continue
                 else:
                     index_data["metric"].update(oid_data)
@@ -862,6 +862,11 @@ class CollectNetworkMetrics(CollectBase):
         topo_data = self.collection_metrics_dict.pop(NETWORK_INTERFACES_RELATIONS, [])
         for metric_key, metrics in self.collection_metrics_dict.items():
             for index_data in metrics:
+                if index_data["instance_id"] not in self.instance_id_map:
+                    logger.info(
+                        "This data is discarded because no feature library can be found for the OID. instance_id={}".format(
+                            index_data["instance_id"]))
+                    continue
                 if "sysobjectid" in index_data:
                     model_id = index_data["device_type"]
                     mapping = self.device_map
@@ -949,9 +954,17 @@ class CollectNetworkMetrics(CollectBase):
                     if dst_instance == src_instance:
                         continue  # 跳过同一设备
 
+                    if dst_instance not in self.instance_id_map or src_instance not in self.instance_id_map:
+                        logger.info(
+                            "This data is discarded because no feature library can be found for the OID. instance_id={}".format(
+                                src_instance))
+                        continue
+
                     src_ifindex = arp_info.get('ifindex')
                     src_interface = device_interfaces[src_instance].get(src_ifindex, {})
                     dst_interface = device_interfaces[dst_instance].get(dst_ifindex, {})
+                    if not src_interface or not dst_interface:
+                        continue
 
                     relations.append({
                         "source_device": src_instance,

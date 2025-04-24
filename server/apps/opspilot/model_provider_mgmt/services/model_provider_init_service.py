@@ -22,27 +22,31 @@ class ModelProviderInitService:
             RerankProvider.objects.get_or_create(
                 name="bce-reranker-base_v1",
                 rerank_model_type=RerankModelChoices.LANG_SERVE,
-                defaults={"rerank_config": {"base_url": "http://bce-embed-server/rerank"}},
+                defaults={
+                    "is_build_in": True,
+                    "rerank_config": {
+                        "base_url": "http://bce-embed-server/rerank",
+                        "api_key": "",
+                    },
+                },
             )
 
             EmbedProvider.objects.get_or_create(
                 name="bce-embedding-base_v1",
                 embed_model_type=EmbedModelChoices.LANG_SERVE,
                 defaults={
-                    "embed_config": {
-                        "base_url": "http://bce-embed-server/embed",
-                    }
+                    "is_build_in": True,
+                    "embed_config": {"base_url": "http://bce-embed-server/embed", "api_key": ""},
                 },
             )
 
             EmbedProvider.objects.get_or_create(
                 name="FastEmbed(BAAI/bge-small-zh-v1.5)",
                 embed_model_type=EmbedModelChoices.LANG_SERVE,
-                defaults=dict(
-                    embed_config={
-                        "base_url": "http://fast-embed-server",
-                    }
-                ),
+                defaults={
+                    "is_build_in": True,
+                    "embed_config": {"base_url": "local:text_embedding:BAAI/bge-small-zh-v1.5", "api_key": ""},
+                },
             )
 
             LLMModel.objects.get_or_create(
@@ -121,9 +125,6 @@ class ModelProviderInitService:
             name="PaddleOCR",
             defaults={
                 "enabled": True,
-                "ocr_config": {
-                    "base_url": "http://ocr-server/paddle_ocr",
-                },
             },
         )
 
@@ -133,13 +134,22 @@ class ModelProviderInitService:
                 "enabled": True,
                 "ocr_config": {
                     "base_url": "http://ocr-server/azure_ocr",
+                    "api_key": "",
+                    "endpoint": "",
                 },
+            },
+        )
+        OCRProvider.objects.get_or_create(
+            name="OlmOCR",
+            defaults={
+                "enabled": True,
+                "ocr_config": {"base_url": "http://ocr-server/olm_ocr", "api_key": ""},
             },
         )
         SkillTools.objects.update_or_create(
             name="Online Search",
             defaults={
-                "params": {"url": "http://127.0.0.1:8003/sse", "name": "Online Search"},
+                "params": {"url": "langchain:duckduckgo", "name": "Online Search"},
                 "description": "Enables quick search and retrieval of information through the internet to obtain real-time data.",  # noqa
                 "tags": ["search"],
                 "icon": "",
@@ -149,7 +159,7 @@ class ModelProviderInitService:
         SkillTools.objects.update_or_create(
             name="General tools",
             defaults={
-                "params": {"url": "http://127.0.0.1:8002/sse", "name": "General tools"},
+                "params": {"url": "langchain:current_time", "name": "General tools"},
                 "description": "Built-in commonly used tools, including holiday queries, current time queries, etc., to provide additional information.",  # noqa
                 "tags": ["general"],
                 "icon": "",

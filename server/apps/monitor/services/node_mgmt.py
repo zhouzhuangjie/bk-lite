@@ -1,6 +1,4 @@
 import ast
-from datetime import datetime, timezone
-
 from apps.monitor.models import MonitorInstance, MonitorInstanceOrganization
 from apps.monitor.utils.instance import calculation_status
 from apps.monitor.utils.node_mgmt_api import NodeUtils, FormatChildConfig
@@ -81,6 +79,9 @@ class InstanceConfigService:
             if "interval" not in instance:
                 instance["interval"] = 10
 
+        # 删除逻辑删除的实例，避免影响现有逻辑
+        MonitorInstance.objects.filter(id__in=[instance["instance_id"] for instance in data["instances"]], is_deleted=True).delete()
+
         # 过滤已存在的实例
         objs = MonitorInstance.objects.filter(id__in=[instance["instance_id"] for instance in data["instances"]])
         instance_set = {obj.id for obj in objs}
@@ -107,28 +108,20 @@ class InstanceConfigService:
             for instance in data["instances"]
         }
 
-        old_instance_ids = set(
-            MonitorInstance.objects.filter(id__in=list(instance_map.keys())).values_list("id", flat=True))
-        creates, updates, assos = [], [], []
+        creates,  assos = [], []
         for instance_id, instance_info in instance_map.items():
             group_ids = instance_info.pop("group_ids")
             for group_id in group_ids:
                 assos.append((instance_id, group_id))
-            if instance_id not in old_instance_ids:
-                creates.append(MonitorInstance(**instance_info))
-            else:
-                updates.append(instance_id)
-        MonitorInstance.objects.bulk_create(creates, batch_size=200)
-        MonitorInstance.objects.filter(id__in=updates).update(is_deleted=False)
+            creates.append(MonitorInstance(**instance_info))
 
-        # 实例组织关联
-        old_asso_objs = MonitorInstanceOrganization.objects.filter(monitor_instance_id__in=old_instance_ids)
-        old_asso_set = {(asso.monitor_instance_id, asso.organization) for asso in old_asso_objs}
-        new_asso_set = set(assos) - old_asso_set
+        MonitorInstance.objects.bulk_create(creates, batch_size=200)
+
         MonitorInstanceOrganization.objects.bulk_create(
-            [MonitorInstanceOrganization(monitor_instance_id=asso[0], organization=asso[1]) for asso in new_asso_set],
+            [MonitorInstanceOrganization(monitor_instance_id=asso[0], organization=asso[1]) for asso in assos],
             batch_size=200
         )
+
         # 实例配置关联（node）
         result = FormatChildConfig.collector(data)
         NodeUtils.batch_setting_node_child_config(result)

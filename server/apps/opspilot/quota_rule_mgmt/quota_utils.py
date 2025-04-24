@@ -56,10 +56,10 @@ class QuotaUtils(object):
             skill_count_map[type_map[quota["rule_type"]]].append(quota["skill_count"])
         if skill_count_map["private"]:
             skill_count_list = skill_count_map["private"]
-            skill_count = LLMSkill.objects.filter(created_by=self.username).count()
+            skill_count = LLMSkill.objects.filter(created_by=self.username, is_template=False).count()
         else:
             skill_count_list = skill_count_map["shared"]
-            skill_count = LLMSkill.objects.filter(team__contains=self.team).count()
+            skill_count = LLMSkill.objects.filter(team__contains=self.team, is_template=False).count()
 
         return (
             min(skill_count_list) if skill_count_list else 0,

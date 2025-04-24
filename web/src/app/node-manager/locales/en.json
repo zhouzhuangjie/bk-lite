@@ -27,7 +27,11 @@
     "successfulDownloaded": "Download successful !",
     "operationSuccessful": "Operation successful !",
     "name": "Name",
-    "bulkOperation": "Bulk Operation"
+    "bulkOperation": "Bulk Operation",
+    "createdBy": "Created By",
+    "createdAt": "Created At",
+    "updatedBy": "Updated By",
+    "updatedAt": "Updated At"
   },
   "node-manager": {
     "cloudregion": {
@@ -108,7 +112,9 @@
         "restartSidecarTips": "Are you sure to restart these sidecars ?",
         "version": "Version",
         "downloadPackage": "Download package",
-        "downloadTemplate": "Download Template"
+        "downloadTemplate": "Download Template",
+        "telegrafConfigTips": "When opening the Telegraf probe, it automatically initializes and binds the corresponding configuration file. If you need to modify it later, please go to the 'Configuration List' to make changes.",
+        "configuration": "Configuration"
       },
       "Configuration": {
         "system": "Operating System",
@@ -156,8 +162,8 @@
       "deleteCollector": "Delete Collector",
       "deleteInfo": "Are you sure to delete this Collector?",
       "single": "Single choice Windows/Linux",
-      "updatedBy": "Updated By",
-      "updatedAt": "Updated At"
+      "executeFilePath": "Execute file path",
+      "executeParameters": "Execution parameters"
     }
   }
 }

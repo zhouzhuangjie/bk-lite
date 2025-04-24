@@ -1,14 +1,13 @@
 import base64
-import json
 import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from django.conf import settings
 from django.utils.translation import gettext as _
-from langserve import RemoteRunnable
 
 from apps.core.logger import logger
+from apps.opspilot.enum import SkillTypeChoices
 from apps.opspilot.knowledge_mgmt.services.knowledge_search_service import KnowledgeSearchService
 from apps.opspilot.models import (
     KnowledgeBase,
@@ -19,6 +18,7 @@ from apps.opspilot.models import (
     TokenConsumption,
 )
 from apps.opspilot.quota_rule_mgmt.quota_utils import QuotaUtils
+from apps.opspilot.utils.chat_server_helper import ChatServerHelper
 
 
 class LLMService:
@@ -44,8 +44,8 @@ class LLMService:
         if "bot_id" in kwargs:
             TokenConsumption.objects.create(
                 bot_id=kwargs["bot_id"],
-                input_tokens=data["input_tokens"],
-                output_tokens=data["output_tokens"],
+                input_tokens=data["prompt_tokens"],
+                output_tokens=data["completion_tokens"],
                 username=kwargs["username"],
                 user_id=kwargs["user_id"],
             )
@@ -64,7 +64,7 @@ class LLMService:
                 for k, v in title_map.items()
             ]
 
-        return {"content": data["content"], "citing_knowledge": citing_knowledge}
+        return {"content": data["message"], "citing_knowledge": citing_knowledge}
 
     @staticmethod
     def _process_user_message_and_images(user_message: Union[str, List[Dict[str, Any]]]) -> Tuple[str, List[str]]:
@@ -106,22 +106,22 @@ class LLMService:
         processed_history = []
 
         for user_msg in chat_history[num:]:
-            if user_msg["event"] == "user" and isinstance(user_msg["text"], list):
+            if user_msg["event"] == "user" and isinstance(user_msg["message"], list):
                 image_list = []
                 msg = ""
-                for item in user_msg["text"]:
+                for item in user_msg["message"]:
                     if item["type"] == "image_url":
                         image_url = item.get("image_url", {}).get("url") or item.get("url")
                         if image_url:
                             image_list.append(image_url)
                     else:
-                        msg = item["text"]
-                processed_history.append({"event": "user", "text": msg, "image_data": image_list})
+                        msg = item["message"]
+                processed_history.append({"event": "user", "message": msg, "image_data": image_list})
             else:
-                txt = user_msg["text"]
+                txt = user_msg["message"]
                 if isinstance(txt, list):
-                    txt = "\n".join([i["text"] for i in txt])
-                processed_history.append({"event": user_msg["event"], "text": txt})
+                    txt = "\n".join([i["message"] for i in txt])
+                processed_history.append({"event": user_msg["event"], "message": txt})
 
         return processed_history
 
@@ -161,12 +161,11 @@ class LLMService:
             raise Exception(_("Token used up"))
 
     def format_chat_server_kwargs(self, kwargs, llm_model):
-        context = ""
         title_map = doc_map = {}
-
+        naive_rag_request = []
         # 如果启用RAG，搜索文档
         if kwargs["enable_rag"]:
-            context, title_map, doc_map = self.search_doc(context, kwargs)
+            naive_rag_request, doc_map = self.format_naive_rag_kwargs(kwargs)
 
         user_message, image_data = self._process_user_message_and_images(kwargs["user_message"])
         # 处理聊天历史
@@ -174,18 +173,23 @@ class LLMService:
         tools = SkillTools.objects.filter(name__in=kwargs.get("tools", [])).values_list("params", flat=True)
         # 构建聊天参数
         chat_kwargs = {
-            "system_message_prompt": kwargs["skill_prompt"],
             "openai_api_base": llm_model.decrypted_llm_config["openai_base_url"],
             "openai_api_key": llm_model.decrypted_llm_config["openai_api_key"],
-            "temperature": kwargs["temperature"],
             "model": llm_model.decrypted_llm_config["model"],
+            "system_message_prompt": kwargs["skill_prompt"],
+            "temperature": kwargs["temperature"],
             "user_message": user_message,
             "chat_history": chat_history,
-            "conversation_window_size": kwargs["conversation_window_size"],
-            "rag_context": context,
-            "mcp_servers": list(tools),
             "image_data": image_data,
+            "user_id": str(kwargs["user_id"]),
+            "enable_naive_rag": kwargs["enable_rag"],
+            "rag_stage": "string",
+            "naive_rag_request": naive_rag_request,
         }
+        if kwargs.get("thread_id"):
+            chat_kwargs["thread_id"] = str(kwargs["thread_id"])
+        if kwargs["skill_type"] == SkillTypeChoices.BASIC_TOOL:
+            chat_kwargs.update({"tools_servers": list(tools)})
         return chat_kwargs, doc_map, title_map
 
     def invoke_chat(self, kwargs: Dict[str, Any]) -> Tuple[Dict, Dict, Dict]:
@@ -200,23 +204,20 @@ class LLMService:
         """
         llm_model = LLMModel.objects.get(id=kwargs["llm_model"])
         self.validate_remaining_token(llm_model)
-        chat_server = RemoteRunnable(settings.OPENAI_CHAT_SERVICE_URL)
         show_think = kwargs.pop("show_think", True)
         # 处理用户消息和图片
         chat_kwargs, doc_map, title_map = self.format_chat_server_kwargs(kwargs, llm_model)
 
         # 调用聊天服务
-        result = chat_server.invoke(chat_kwargs)
-        if isinstance(result, str):
-            result = json.loads(result)
-        if not result["result"]:
-            raise Exception(result["message"])
-
-        data = result["data"]
+        url = f"{settings.METIS_SERVER_URL}/api/agent/invoke_chatbot_workflow"
+        if kwargs["skill_type"] == SkillTypeChoices.BASIC_TOOL:
+            url = f"{settings.METIS_SERVER_URL}/api/agent/invoke_react_agent"
+        result = ChatServerHelper.post_chat_server(chat_kwargs, url)
+        data = result["message"]
 
         # 更新团队令牌使用信息
         group = llm_model.consumer_team or llm_model.team[0]
-        used_token = data["input_tokens"] + data["output_tokens"]
+        used_token = result["prompt_tokens"] + result["completion_tokens"]
         team_info, is_created = TeamTokenUseInfo.objects.get_or_create(
             group=group, llm_model=llm_model.name, defaults={"used_token": used_token}
         )
@@ -225,12 +226,10 @@ class LLMService:
             team_info.save()
 
         # 处理内容（可选隐藏思考过程）
-        content = data["content"]
         if not show_think:
-            content = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL).strip()
-        data["content"] = content
-
-        return data, doc_map, title_map
+            content = re.sub(r"<think>.*?</think>", "", data, flags=re.DOTALL).strip()
+            result["message"] = content
+        return result, doc_map, title_map
 
     @staticmethod
     def image_to_base64(image_path: str, log_file: str = "base64.log") -> Optional[str]:
@@ -262,21 +261,20 @@ class LLMService:
             logger.error(f"Error converting image to base64: {e}")
             return None
 
-    def search_doc(self, context: str, kwargs: Dict[str, Any]) -> Tuple[str, Dict, Dict]:
+    @staticmethod
+    def format_naive_rag_kwargs(kwargs: Dict[str, Any]) -> Tuple[List, Dict]:
         """
         搜索相关文档以提供上下文
 
         Args:
-            context: 当前上下文
             kwargs: 包含搜索所需参数的字典
 
         Returns:
-            更新后的上下文、标题映射和文档映射
+            请求参数、标题映射
         """
-        title_map = {}
+        naive_rag_request = []
         score_threshold_map = {i["knowledge_base"]: i["score"] for i in kwargs["rag_score_threshold"]}
         base_ids = list(score_threshold_map.keys())
-
         # 获取知识库和文档
         knowledge_base_list = KnowledgeBase.objects.filter(id__in=base_ids)
         doc_list = list(
@@ -288,53 +286,38 @@ class LLMService:
 
         # 为每个知识库搜索相关文档
         for knowledge_base in knowledge_base_list:
-            params = {
-                "enable_rerank": knowledge_base.enable_rerank,
-                "embed_model": knowledge_base.embed_model.id,
-                "rerank_model": knowledge_base.rerank_model_id,
-                "rag_k": knowledge_base.rag_k,
-                "rerank_top_k": knowledge_base.rerank_top_k,
-                "rag_num_candidates": knowledge_base.rag_num_candidates,
-                "enable_text_search": knowledge_base.enable_text_search,
+            embed_model_base_url = knowledge_base.embed_model.embed_config["base_url"]
+            embed_model_api_key = knowledge_base.embed_model.embed_config["api_key"]
+            rerank_model_base_url = rerank_model_api_key = rerank_model_name = ""
+            if knowledge_base.rerank_model:
+                rerank_model_base_url = knowledge_base.rerank_model.rerank_config["base_url"]
+                rerank_model_api_key = knowledge_base.rerank_model.rerank_config["api_key"]
+                rerank_model_name = knowledge_base.rerank_model.name
+            score_threshold = score_threshold_map.get(knowledge_base.id, 0.7)
+            kwargs = {
+                "index_name": knowledge_base.knowledge_index_name(),
+                "metadata_filter": {"enabled": True},
+                "size": knowledge_base.result_count,
+                "threshold": score_threshold,
+                "enable_term_search": knowledge_base.enable_text_search,  # TODO 确认是否这个参数
                 "text_search_weight": knowledge_base.text_search_weight,
+                "text_search_mode": knowledge_base.text_search_mode,
                 "enable_vector_search": knowledge_base.enable_vector_search,
                 "vector_search_weight": knowledge_base.vector_search_weight,
-                "text_search_mode": knowledge_base.text_search_mode,
+                "rag_k": knowledge_base.rag_k,
+                "rag_num_candidates": knowledge_base.rag_num_candidates,
+                "enable_rerank": knowledge_base.enable_rerank,
+                "embed_model_base_url": embed_model_base_url,
+                "embed_model_api_key": embed_model_api_key,
+                "embed_model_name": knowledge_base.embed_model.name,
+                "rerank_model_base_url": rerank_model_base_url,
+                "rerank_model_api_key": rerank_model_api_key,
+                "rerank_model_name": rerank_model_name,
+                "rerank_top_k": knowledge_base.rerank_top_k,
             }
-            score_threshold = score_threshold_map.get(knowledge_base.id, 0.7)
+            naive_rag_request.append(kwargs)
 
-            # 执行搜索
-            rag_result = self.knowledge_search_service.search(
-                knowledge_base, kwargs["user_message"], params, score_threshold=score_threshold
-            )
-
-            # 构建上下文
-            context += _(
-                """
-The following is the background knowledge provided to you. The format of the background knowledge is as follows:
---------
-Knowledge Title: [Title]
-Knowledge Content: [Content]
---------
-
-             """
-            )
-
-            # 添加每个搜索结果到上下文
-            for result in rag_result:
-                context += "--------\n"
-                context += _("Knowledge Title:[{}]\n").format(result["knowledge_title"])
-                context += _("Knowledge Content:[{}]\n").format(result["content"].replace("{", "").replace("}", ""))
-
-                # 将结果添加到标题映射
-                title_map.setdefault(result["knowledge_id"], []).append(
-                    {
-                        "content": result["content"],
-                        "score": result["score"],
-                    }
-                )
-
-        return context, title_map, doc_map
+        return naive_rag_request, doc_map
 
 
 # 创建服务实例

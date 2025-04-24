@@ -17,32 +17,32 @@ export const useDetailColumns = ({
       dataIndex: 'name',
       key: 'name',
       width: 120,
-      ellipsis: true,
-      render: (_, record) => <>{record.name || '--'}</>,
     },
     {
       title: t('node-manager.collector.version'),
       dataIndex: 'version',
       key: 'version',
       width: 120,
-      ellipsis: true,
-      render: (_, record) => <>{record.version || '--'}</>,
     },
     {
-      title: t('node-manager.collector.updatedBy'),
-      dataIndex: 'updated_by',
-      key: 'updated_by',
+      title: t('common.createdBy'),
+      dataIndex: 'created_by',
+      key: 'created_by',
       width: 120,
-      ellipsis: true,
-      render: (_, record) => <>{record.updated_by || '--'}</>,
     },
     {
-      title: t('node-manager.collector.updatedAt'),
-      dataIndex: 'updated_at',
-      key: 'updated_at',
+      title: t('common.createdAt'),
+      dataIndex: 'created_at',
+      key: 'created_at',
       width: 120,
       ellipsis: true,
-      render: (_, { updated_at }) => <>{updated_at ? convertToLocalizedTime(new Date(updated_at) + '') : '--'}</>,
+      render: (value, { created_at }) => (
+        <>
+          {created_at
+            ? convertToLocalizedTime(new Date(created_at) + '')
+            : '--'}
+        </>
+      ),
     },
     {
       title: t('common.actions'),
@@ -55,17 +55,13 @@ export const useDetailColumns = ({
           <Popconfirm
             title={t(`node-manager.collector.delete`)}
             description={t(`node-manager.collector.deleteInfo`)}
-            okText={t("common.confirm")}
-            cancelText={t("common.cancel")}
+            okText={t('common.confirm')}
+            cancelText={t('common.cancel')}
             onConfirm={() => {
-              handleDelete(id)
+              handleDelete(id);
             }}
           >
-            <Button
-              type="link"
-            >
-              {t('common.delete')}
-            </Button>
+            <Button type="link">{t('common.delete')}</Button>
           </Popconfirm>
         </Permission>
       ),
@@ -73,4 +69,4 @@ export const useDetailColumns = ({
   ];
 
   return detailColumns;
-} 
+};

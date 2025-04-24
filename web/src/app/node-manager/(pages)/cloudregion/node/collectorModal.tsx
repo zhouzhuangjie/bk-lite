@@ -4,33 +4,42 @@ import React, {
   useRef,
   forwardRef,
   useImperativeHandle,
+  useMemo,
   useEffect,
 } from 'react';
 import { Form, Select, message, Button, Popconfirm } from 'antd';
 import OperateModal from '@/components/operate-modal';
 import type { FormInstance } from 'antd';
 import { useTranslation } from '@/utils/i18n';
-import { ModalSuccess, ModalRef } from '@/app/node-manager/types/index';
+import { ModalSuccess, ModalRef } from '@/app/node-manager/types';
 import useApiCollector from '@/app/node-manager/api/collector';
 import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
-import type { TableDataItem } from '@/app/node-manager/types/index';
+import type { TableDataItem } from '@/app/node-manager/types';
+import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 const { Option } = Select;
 
 const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
   ({ onSuccess }, ref) => {
-    const collectorformRef = useRef<FormInstance>(null);
     const { t } = useTranslation();
     const { getCollectorlist, getPackageList } = useApiCollector();
-    const { installCollector, batchoperationcollector } = useApiCloudRegion();
+    const {
+      installCollector,
+      batchoperationcollector,
+      getconfiglist,
+      applyconfig,
+    } = useApiCloudRegion();
+    const cloudId = useCloudId();
+    const collectorformRef = useRef<FormInstance>(null);
+    const Popconfirmarr = ['restartCollector', 'uninstallCollector'];
     const [type, setType] = useState<string>('installCollector');
     const [nodeIds, setNodeIds] = useState<string[]>(['']);
     const [collectorVisible, setCollectorVisible] = useState<boolean>(false);
-    //需要二次弹窗确定的类型
-    const Popconfirmarr = ['restartCollector', 'uninstallCollector'];
     const [packageList, setPackageList] = useState<TableDataItem[]>([]);
     const [collectorlist, setCollectorlist] = useState<TableDataItem[]>([]);
+    const [configList, setConfigList] = useState<TableDataItem[]>([]);
     const [versionLoading, setVersionLoading] = useState<boolean>(false);
     const [collectorLoading, setCollectorLoading] = useState<boolean>(false);
+    const [configListLoading, setConfigListLoading] = useState<boolean>(false);
     const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
     const [collector, setCollector] = useState<string | null>(null);
     const [system, setSystem] = useState<string>('');
@@ -42,12 +51,17 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
         setSystem(selectedsystem as string);
         setNodeIds(ids || []);
         initPage(selectedsystem || '');
+        type === 'startCollector' && getConfigData();
       },
     }));
 
     useEffect(() => {
       collectorformRef.current?.resetFields();
     }, [collectorformRef]);
+
+    const configs = useMemo(() => {
+      return configList.filter((item) => item.collector_id === collector);
+    }, [collector]);
 
     const initPage = async (selectedsystem: string) => {
       setCollectorLoading(true);
@@ -61,11 +75,22 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
       }
     };
 
+    const getConfigData = async () => {
+      setConfigListLoading(true);
+      try {
+        const data = await getconfiglist({ cloud_region_id: cloudId });
+        setConfigList(data);
+      } finally {
+        setConfigListLoading(false);
+      }
+    };
+
     //关闭用户的弹窗(取消和确定事件)
     const handleCancel = () => {
       setCollectorVisible(false);
       setVersionLoading(false);
       setCollectorLoading(false);
+      setCollector(null);
     };
 
     //点击确定按钮的相关逻辑处理
@@ -82,10 +107,12 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
             params = {
               node_ids: nodeIds,
               collector_id: collector,
+              configuration: values.configuration,
               operation: 'start',
             };
             request = batchoperationcollector;
-            break;
+            startCollector(request, params);
+            return;
           case 'restartCollector':
             params = {
               node_ids: nodeIds,
@@ -109,7 +136,36 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
       });
     };
 
-    const operate = async (callback: any, params: any) => {
+    const startCollector = (callback: any, params: any) => {
+      const { configuration, ...rest } = params;
+      Promise.all([
+        operate(callback, rest, !!configuration),
+        configuration && handleApply(configuration),
+      ])
+        .then(() => {
+          if (configuration) {
+            message.success(t('common.operationSuccessful'));
+            handleCancel();
+          }
+        })
+        .finally(() => {
+          setConfirmLoading(false);
+        });
+    };
+
+    const handleApply = async (id: string) => {
+      const params = nodeIds.map((item) => ({
+        node_id: item,
+        collector_configuration_id: id,
+      }));
+      await applyconfig(params);
+    };
+
+    const operate = async (
+      callback: any,
+      params: any,
+      keepLoading?: boolean
+    ) => {
       try {
         setConfirmLoading(true);
         const data = await callback(params);
@@ -117,11 +173,13 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
           taskId: data.task_id || '',
           type,
         };
-        message.success(t('common.operationSuccessful'));
-        handleCancel();
+        if (!keepLoading) {
+          message.success(t('common.operationSuccessful'));
+          handleCancel();
+        }
         onSuccess(config);
       } finally {
-        setConfirmLoading(false);
+        setConfirmLoading(!!keepLoading);
       }
     };
 
@@ -130,6 +188,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
       setPackageList([]);
       collectorformRef.current?.setFieldsValue({
         version: null,
+        configuration: null,
       });
       const object = collectorlist.find(
         (item: TableDataItem) => item.id === value
@@ -181,30 +240,53 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
         }
       >
         <Form ref={collectorformRef} layout="vertical" colon={false}>
-          <Form.Item
-            name="Collector"
-            label={t('node-manager.cloudregion.node.collector')}
-            rules={[
-              {
-                required: true,
-                message: t('common.required'),
-              },
-            ]}
-          >
-            <Select
-              value={collector}
-              loading={collectorLoading}
-              showSearch
-              allowClear
-              onChange={handleCollectorChange}
+          <Form.Item noStyle>
+            <Form.Item
+              name="Collector"
+              label={t('node-manager.cloudregion.node.collector')}
+              rules={[
+                {
+                  required: true,
+                  message: t('common.required'),
+                },
+              ]}
             >
-              {collectorlist.map((item) => (
-                <Option value={item.id} key={item.id}>
-                  {item.name}
-                </Option>
-              ))}
-            </Select>
+              <Select
+                value={collector}
+                loading={collectorLoading}
+                showSearch
+                allowClear
+                onChange={handleCollectorChange}
+              >
+                {collectorlist.map((item) => (
+                  <Option value={item.id} key={item.id}>
+                    {item.name}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+            {type === 'startCollector' && collector?.includes('telegraf') && (
+              <div className="text-[12px] text-[var(--color-text-2)]">
+                {t('node-manager.cloudregion.node.telegrafConfigTips')}
+              </div>
+            )}
           </Form.Item>
+          {type === 'startCollector' &&
+            collector &&
+            !collector.includes('telegraf') && (
+            <Form.Item
+              name="configuration"
+              label={t('node-manager.cloudregion.node.configuration')}
+            >
+              <Select showSearch allowClear loading={configListLoading}>
+                {configs.map((item) => (
+                  <Option value={item.id} key={item.id}>
+                    {item.name}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+          )}
           {type === 'installCollector' && (
             <Form.Item
               name="version"

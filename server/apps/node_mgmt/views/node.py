@@ -108,3 +108,43 @@ class NodeViewSet(mixins.DestroyModelMixin,
         operation = serializer.validated_data["operation"]
         NodeService.batch_operate_node_collector(node_ids, collector_id, operation)
         return WebUtils.response_success()
+
+    @swagger_auto_schema(
+        operation_summary="查询节点信息以及关联的配置",
+        operation_id="node_config_asso",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "cloud_region_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="云区域ID"),
+                "ids": openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING,description="节点id")),
+            },
+            required=["cloud_region_id"]
+        ),
+    )
+    @action(detail=False, methods=["post"], url_path="node_config_asso")
+    def get_node_config_asso(self, request):
+        nodes = Node.objects.prefetch_related("collectorconfiguration_set").filter(cloud_region_id=request.data["cloud_region_id"])
+        if request.data.get("ids"):
+            nodes = nodes.filter(id__in=request.data["ids"])
+
+        result = [
+            {
+                "id": node.id,
+                "name": node.name,
+                "ip": node.ip,
+                "operating_system": node.operating_system,
+                "cloud_region_id": node.cloud_region_id,
+                "configs": [
+                    {
+                        "id": cfg.id,
+                        "name": cfg.name,
+                        "collector_id": cfg.collector_id,
+                        "is_pre": cfg.is_pre,
+                    }
+                    for cfg in node.collectorconfiguration_set.all()
+                ],
+            }
+            for node in nodes
+        ]
+
+        return WebUtils.response_success(result)

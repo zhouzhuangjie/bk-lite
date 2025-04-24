@@ -24,7 +24,7 @@
     {
       "metric_group": "HTTP",
       "name": "http_duration",
-      "query": "avg(http_response_response_time{instance_type=\"web\",__$labels__})by (instance_id)",
+      "query": "avg(http_response_response_time{instance_type=\"web\",__$labels__})by (instance_id,agent_id)",
       "display_name": "Response Time",
       "data_type": "Number",
       "unit": "s",

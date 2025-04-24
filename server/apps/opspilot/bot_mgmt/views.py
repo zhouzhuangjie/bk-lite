@@ -1,8 +1,6 @@
-import asyncio
 import datetime
 import hashlib
 import json
-import re
 import time
 
 from django.conf import settings
@@ -10,7 +8,6 @@ from django.db.models import Count, Sum
 from django.db.models.functions import TruncDate
 from django.http import FileResponse, JsonResponse, StreamingHttpResponse
 from django_minio_backend import MinioBackend
-from langserve import RemoteRunnable
 
 from apps.base.models import UserAPISecret
 from apps.core.logger import logger
@@ -96,7 +93,7 @@ def validate_openai_token(token):
     user = UserAPISecret.objects.filter(api_secret=token).first()
     if not user:
         return False, {"choices": [{"message": {"role": "assistant", "content": "No authorization"}}]}
-    return True, user.team
+    return True, user
 
 
 def get_skill_and_params(kwargs, team):
@@ -107,7 +104,7 @@ def get_skill_and_params(kwargs, team):
     if not skill_obj:
         return None, None, {"choices": [{"message": {"role": "assistant", "content": "No skill"}}]}
     num = kwargs.get("conversation_window_size") or skill_obj.conversation_window_size
-    chat_history = [{"text": i["content"], "event": i["role"]} for i in kwargs.get("messages", [])[-1 * num :]]
+    chat_history = [{"message": i["content"], "event": i["role"]} for i in kwargs.get("messages", [])[-1 * num :]]
 
     params = {
         "llm_model": skill_obj.llm_model_id,
@@ -124,6 +121,7 @@ def get_skill_and_params(kwargs, team):
         "enable_rag_knowledge_source": skill_obj.enable_rag_knowledge_source,
         "show_think": skill_obj.show_think,
         "tools": skill_obj.tools,
+        "skill_type": skill_obj.skill_type,
     }
 
     return skill_obj, params, None
@@ -150,17 +148,22 @@ def get_knowledge_sources(content, skill_obj, doc_map=None, title_map=None):
 
 
 def invoke_chat(params, skill_obj, kwargs, current_ip, user_message):
+    return_data, _ = get_chat_msg(current_ip, kwargs, params, skill_obj, user_message)
+    return JsonResponse(return_data)
+
+
+def get_chat_msg(current_ip, kwargs, params, skill_obj, user_message):
     data, doc_map, title_map = llm_service.invoke_chat(params)
-    content = format_knowledge_sources(data["content"], skill_obj, doc_map, title_map)
+    content = format_knowledge_sources(data["message"], skill_obj, doc_map, title_map)
     return_data = {
         "id": skill_obj.name,
         "object": "chat.completion",
         "created": int(time.time()),
         "model": kwargs["model"],
         "usage": {
-            "prompt_tokens": data["input_tokens"],
-            "completion_tokens": data["output_tokens"],
-            "total_tokens": data["input_tokens"] + data["output_tokens"],
+            "prompt_tokens": data["prompt_tokens"],
+            "completion_tokens": data["completion_tokens"],
+            "total_tokens": data["prompt_tokens"] + data["completion_tokens"],
             "completion_tokens_details": {
                 "reasoning_tokens": 0,
                 "accepted_prediction_tokens": 0,
@@ -177,7 +180,7 @@ def invoke_chat(params, skill_obj, kwargs, current_ip, user_message):
         ],
     }
     insert_skill_log(current_ip, skill_obj.id, return_data, kwargs, user_message=user_message)
-    return JsonResponse(return_data)
+    return return_data, content
 
 
 @api_exempt
@@ -195,8 +198,8 @@ def openai_completions(request):
             return generate_stream_error(msg["choices"][0]["message"]["content"])
         else:
             return JsonResponse(msg)
-    team = msg
-    skill_obj, params, error = get_skill_and_params(kwargs, team)
+    user = msg
+    skill_obj, params, error = get_skill_and_params(kwargs, user.team)
     if error:
         if skill_obj:
             user_message = params.get("user_message")
@@ -205,6 +208,7 @@ def openai_completions(request):
             return generate_stream_error(error["choices"][0]["message"]["content"])
         else:
             return JsonResponse(error)
+    params["user_id"] = user.username
     user_message = params.get("user_message")
     if not stream_mode:
         return invoke_chat(params, skill_obj, kwargs, current_ip, user_message)
@@ -212,94 +216,27 @@ def openai_completions(request):
 
 
 def stream_chat(params, skill_obj, kwargs, current_ip, user_message):
-    show_think = params.pop("show_think", True)
-    try:
-        doc_map, title_map, team_info, chat_kwargs = llm_service.format_stream_chat_params(params)
-    except Exception as e:
-        logger.exception(e)
-        return generate_stream_error(str(e))
-
-    chat_server = RemoteRunnable(settings.OPENAI_CHAT_SERVICE_URL.rstrip("/") + "/stream")
-
-    async def generate_stream_async(token_data):
-        chat_content = ""
-        input_tokens = output_tokens = 0
-        async for result in chat_server.astream(chat_kwargs):
-            if isinstance(result, str):
-                result = json.loads(result)
-            if not result["result"]:
-                raise Exception(result["message"])
-            data = result["data"]
-            input_tokens += data["input_tokens"]
-            output_tokens += data["output_tokens"]
-            content = data["content"]
-            if not show_think:
-                # TODO
-                content = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL).strip()
-            stream_chunk = {
-                "choices": [{"delta": {"content": content}, "index": 0, "finish_reason": None}],
-                "id": skill_obj.name,
-                "object": "chat.completion.chunk",
-                "created": int(time.time()),
-            }
-            chat_content += content
-            yield f"data: {json.dumps(stream_chunk)}\n\n"
-
-        # Final chunk indicating completion
-        source_content = get_knowledge_sources(chat_content, skill_obj, doc_map, title_map)
-        if source_content:
-            final_chunk = {
-                "choices": [{"delta": {"content": source_content}, "index": 0, "finish_reason": "stop"}],
-                "id": skill_obj.name,
-                "object": "chat.completion.chunk",
-                "created": int(time.time()),
-            }
-            yield f"data: {json.dumps(final_chunk)}\n\n"
-            chat_content += source_content
-        token_data["input_tokens"] = input_tokens
-        token_data["output_tokens"] = output_tokens
-        token_data["chat_content"] = chat_content
+    _, content = get_chat_msg(current_ip, kwargs, params, skill_obj, user_message)
 
     def generate_stream():
-        # 将异步生成器转换为同步生成器
-        token_data = {"input_tokens": 0, "output_tokens": 0, "chat_content": ""}
-        loop = asyncio.new_event_loop()
-        async_gen = generate_stream_async(token_data)
-        while True:
-            try:
-                chunk = loop.run_until_complete(async_gen.__anext__())
-                yield chunk
-            except StopAsyncIteration:
-                break
-        used_token = token_data["input_tokens"] + token_data["output_tokens"]
-        return_data = {
+        chunk_size = 20  # characters per chunk
+        for i in range(0, len(content), chunk_size):
+            chunk = content[i : i + chunk_size]
+            stream_chunk = {
+                "choices": [{"delta": {"content": chunk}, "index": 0, "finish_reason": None}],
+                "id": skill_obj.name,
+                "object": "chat.completion.chunk",
+                "created": int(time.time()),
+            }
+            yield f"data: {json.dumps(stream_chunk)}\n\n"
+        # Final chunk indicating completion
+        final_chunk = {
+            "choices": [{"delta": {}, "index": 0, "finish_reason": "stop"}],
             "id": skill_obj.name,
-            "object": "chat.completion",
+            "object": "chat.completion.chunk",
             "created": int(time.time()),
-            "model": kwargs["model"],
-            "usage": {
-                "prompt_tokens": token_data["input_tokens"],
-                "completion_tokens": token_data["output_tokens"],
-                "total_tokens": used_token,
-                "completion_tokens_details": {
-                    "reasoning_tokens": 0,
-                    "accepted_prediction_tokens": 0,
-                    "rejected_prediction_tokens": 0,
-                },
-            },
-            "choices": [
-                {
-                    "message": {"role": "assistant", "content": token_data["chat_content"]},
-                    "logprobs": None,
-                    "finish_reason": "stop",
-                    "index": 0,
-                }
-            ],
         }
-
-        team_info.used_token += used_token
-        team_info.save()
-        insert_skill_log(current_ip, skill_obj.id, return_data, kwargs, user_message=user_message)
+        yield f"data: {json.dumps(final_chunk)}\n\n"
 
     response = StreamingHttpResponse(generate_stream(), content_type="text/event-stream")
     # 添加必要的头信息以防止缓冲

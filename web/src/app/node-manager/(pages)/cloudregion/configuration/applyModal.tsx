@@ -16,19 +16,17 @@ import {
   nodeItemtRes,
   mappedNodeItem,
 } from '@/app/node-manager/types/cloudregion';
-import useCloudId from '@/app/node-manager/hooks/useCloudid';
+import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 
 type SearchProps = GetProps<typeof Input.Search>;
 const { Search } = Input;
 
 const ApplyModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
-  //设置弹窗状态
-  const [configVisible, setConfigVisible] = useState<boolean>(false);
-  //设置表当的数据
   const { t } = useTranslation();
   const cloudId = useCloudId();
   const { getnodelist, applyconfig, cancelApply, getAssoNodes } =
     useApiCloudRegion();
+  const [configVisible, setConfigVisible] = useState<boolean>(false);
   const [configForm, setConfigForm] = useState<TableDataItem>();
   const [applydata, setApplydata] = useState<mappedNodeItem[]>();
   const [type, setType] = useState<string>('apply');
@@ -39,10 +37,14 @@ const ApplyModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
   const handleApply = async (row: TableDataItem) => {
     setLoading(true);
     const request = row.isRelated ? cancelApply : applyconfig;
-    await request({
+    let params: any = {
       node_id: row.key,
       collector_configuration_id: configForm?.key,
-    });
+    };
+    if (!row.isRelated) {
+      params = [params];
+    }
+    await request(params);
     message.success(t('common.operationSuccessful'));
     onSuccess();
     getApplydata({
@@ -89,12 +91,12 @@ const ApplyModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
     try {
       setLoading(true);
       const getNodeData = getnodelist({
-        cloud_region_id: Number(cloudId),
+        cloud_region_id: cloudId,
         name: params.name,
         operating_system: params.operating_system,
       });
       const getAssoConfig = getAssoNodes({
-        cloud_region_id: Number(cloudId),
+        cloud_region_id: cloudId,
         ids: [params.id as string],
       });
       Promise.all([getNodeData, getAssoConfig])
