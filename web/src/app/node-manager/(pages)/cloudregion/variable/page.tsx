@@ -1,25 +1,24 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
 import { Button, Input, message } from 'antd';
-import CustomTable from '@/components/custom-table/index';
+import CustomTable from '@/components/custom-table';
 import { useTranslation } from '@/utils/i18n';
 import VariableModal from './variableModal';
-import { ModalRef } from '@/app/node-manager/types/index';
+import { ModalRef, TableDataItem } from '@/app/node-manager/types';
 import { useVarColumns } from '@/app/node-manager/hooks/variable';
 import type { GetProps } from 'antd';
-import type { TableDataItem } from '@/app/node-manager/types/index';
 import Mainlayout from '../mainlayout/layout';
 import { PlusOutlined } from '@ant-design/icons';
 import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
 import useApiClient from '@/utils/request';
-import useCloudId from '@/app/node-manager/hooks/useCloudid';
+import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 import variableStyle from './index.module.scss';
 import PermissionWrapper from '@/components/permission';
 type SearchProps = GetProps<typeof Input.Search>;
 const { Search } = Input;
 
 const Variable = () => {
-  const cloudid = useCloudId();
+  const cloudId = useCloudId();
   const { t } = useTranslation();
   const { isLoading } = useApiClient();
   const { getvariablelist, deletevariable } = useApiCloudRegion();
@@ -70,7 +69,7 @@ const Variable = () => {
   };
 
   const onSearch: SearchProps['onSearch'] = (value) => {
-    getvariablelist(Number(cloudid), value).then((res) => {
+    getvariablelist(cloudId, value).then((res) => {
       const tempdata = res.map((item: any) => {
         return {
           key: item.id,
@@ -85,7 +84,7 @@ const Variable = () => {
 
   //获取表格数据
   const getVariablelist = () => {
-    getvariablelist(Number(cloudid))
+    getvariablelist(cloudId)
       .then((res) => {
         setLoading(true);
         const tempdata = res.map((item: any) => {
@@ -113,7 +112,7 @@ const Variable = () => {
             enterButton
             onSearch={onSearch}
           />
-          <PermissionWrapper requiredPermissions={["Add"]}>
+          <PermissionWrapper requiredPermissions={['Add']}>
             <Button
               type="primary"
               onClick={() => {
@@ -129,7 +128,6 @@ const Variable = () => {
               {t('common.add')}
             </Button>
           </PermissionWrapper>
-
         </div>
         <div className="tablewidth">
           <CustomTable

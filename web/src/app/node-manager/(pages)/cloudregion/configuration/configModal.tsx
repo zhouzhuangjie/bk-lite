@@ -14,7 +14,7 @@ import {
   ModalSuccess,
   TableDataItem,
   ModalRef,
-} from '@/app/node-manager/types/index';
+} from '@/app/node-manager/types';
 import { useTranslation } from '@/utils/i18n';
 import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
 import {
@@ -22,7 +22,7 @@ import {
   VarResItem,
   ConfigParams,
 } from '@/app/node-manager/types/cloudregion';
-import useCloudId from '@/app/node-manager/hooks/useCloudid';
+import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 import CodeEditor from '@/app/node-manager/components/codeEditor';
 import { useConfigModalColumns } from '@/app/node-manager/hooks/configuration';
 import { cloneDeep } from 'lodash';
@@ -37,7 +37,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
       getvariablelist,
       updatechildconfig,
     } = useApiCloudRegion();
-    const cloudid = useCloudId();
+    const cloudId = useCloudId();
     const { t } = useTranslation();
     const columns = useConfigModalColumns();
     const configformRef = useRef<FormInstance>(null);
@@ -73,7 +73,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
     const initializeVarForm = async () => {
       try {
         setTableLoading(true);
-        const res = await getvariablelist(Number(cloudid));
+        const res = await getvariablelist(cloudId);
         const tempdata = res.map((item: VarResItem) => ({
           key: item.id,
           name: item.key,
@@ -140,7 +140,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
             config_template: configinfo,
           };
           if (type === 'add') {
-            params.cloud_region_id = Number(cloudid);
+            params.cloud_region_id = cloudId;
           }
           handleCreateAndUpdate(params);
           return;

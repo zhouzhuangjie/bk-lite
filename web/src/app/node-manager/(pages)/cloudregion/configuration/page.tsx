@@ -6,7 +6,7 @@ import { DownOutlined } from '@ant-design/icons';
 import { ColumnFilterItem } from 'antd/es/table/interface';
 import { useRouter, useSearchParams } from 'next/navigation';
 import CustomTable from '@/components/custom-table';
-import { ModalRef, TableDataItem } from '@/app/node-manager/types/index';
+import { ModalRef, TableDataItem } from '@/app/node-manager/types';
 import { useTranslation } from '@/utils/i18n';
 import useApiClient from '@/utils/request';
 import type {
@@ -16,7 +16,7 @@ import type {
 } from '@/app/node-manager/types/cloudregion';
 import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
 import useApiCollector from '@/app/node-manager/api/collector';
-import useCloudId from '@/app/node-manager/hooks/useCloudid';
+import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 import Mainlayout from '../mainlayout/layout';
 import configstyle from './index.module.scss';
 import SubConfiguration from './subconfiguration';
@@ -33,7 +33,7 @@ const Configration = () => {
   const subConfiguration = useRef<SubRef>(null);
   const configurationRef = useRef<ModalRef>(null);
   const applyRef = useRef<ModalRef>(null);
-  const cloudid = useCloudId();
+  const cloudId = useCloudId();
   const router = useRouter();
   const { t } = useTranslation();
   const { isLoading } = useApiClient();
@@ -178,10 +178,10 @@ const Configration = () => {
     try {
       const res = await Promise.all([
         getconfiglist({
-          cloud_region_id: Number(cloudid),
+          cloud_region_id: cloudId,
           node_id: nodeId || '',
         }),
-        getnodelist({ cloud_region_id: Number(cloudid) }),
+        getnodelist({ cloud_region_id: cloudId }),
         getCollectorlist({}),
       ]);
       const configlist = res[0] || [];
@@ -230,7 +230,7 @@ const Configration = () => {
     setLoading(true);
     try {
       const data = await getconfiglist({
-        cloud_region_id: Number(cloudid),
+        cloud_region_id: cloudId,
         node_id: nodeId || '',
         name: search,
       });
