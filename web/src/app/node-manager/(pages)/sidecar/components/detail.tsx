@@ -6,7 +6,7 @@ import CustomTable from '@/components/custom-table';
 import { useDetailColumns } from '@/app/node-manager/hooks/collector';
 import useApiCollector from '@/app/node-manager/api/collector';
 import useApiClient from '@/utils/request';
-import type { Pagination, TableDataItem } from '@/app/node-manager/types/index';
+import type { Pagination, TableDataItem } from '@/app/node-manager/types';
 
 const Collectordetail = () => {
   const { t } = useTranslation();
@@ -19,6 +19,7 @@ const Collectordetail = () => {
   });
   const [tableData, setTableData] = useState<TableDataItem[]>([]);
   const [tableLoading, setTableLoading] = useState<boolean>(false);
+
   const columns = useDetailColumns({
     handleDelete: (id) => handleDelete(id),
   });
@@ -49,10 +50,9 @@ const Collectordetail = () => {
         total: packageInfo.length,
         current: 1,
       }));
-    } catch (error) {
-      console.log(error);
+    } finally {
+      setTableLoading(false);
     }
-    setTableLoading(false);
   };
 
   const handleDelete = (id: number) => {
@@ -62,10 +62,7 @@ const Collectordetail = () => {
         getTableData();
         message.success(t('common.delSuccess'));
       })
-      .catch((e) => {
-        console.log(e);
-      })
-      .finally(() => {
+      .catch(() => {
         setTableLoading(false);
       });
   };
@@ -79,12 +76,11 @@ const Collectordetail = () => {
   };
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-[calc(100vh-230px)]">
       <CustomTable
-        scroll={{ y: 'calc(100vh - 330px)', x: 'calc(100vw - 320px)' }}
+        scroll={{ y: 'calc(100vh - 280px)', x: 'calc(100vw - 320px)' }}
         columns={columns}
         dataSource={tableData}
-        pagination={false}
         loading={tableLoading}
         rowKey="id"
         onChange={handleTableChange}
