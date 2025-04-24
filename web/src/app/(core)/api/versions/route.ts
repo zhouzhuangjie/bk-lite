@@ -8,7 +8,9 @@ export const GET = async (request: NextRequest) => {
     const locale = searchParams.get('locale') || 'en';
 
     const versionsDirectory = path.join(process.cwd(), `public/app/versions/${locale}`);
-    const versionFiles = fs.readdirSync(versionsDirectory).map(file => file.replace('.md', ''));
+    const versionFiles = fs.readdirSync(versionsDirectory)
+      .map(file => file.replace('.md', ''))
+      .sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
 
     return NextResponse.json({ versionFiles });
   } catch (error) {
