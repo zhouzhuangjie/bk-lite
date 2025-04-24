@@ -11,16 +11,15 @@ import { Form, Select, message, Button, Popconfirm } from 'antd';
 import OperateModal from '@/components/operate-modal';
 import type { FormInstance } from 'antd';
 import { useTranslation } from '@/utils/i18n';
-import { ModalSuccess, ModalRef } from '@/app/node-manager/types/index';
+import { ModalSuccess, ModalRef } from '@/app/node-manager/types';
 import useApiCollector from '@/app/node-manager/api/collector';
 import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
-import type { TableDataItem } from '@/app/node-manager/types/index';
-import useCloudId from '@/app/node-manager/hooks/useCloudid';
+import type { TableDataItem } from '@/app/node-manager/types';
+import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 const { Option } = Select;
 
 const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
   ({ onSuccess }, ref) => {
-    const collectorformRef = useRef<FormInstance>(null);
     const { t } = useTranslation();
     const { getCollectorlist, getPackageList } = useApiCollector();
     const {
@@ -30,11 +29,11 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
       applyconfig,
     } = useApiCloudRegion();
     const cloudId = useCloudId();
+    const collectorformRef = useRef<FormInstance>(null);
+    const Popconfirmarr = ['restartCollector', 'uninstallCollector'];
     const [type, setType] = useState<string>('installCollector');
     const [nodeIds, setNodeIds] = useState<string[]>(['']);
     const [collectorVisible, setCollectorVisible] = useState<boolean>(false);
-    //需要二次弹窗确定的类型
-    const Popconfirmarr = ['restartCollector', 'uninstallCollector'];
     const [packageList, setPackageList] = useState<TableDataItem[]>([]);
     const [collectorlist, setCollectorlist] = useState<TableDataItem[]>([]);
     const [configList, setConfigList] = useState<TableDataItem[]>([]);
@@ -79,7 +78,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
     const getConfigData = async () => {
       setConfigListLoading(true);
       try {
-        const data = await getconfiglist({ cloud_region_id: Number(cloudId) });
+        const data = await getconfiglist({ cloud_region_id: cloudId });
         setConfigList(data);
       } finally {
         setConfigListLoading(false);

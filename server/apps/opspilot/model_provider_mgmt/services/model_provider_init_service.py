@@ -149,7 +149,7 @@ class ModelProviderInitService:
         SkillTools.objects.update_or_create(
             name="Online Search",
             defaults={
-                "params": {"url": "http://127.0.0.1:8003/sse", "name": "Online Search"},
+                "params": {"url": "langchain:duckduckgo", "name": "Online Search"},
                 "description": "Enables quick search and retrieval of information through the internet to obtain real-time data.",  # noqa
                 "tags": ["search"],
                 "icon": "",
@@ -159,7 +159,7 @@ class ModelProviderInitService:
         SkillTools.objects.update_or_create(
             name="General tools",
             defaults={
-                "params": {"url": "langchain:http://127.0.0.1:8002/sse", "name": "General tools"},
+                "params": {"url": "langchain:current_time", "name": "General tools"},
                 "description": "Built-in commonly used tools, including holiday queries, current time queries, etc., to provide additional information.",  # noqa
                 "tags": ["general"],
                 "icon": "",

@@ -1,18 +1,18 @@
-"use client";
-import React, { useEffect, useState, useRef, useCallback } from "react";
-import collectorstyle from "../index.module.scss";
-import { Menu, Input, Space, Select, Button } from "antd";
+'use client';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import collectorstyle from '../index.module.scss';
+import { Menu, Input, Space, Select, Button } from 'antd';
 import useApiClient from '@/utils/request';
-import useApiCollector from "@/app/node-manager/api/collector/index";
-import EntityList from "@/components/entity-list/index";
-import { useRouter } from "next/navigation";
-import { useTranslation } from "@/utils/i18n";
-import type { CardItem } from "@/app/node-manager/types/collector";
-import CollectorModal from "../collectorModal";
-import { ModalRef } from "@/app/node-manager/types";
+import useApiCollector from '@/app/node-manager/api/collector/index';
+import EntityList from '@/components/entity-list/index';
+import { useRouter } from 'next/navigation';
+import { useTranslation } from '@/utils/i18n';
+import type { CardItem } from '@/app/node-manager/types/collector';
+import CollectorModal from '../components/collectorModal';
+import { ModalRef } from '@/app/node-manager/types';
 import PermissionWrapper from '@/components/permission';
-import { useMenuItem } from "@/app/node-manager/constants/collector";
-import { Option } from "@/types";
+import { useMenuItem } from '@/app/node-manager/constants/collector';
+import { Option } from '@/types';
 const { Search } = Input;
 
 const Controller = () => {
@@ -20,19 +20,19 @@ const Controller = () => {
   const { t } = useTranslation();
   const { isLoading } = useApiClient();
   const { getControllerList } = useApiCollector();
+  const menuItem = useMenuItem();
   const modalRef = useRef<ModalRef>(null);
   const [controllerCards, setControllerCards] = useState<CardItem[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState<string>('');
   const [options, setOptions] = useState<Option[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const menuItem = useMenuItem();
 
   useEffect(() => {
     if (!isLoading) {
       fetchCollectorlist(search, selected);
     }
-  }, [isLoading])
+  }, [isLoading]);
 
   const navigateToCollectorDetail = (item: CardItem) => {
     router.push(`
@@ -57,7 +57,7 @@ const Controller = () => {
         optionSet.add(system);
         _options.push({ value: system, label: system });
       }
-      return ({
+      return {
         id: item.id,
         name: item.name,
         service_type: item.service_type,
@@ -65,8 +65,8 @@ const Controller = () => {
         execute_parameters: item.execute_parameters,
         description: item.description || '--',
         icon: 'caijiqizongshu',
-        tagList: [system]
-      })
+        tagList: [system],
+      };
     });
     tempdata = filterBySelected(tempdata, selected || []);
     setControllerCards(tempdata);
@@ -91,42 +91,45 @@ const Controller = () => {
       title: config?.title,
       type: config?.type,
       form: config?.form,
-      key: config?.key
-    })
+      key: config?.key,
+    });
   };
 
   const handleSubmit = () => {
     fetchCollectorlist();
   };
 
-  const menuActions = useCallback((data: any) => {
-    return (<Menu
-      onClick={(e) => e.domEvent.preventDefault()}
-    >
-      {menuItem.map((item) => {
-        if (['delete', 'edit'].includes(item.key)) return;
-        return (
-
-          <Menu.Item
-            key={item.title}
-            onClick={() => openModal({ ...item.config, form: data, key: 'controller' })}
-            className="!p-0"
-          >
-            <PermissionWrapper
-              key={item.title}
-              requiredPermissions={[item.role]}
-              className="!block"
-            >
-              <Button type="text" className="w-full" >
-                {t(`node-manager.collector.${item.title}`)}
-              </Button>
-            </PermissionWrapper>
-          </Menu.Item>
-        )
-      }
-      )}
-    </Menu>)
-  }, [menuItem]);
+  const menuActions = useCallback(
+    (data: any) => {
+      return (
+        <Menu onClick={(e) => e.domEvent.preventDefault()}>
+          {menuItem.map((item) => {
+            if (['delete', 'edit'].includes(item.key)) return;
+            return (
+              <Menu.Item
+                key={item.title}
+                onClick={() =>
+                  openModal({ ...item.config, form: data, key: 'controller' })
+                }
+                className="!p-0"
+              >
+                <PermissionWrapper
+                  key={item.title}
+                  requiredPermissions={[item.role]}
+                  className="!block"
+                >
+                  <Button type="text" className="w-full">
+                    {t(`node-manager.collector.${item.title}`)}
+                  </Button>
+                </PermissionWrapper>
+              </Menu.Item>
+            );
+          })}
+        </Menu>
+      );
+    },
+    [menuItem]
+  );
 
   const changeFilter = (selected: string[]) => {
     fetchCollectorlist(search, selected);
@@ -147,10 +150,10 @@ const Controller = () => {
         menuActions={(value) => menuActions(value)}
         filter={false}
         search={false}
-        operateSection={(
+        operateSection={
           <Space.Compact>
             <Select
-              size='middle'
+              size="middle"
               allowClear={true}
               placeholder={`${t('common.select')}...`}
               mode="multiple"
@@ -161,7 +164,7 @@ const Controller = () => {
               onChange={changeFilter}
             />
             <Search
-              size='middle'
+              size="middle"
               allowClear
               enterButton
               placeholder={`${t('common.search')}...`}
@@ -171,11 +174,12 @@ const Controller = () => {
               onSearch={onSearch}
             />
           </Space.Compact>
-        )}
-        onCardClick={(item: CardItem) => navigateToCollectorDetail(item)}></EntityList>
+        }
+        onCardClick={(item: CardItem) => navigateToCollectorDetail(item)}
+      ></EntityList>
       <CollectorModal ref={modalRef} onSuccess={handleSubmit} />
     </div>
   );
-}
+};
 
 export default Controller;
