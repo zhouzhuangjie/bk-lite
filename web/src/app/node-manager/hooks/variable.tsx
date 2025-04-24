@@ -13,7 +13,6 @@ export const useVarColumns = ({
     {
       title: t('common.name'),
       dataIndex: 'name',
-      render: (text: string) => <p>{text}</p>,
     },
     {
       title: t('node-manager.cloudregion.variable.value'),
@@ -22,7 +21,6 @@ export const useVarColumns = ({
     {
       title: t('node-manager.cloudregion.variable.desc'),
       dataIndex: 'description',
-      render: (text: string) => <p>{text || '--'}</p>,
     },
     {
       title: t('common.actions'),

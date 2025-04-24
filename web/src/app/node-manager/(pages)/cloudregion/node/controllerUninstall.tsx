@@ -13,10 +13,13 @@ import { EditOutlined } from '@ant-design/icons';
 import OperateModal from '@/components/operate-modal';
 import type { FormInstance } from 'antd';
 import { useTranslation } from '@/utils/i18n';
-import { ModalSuccess, ModalRef } from '@/app/node-manager/types/index';
+import {
+  ModalSuccess,
+  ModalRef,
+  TableDataItem,
+} from '@/app/node-manager/types';
 import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
-import type { TableDataItem } from '@/app/node-manager/types/index';
-import useCloudId from '@/app/node-manager/hooks/useCloudid';
+import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 import { OPERATE_SYSTEMS } from '@/app/node-manager/constants/cloudregion';
 import { ControllerInstallFields } from '@/app/node-manager/types/cloudregion';
 import CustomTable from '@/components/custom-table';
@@ -25,15 +28,15 @@ import { cloneDeep, isNumber } from 'lodash';
 
 const ControllerUninstall = forwardRef<ModalRef, ModalSuccess>(
   ({ onSuccess, config }, ref) => {
-    const collectorformRef = useRef<FormInstance>(null);
     const { t } = useTranslation();
-    const cloudid = useCloudId();
+    const cloudId = useCloudId();
     const { uninstallController } = useApiCloudRegion();
-    const instRef = useRef<ModalRef>(null);
-    const [type, setType] = useState<string>('uninstallSidecar');
-    const [collectorVisible, setCollectorVisible] = useState<boolean>(false);
     //需要二次弹窗确定的类型
     const Popconfirmarr = ['uninstallSidecar'];
+    const instRef = useRef<ModalRef>(null);
+    const collectorformRef = useRef<FormInstance>(null);
+    const [type, setType] = useState<string>('uninstallSidecar');
+    const [collectorVisible, setCollectorVisible] = useState<boolean>(false);
     const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
     const [tableData, setTableData] = useState<TableDataItem[]>([]);
 
@@ -213,7 +216,7 @@ const ControllerUninstall = forwardRef<ModalRef, ModalSuccess>(
       collectorformRef.current?.validateFields().then(() => {
         const data = cloneDeep(tableData);
         const params = {
-          cloud_region_id: +cloudid,
+          cloud_region_id: cloudId,
           work_node: config.work_node,
           nodes: data.map((item) => {
             delete item.id;

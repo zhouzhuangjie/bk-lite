@@ -2,11 +2,8 @@ import os
 
 # REMOTE_SERVICE
 METIS_SERVER_URL = os.getenv("METIS_SERVER_URL", "http://rag-server-api/")
-OPENAI_CHAT_SERVICE_URL = os.getenv("OPENAI_CHAT_SERVICE_URL", "http://chat-server/openai")
-
 # BOT 环境变量
 KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "lite")
-
 MUNCHKIN_BASE_URL = os.getenv("MUNCHKIN_BASE_URL", "http://munchkin")
 
 CONVERSATION_MQ_HOST = os.getenv("CONVERSATION_MQ_HOST", "rabbitmq.ops-pilot")
