@@ -69,6 +69,7 @@ def sync_db():
 @command_func
 def startup():
     logger.info("start server")
+    app.config.REQUEST_MAX_SIZE = 300_000_000
     app.run(
         host="0.0.0.0",
         port=int(os.getenv('APP_PORT', 18083)),
@@ -78,8 +79,8 @@ def startup():
 
 @command_func
 def download_models():
-    logger.info("download FastEmbed")
-    EmbedBuilder().get_embed('local:text_embedding:BAAI/bge-small-zh-v1.5')
+    logger.info("download HuggingFace Embed Models")
+    EmbedBuilder().get_embed('local:huggingface_embedding:BAAI/bge-small-zh-v1.5')
 
     logger.info("download PaddleOCR")
     PPOcr()

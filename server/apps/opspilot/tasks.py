@@ -113,10 +113,11 @@ def invoke_one_document(document, is_show=False):
             form_data.update(source_data)
             res = requests.post(source_remote, headers=headers, data=form_data, verify=False).json()
         remote_docs = res.get("documents", [])
+        if not remote_docs:
+            logger.error(f"获取不到文档，返回结果为： {res}")
         document.chunk_size = len(remote_docs)
         knowledge_docs.extend(remote_docs)
     except Exception as e:
-        print(e)
         logger.exception(e)
     return res["status"] == "success", knowledge_docs
 
@@ -181,7 +182,9 @@ def format_invoke_kwargs(knowledge_document: KnowledgeDocument, preview=False):
         "chunk_size": knowledge_document.general_parse_chunk_size,
         "chunk_overlap": knowledge_document.general_parse_chunk_overlap,
         "load_mode": knowledge_document.mode,
-        "semantic_chunk_model_base_url": [semantic_embed_config.get("base_url", "")],
+        "semantic_chunk_model_base_url": [semantic_embed_config.get("base_url", "")]
+        if semantic_embed_config.get("base_url", "")
+        else [],
         "semantic_chunk_model_api_key": semantic_embed_config.get("api_key", ""),
         "semantic_chunk_model": semantic_embed_model_name,
         "preview": "true" if preview else "false",

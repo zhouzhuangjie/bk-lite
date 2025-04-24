@@ -214,7 +214,7 @@ async def custom_content_ingest(request):
             metadata=metadata
         )
 
-        return json({"status": "success", "message": ""})
+        return json({"status": "success", "message": "","chunks_size": len(chunked_docs)})
     except Exception as e:
         logger.error(f"自定义内容处理错误: {str(e)}")
         return json({"status": "error", "message": str(e)})
@@ -262,7 +262,7 @@ async def website_ingest(request):
             metadata=metadata
         )
 
-        return json({"status": "success", "message": ""})
+        return json({"status": "success", "message": "","chunks_size": len(chunked_docs)})
     except Exception as e:
         logger.error(f"网站内容处理错误: {str(e)}")
         return json({"status": "error", "message": str(e)})
@@ -327,7 +327,7 @@ async def file_ingest(request):
                 metadata=metadata
             )
 
-        return json({"status": "success", "message": ""})
+        return json({"status": "success", "message": "","chunks_size": len(chunked_docs)})
     except Exception as e:
         logger.error(f"文件处理错误: {str(e)}")
         return json({"status": "error", "message": str(e)})

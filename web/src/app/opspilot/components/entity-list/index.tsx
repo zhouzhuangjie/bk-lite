@@ -121,7 +121,7 @@ const EntityList = <T,>({ endpoint, CardComponent, ModifyModalComponent, itemTyp
 
   const filteredItems = items.filter(item =>
     (item as any).name?.toLowerCase().includes(searchTerm.toLowerCase()) &&
-    (!selectedType || (item as any).type === selectedType)
+    (!selectedType || (item as any).skill_type === selectedType)
   );
 
   return (
