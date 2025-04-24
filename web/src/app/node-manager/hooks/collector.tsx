@@ -17,16 +17,12 @@ export const useDetailColumns = ({
       dataIndex: 'name',
       key: 'name',
       width: 120,
-      ellipsis: true,
-      render: (_, record) => <>{record.name || '--'}</>,
     },
     {
       title: t('node-manager.collector.version'),
       dataIndex: 'version',
       key: 'version',
       width: 120,
-      ellipsis: true,
-      render: (_, record) => <>{record.version || '--'}</>,
     },
     {
       title: t('common.createdBy'),
