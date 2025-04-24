@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button, Form, Select, message, Spin } from 'antd';
 import { TableDataItem } from '@/app/node-manager/types';
 import { useTranslation } from '@/utils/i18n';
@@ -14,6 +14,7 @@ const { Option } = Select;
 
 const ManualInstall: React.FC<{ config: any }> = ({ config }) => {
   const { t } = useTranslation();
+  const { getInstallCommand } = useApiCloudRegion();
   const authContext = useAuth();
   const token = authContext?.token || null;
   const tokenRef = useRef(token);
@@ -22,11 +23,6 @@ const ManualInstall: React.FC<{ config: any }> = ({ config }) => {
   const [loadingCommand, setLoadingCommand] = useState<boolean>(false);
   const [sidecar, setSidecar] = useState<string | null>(null);
   const [script, setScript] = useState<string>('');
-  const { getInstallCommand } = useApiCloudRegion();
-
-  useEffect(() => {
-    setScript('');
-  }, []);
 
   const download = async () => {
     try {

@@ -23,12 +23,12 @@ const ControllerTable: React.FC<ControllerInstallProps> = ({
   const { t } = useTranslation();
   const { isLoading } = useApiClient();
   const { getControllerNodes, getCollectorNodes } = useApiCloudRegion();
+  const installMay = useInstallMap();
+  const { showGroupNames } = useGroupNames();
   const guidance = useRef<ModalRef>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [pageLoading, setPageLoading] = useState<boolean>(false);
   const [tableData, setTableData] = useState<TableDataItem[]>([]);
-  const installMay = useInstallMap();
-  const { showGroupNames } = useGroupNames();
 
   const columns: any = useMemo(() => {
     return [
@@ -37,10 +37,6 @@ const ControllerTable: React.FC<ControllerInstallProps> = ({
         dataIndex: 'ip',
         width: 100,
         key: 'ip',
-        ellipsis: true,
-        render: (value: string, row: TableDataItem) => {
-          return <>{row.ip || '--'}</>;
-        },
       },
       {
         title: t('node-manager.cloudregion.node.operateSystem'),

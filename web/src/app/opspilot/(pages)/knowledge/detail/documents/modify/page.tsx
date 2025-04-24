@@ -58,7 +58,6 @@ const KnowledgeModifyPage = () => {
   const [manualData, setManualData] = useState<{ name: string, content: string }>({ name: '', content: '' });
   const [pageLoading, setPageLoading] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
-  const [config, setConfig] = useState<any>(null);
   const [isUpdate, setIsUpdate] = useState<boolean>(false);
 
   const formRef = useRef<any>(null);
@@ -77,7 +76,7 @@ const KnowledgeModifyPage = () => {
       if (documentIds) {
         setCurrentStep(1);
         setIsUpdate(true);
-        setConfig({});
+        setPreprocessConfig({});
 
         const documentIdArray = documentIds.split(',').map(Number);
 
@@ -88,7 +87,7 @@ const KnowledgeModifyPage = () => {
           // Fetch configuration for a single document if applicable
           if (documentIdArray.length === 1) {
             const config = await getDocumentConfig(documentIdArray[0]);
-            setConfig(config);
+            setPreprocessConfig(config);
           }
         } catch {
           message.error(t('common.fetchFailed'));
@@ -340,7 +339,7 @@ const KnowledgeModifyPage = () => {
         knowledgeSourceType={type}
         knowledgeDocumentIds={documentIds}
         onConfigChange={handlePreprocessConfigChange}
-        initialConfig={config || {}}
+        initialConfig={preprocessConfig || {}}
       />,
     },
     {
