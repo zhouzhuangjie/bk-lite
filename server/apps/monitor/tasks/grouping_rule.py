@@ -120,7 +120,7 @@ class RuleGrouping:
 
         exist_instance_map = {(i.monitor_instance_id, i.organization): i.id for i in MonitorInstanceOrganization.objects.all()}
         create_asso_set = monitor_inst_asso_set - set(exist_instance_map.keys())
-        delete_asso_set = set(exist_instance_map.keys()) - monitor_inst_asso_set
+        # delete_asso_set = set(exist_instance_map.keys()) - monitor_inst_asso_set
 
         if create_asso_set:
             create_objs = [
@@ -129,6 +129,6 @@ class RuleGrouping:
             ]
             MonitorInstanceOrganization.objects.bulk_create(create_objs, batch_size=200)
 
-        if delete_asso_set:
-            delete_ids = [exist_instance_map[asso_tuple] for asso_tuple in delete_asso_set]
-            MonitorInstanceOrganization.objects.filter(id__in=delete_ids).delete()
+        # if delete_asso_set:
+        #     delete_ids = [exist_instance_map[asso_tuple] for asso_tuple in delete_asso_set]
+        #     MonitorInstanceOrganization.objects.filter(id__in=delete_ids).delete()
