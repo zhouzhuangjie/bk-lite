@@ -211,7 +211,7 @@ class LLMService:
         # 调用聊天服务
         url = f"{settings.METIS_SERVER_URL}/api/agent/invoke_chatbot_workflow"
         if kwargs["skill_type"] == SkillTypeChoices.BASIC_TOOL:
-            url = f"{settings.METIS_SERVER_URL}/api/agent/invoke_tool_agent"
+            url = f"{settings.METIS_SERVER_URL}/api/agent/invoke_react_agent"
         result = ChatServerHelper.post_chat_server(chat_kwargs, url)
         data = result["message"]
 
