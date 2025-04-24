@@ -78,8 +78,8 @@ def startup():
 
 @command_func
 def download_models():
-    logger.info("download FastEmbed")
-    EmbedBuilder().get_embed('local:text_embedding:BAAI/bge-small-zh-v1.5')
+    logger.info("download HuggingFace Embed Models")
+    EmbedBuilder().get_embed('local:huggingface_embedding:BAAI/bge-small-zh-v1.5')
 
     logger.info("download PaddleOCR")
     PPOcr()
