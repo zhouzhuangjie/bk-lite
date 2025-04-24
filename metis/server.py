@@ -21,10 +21,12 @@ config = YamlConfig(path="config.yml")
 
 # 创建全局应用实例
 app = Sanic("Metis", config=config)
-crypto = PasswordCrypto(os.getenv("SECRET_KEY"))
-users = {
-    "admin": crypto.encrypt(os.getenv("ADMIN_PASSWORD")),
-}
+
+if os.getenv('MODE', 'DEBUG') != 'DEBUG':
+    crypto = PasswordCrypto(os.getenv("SECRET_KEY"))
+    users = {
+        "admin": crypto.encrypt(os.getenv("ADMIN_PASSWORD")),
+    }
 
 
 # 配置认证
@@ -32,7 +34,7 @@ users = {
 
 @auth.verify_password
 def verify_password(username, password):
-    if os.getenv('MODE') == 'DEBUG':
+    if os.getenv('MODE', 'DEBUG') == 'DEBUG':
         return True
 
     if username in users:
@@ -72,6 +74,7 @@ def startup():
         port=int(os.getenv('APP_PORT', 18083)),
         workers=1
     )
+
 
 @command_func
 def download_models():
