@@ -9,6 +9,7 @@ CONFIG_MAP = {
     interval = "${interval}s"
     timeout = "30s"
     response_timeout = "30s"
+    http_headers = ${custom_headers}
     [inputs.prometheus.tags]
         instance_id = "${instance_id}"
         instance_type = "${instance_type}"
