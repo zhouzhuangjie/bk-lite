@@ -20,7 +20,7 @@ RUN mkdir -p /opt/fusion-collectors/log
 RUN mkdir -p /opt/fusion-collectors/generated
 
 ADD ./telegraf ./bin/telegraf
-ADD ./nats-executor ./bin/telegraf
+ADD ./nats-executor ./bin/nats-executor
 
 RUN chmod +x /opt/fusion-collectors/startup.sh
 
