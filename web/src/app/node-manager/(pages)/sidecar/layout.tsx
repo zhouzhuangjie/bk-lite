@@ -58,17 +58,19 @@ const SidecarLayout = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <SubLayout
-      layoutType={!isDetail ? 'segmented' : 'sideMenu'}
-      topSection={!isDetail || <Topsection></Topsection>}
-      showBackButton={true}
-      intro={!isDetail || <Collectorintro></Collectorintro>}
-      onBackButtonClick={() => {
-        router.back();
-      }}
-    >
-      {children}
-    </SubLayout>
+    <div className="w-full">
+      <SubLayout
+        layoutType={!isDetail ? 'segmented' : 'sideMenu'}
+        topSection={!isDetail || <Topsection></Topsection>}
+        showBackButton={true}
+        intro={!isDetail || <Collectorintro></Collectorintro>}
+        onBackButtonClick={() => {
+          router.back();
+        }}
+      >
+        {children}
+      </SubLayout>
+    </div>
   );
 };
 

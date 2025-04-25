@@ -51,7 +51,7 @@ const PreprocessStep: React.FC<{
       icon: 'yuyirenwu' 
     },
     { 
-      key: 'none', 
+      key: 'full', 
       title: t('knowledge.documents.noChunk'), 
       desc: t('knowledge.documents.noChunkDesc'), 
       icon: 'fenge1' 
@@ -80,14 +80,14 @@ const PreprocessStep: React.FC<{
     fixed_size: fixedImg,
     recursive: overlapImg,
     semantic: locale === 'en' ? semanticImgEn : semanticImgZh,
-    none: noneImg,
+    full: noneImg,
   };
 
   const chunkIntrdution = {
     fixed_size: 'fixed',
     recursive: 'overlap',
     semantic: 'semantic',
-    none: 'none',
+    full: 'none',
   };
 
   const { previewChunk, fetchEmbeddingModels } = useKnowledgeApi();
@@ -190,7 +190,7 @@ const PreprocessStep: React.FC<{
       </div>
       <div className="flex justify-between">
         <div className={`flex-1 pr-4 ${styles.config}`}>
-          {chunkType !== 'none' && (
+          {chunkType !== 'full' && (
             <>
               <h2 className="text-sm font-semibold mb-3">{t('knowledge.documents.chunkParams')}</h2>
               <div className={`rounded-md p-4 mb-6 ${styles.configItem}`}>

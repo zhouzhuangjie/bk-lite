@@ -388,7 +388,7 @@ const Node = () => {
                 columns={tableColumns}
                 loading={loading}
                 dataSource={nodelist}
-                scroll={{ y: 'calc(100vh - 400px)', x: 'calc(100vw - 300px)' }}
+                scroll={{ y: 'calc(100vh - 326px)', x: 'calc(100vw - 300px)' }}
                 rowSelection={rowSelection}
               />
             </div>
