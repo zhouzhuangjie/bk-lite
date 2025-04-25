@@ -82,7 +82,6 @@ const Configure = () => {
       dataIndex: 'data_type',
       key: 'data_type',
       width: 100,
-      render: (_, record) => <>{record.data_type || '--'}</>,
     },
     {
       title: t('common.unit'),
@@ -98,8 +97,6 @@ const Configure = () => {
       dataIndex: 'display_description',
       key: 'display_description',
       width: 150,
-      ellipsis: true,
-      render: (_, record) => <>{record.display_description || '--'}</>,
     },
     {
       title: t('common.action'),

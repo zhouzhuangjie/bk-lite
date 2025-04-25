@@ -126,8 +126,6 @@ const Asset = () => {
       dataIndex: 'agent_id',
       key: 'agent_id',
       width: 150,
-      ellipsis: true,
-      render: (_, record) => <>{record.agent_id || '--'}</>,
     },
     {
       title: t('monitor.intergrations.reportingStatus'),
@@ -353,24 +351,21 @@ const Asset = () => {
   };
 
   const getTreeData = (data: ObectItem[]): TreeItem[] => {
-    const groupedData = data.reduce(
-      (acc, item) => {
-        if (!acc[item.type]) {
-          acc[item.type] = {
-            title: item.display_type || '--',
-            key: item.type,
-            children: [],
-          };
-        }
-        acc[item.type].children.push({
-          title: `${item.display_name || '--'}(${item.instance_count ?? 0})`,
-          key: item.id,
+    const groupedData = data.reduce((acc, item) => {
+      if (!acc[item.type]) {
+        acc[item.type] = {
+          title: item.display_type || '--',
+          key: item.type,
           children: [],
-        });
-        return acc;
-      },
-      {} as Record<string, TreeItem>
-    );
+        };
+      }
+      acc[item.type].children.push({
+        title: `${item.display_name || '--'}(${item.instance_count ?? 0})`,
+        key: item.id,
+        children: [],
+      });
+      return acc;
+    }, {} as Record<string, TreeItem>);
     return Object.values(groupedData);
   };
 
