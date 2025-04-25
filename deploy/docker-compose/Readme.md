@@ -1,16 +1,17 @@
 # 使用compose部署bk-lite
 
-#### TL;DR
+## 部署要求
 
-部署前提：docker >= 20.10.23, docker-compose >=v2.27.0 
+* docker >= 20.10.23
+* docker-compose >=v2.27.0 
 
+## 安装部署
+
+> bootstrap.sh是幂等的，多次运行不会对当前部署造成影响
 ```bash
-#!/bin/bash
-# 将此仓库克隆到本地目录
+git clone https://github.com/TencentBlueKing/bk-lite.git
 cd deploy/docker-compose
-# 启动服务,一直回车即可,有调整端口需求见下文
 bash bootstrap.sh
-# bootstrap.sh是幂等的，多次运行不会对当前部署造成影响
 ```
 
 #### 端口映射说明
