@@ -1,16 +1,14 @@
-# Metis
+# 工具集
 
-## 工具集
+##  时间工具集
 
-###  时间工具集
-
-#### langchain:current_time
+### langchain:current_time
 
 | 函数名 | 中文名称 | 作用 |
 |-------|---------|------|
 | `get_current_time` | 获取当前时间 | 返回当前的系统时间，可用于记录操作时间或日志记录 |
 
-### 搜索工具集
+## 搜索工具集
 
 ### langchain:duckduckgo
 
@@ -19,9 +17,9 @@
 | `duckduckgo_search` | DuckDuckGo搜索 | 通过DuckDuckGo搜索引擎进行网络信息检索，获取相关查询结果 |
 
 
-### Jenkins工具集
+## Jenkins工具集
 
-#### langchain:jenkins
+### langchain:jenkins
 
 **运行时参数**
 | 参数名 | 中文名称 | 作用 |
@@ -35,7 +33,7 @@
 | `list_jenkins_jobs` | 列出Jenkins任务 | 获取Jenkins服务器上所有可用的构建任务列表 |
 | `trigger_jenkins_build` | 触发Jenkins构建 | 远程触发指定的Jenkins任务执行构建操作 |
 
-### Kubernetes工具集
+## Kubernetes工具集
 
 | 函数名 | 中文名称 | 作用 |
 |-------|---------|------|
