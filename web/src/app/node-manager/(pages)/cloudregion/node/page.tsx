@@ -252,13 +252,10 @@ const Node = () => {
     const data = await getCollectorlist({
       node_operating_system: selectedsystem,
     });
+    const natsexecutors = ['natsexecutor_windows', 'natsexecutor_linux'];
     const columnItems = data
       .map((tex: TableDataItem) => {
-        if (
-          ['natsexecutor_windows', 'natsexecutor_linux'].includes(
-            tex.id as string
-          )
-        ) {
+        if (natsexecutors.includes(tex.id as string)) {
           return {
             title: tex.name,
             dataIndex: tex.id,
@@ -314,9 +311,7 @@ const Node = () => {
         };
       })
       .sort((item: TableDataItem) =>
-        ['natsexecutor_windows', 'natsexecutor_linux'].includes(item.dataIndex)
-          ? -1
-          : 0
+        natsexecutors.includes(item.dataIndex) ? -1 : 0
       );
     setActiveColumns(columnItems);
   };
