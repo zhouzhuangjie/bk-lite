@@ -5,7 +5,7 @@ import path from 'path';
 export const GET = async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url);
-    const locale = searchParams.get('locale') || 'en';
+    const locale = searchParams.get('locale') === 'en' ? 'en' : 'zh';
 
     const versionsDirectory = path.join(process.cwd(), `public/app/versions/${locale}`);
     const versionFiles = fs.readdirSync(versionsDirectory)
