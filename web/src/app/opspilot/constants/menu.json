@@ -26,7 +26,7 @@
         },
         {
           "title": "日志",
-          "url": "/opspilot/studio/detail/logs",
+          "url": "/opspilot/studio/detail/logInfo",
           "icon": "talk-line",
           "name": "bot_conversation_log"
         },
@@ -206,7 +206,7 @@
         },
         {
           "title": "Logs",
-          "url": "/opspilot/studio/detail/logs",
+          "url": "/opspilot/studio/detail/logInfo",
           "icon": "talk-line",
           "name": "bot_conversation_log"
         },
