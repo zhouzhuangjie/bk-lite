@@ -1,4 +1,3 @@
-from apps.monitor.constants import STARGAZER_URL
 from apps.rpc.node_mgmt import NodeMgmt
 
 
@@ -44,13 +43,14 @@ class FormatChildConfig:
                     username, password = config.get("username", ""), config.get("password", "")
                     host = instance.get("host", "")
                     interval = config.get("interval", 60)
-                    url = f"{STARGAZER_URL}/api/monitor/{instance_type}/metrics?username={username}&password={password}&host={host}"
+                    url = "${STARGAZER_URL}/api/monitor/vmware/metrics"
                     config_info = {
                         "type": config["type"],
                         "instance_id": instance_id,
                         "instance_type": instance_type,
                         "interval": interval,
                         "url": url,
+                        "custom_headers": {"username":username, "password":password, "host":host},
                     }
                     node_info["configs"].append(config_info)
 
