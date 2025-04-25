@@ -1,7 +1,7 @@
 import datetime
 
 from core.config import YamlConfig
-from monitor.cmp.driver import CMPDriver
+from common.cmp.driver import CMPDriver
 from monitor.utils import convert_to_prometheus
 
 from sanic import Blueprint
