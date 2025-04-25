@@ -357,7 +357,7 @@ const ControllerInstall: React.FC<ControllerInstallProps> = ({
   const getSidecarList = async () => {
     setPageLoading(true);
     try {
-      const data = await getPackages({ os: config.os });
+      const data = await getPackages({ os: config.os, object: 'Controller' });
       setSidecarVersionList(data);
     } finally {
       setPageLoading(false);

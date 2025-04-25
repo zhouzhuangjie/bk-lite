@@ -252,12 +252,32 @@ const Node = () => {
     const data = await getCollectorlist({
       node_operating_system: selectedsystem,
     });
-    const columnItems = data.map((tex: TableDataItem) => {
-      if (
-        ['natsexecutor_windows', 'natsexecutor_linux'].includes(
-          tex.id as string
-        )
-      ) {
+    const natsexecutors = ['natsexecutor_windows', 'natsexecutor_linux'];
+    const columnItems = data
+      .map((tex: TableDataItem) => {
+        if (natsexecutors.includes(tex.id as string)) {
+          return {
+            title: tex.name,
+            dataIndex: tex.id,
+            render: (key: string, item: TableDataItem) => {
+              const target = (item.status.collectors || []).find(
+                (item: TableDataItem) => item.collector_id === tex.id
+              );
+              return target ? (
+                <Tooltip title={`${target?.message}`}>
+                  <Tag
+                    bordered={false}
+                    color={!target?.status ? 'success' : 'error'}
+                  >
+                    {!target?.status ? 'Running' : 'Error'}
+                  </Tag>
+                </Tooltip>
+              ) : (
+                '--'
+              );
+            },
+          };
+        }
         return {
           title: tex.name,
           dataIndex: tex.id,
@@ -267,51 +287,32 @@ const Node = () => {
             );
             return target ? (
               <Tooltip title={`${target?.message}`}>
-                <Tag
-                  bordered={false}
-                  color={!target?.status ? 'success' : 'error'}
-                >
-                  {!target?.status ? 'Running' : 'Error'}
-                </Tag>
+                <div>
+                  <span
+                    className="recordStatus"
+                    style={{
+                      backgroundColor:
+                        statusMap[target?.status]?.color || '#b2b5bd',
+                    }}
+                  ></span>
+                  <span
+                    style={{
+                      color: statusMap[target?.status]?.color || '#b2b5bd',
+                    }}
+                  >
+                    {!target?.status ? 'Running' : 'Error'}
+                  </span>
+                </div>
               </Tooltip>
             ) : (
               '--'
             );
           },
         };
-      }
-      return {
-        title: tex.name,
-        dataIndex: tex.id,
-        render: (key: string, item: TableDataItem) => {
-          const target = (item.status.collectors || []).find(
-            (item: TableDataItem) => item.collector_id === tex.id
-          );
-          return target ? (
-            <Tooltip title={`${target?.message}`}>
-              <div>
-                <span
-                  className="recordStatus"
-                  style={{
-                    backgroundColor:
-                      statusMap[target?.status]?.color || '#b2b5bd',
-                  }}
-                ></span>
-                <span
-                  style={{
-                    color: statusMap[target?.status]?.color || '#b2b5bd',
-                  }}
-                >
-                  {!target?.status ? 'Running' : 'Error'}
-                </span>
-              </div>
-            </Tooltip>
-          ) : (
-            '--'
-          );
-        },
-      };
-    });
+      })
+      .sort((item: TableDataItem) =>
+        natsexecutors.includes(item.dataIndex) ? -1 : 0
+      );
     setActiveColumns(columnItems);
   };
 
