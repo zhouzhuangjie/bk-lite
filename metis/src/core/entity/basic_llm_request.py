@@ -25,3 +25,5 @@ class BasicLLMReuqest(BaseModel):
     naive_rag_request: List[ElasticSearchRetrieverRequest] = []
 
     rag_stage: str = 'naive-rag'
+
+    extra_config: Optional[dict] = {}

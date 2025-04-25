@@ -39,3 +39,6 @@ duckduckgo-search==7.2.1
 playwright==1.51.0
 sanic-fire==0.1
 langchain-huggingface==0.1.2
+
+python-jenkins==1.8.2
+kubernetes==32.0.1
