@@ -418,7 +418,7 @@ const Configure = () => {
             </Button>
           </Permission>
           <Permission requiredPermissions={['Add Metric']}>
-            <Button onClick={() => openMetricModal('Add Metric')}>
+            <Button onClick={() => openMetricModal('add')}>
               {t('monitor.intergrations.addMetric')}
             </Button>
           </Permission>
