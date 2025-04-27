@@ -14,6 +14,7 @@ from apps.cmdb.utils.change_record import create_change_record
 from apps.core.logger import logger
 from apps.core.utils.celery_utils import crontab_format, CeleryUtils
 from apps.rpc.node_mgmt import NodeMgmt
+from apps.rpc.stargazer import Stargazer
 
 
 class CollectModelService(object):
@@ -165,5 +166,17 @@ class CollectModelService(object):
             "association": len(format_data.get("association", [])),
         }
         instance.save()
+
+        return result
+
+    @classmethod
+    def list_regions(cls, plugin_id, credential):
+        data = {
+            "plugin_name": plugin_id,
+            "_timeout": 5,
+            **credential
+        }
+        stargazer = Stargazer()
+        result = stargazer.list_regions(data)
 
         return result

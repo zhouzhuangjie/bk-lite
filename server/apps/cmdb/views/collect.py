@@ -162,6 +162,17 @@ class CollectModelViewSet(ModelViewSet):
         result = [{"id": instance[0]["_id"], "inst_name": instance[0]["inst_name"]} for instance in instances]
         return WebUtils.response_success(result)
 
+    @action(methods=["POST"], detail=False)
+    def list_regions(self, requests, *args, **kwargs):
+        """
+        查询云的所有区域
+        """
+        params = requests.data
+        model_id = params.pop("model_id")
+        plugin_id = "{}_info".format(model_id.split("_", 1)[0])
+        result = CollectModelService.list_regions(plugin_id, params)
+        return WebUtils.response_success(result)
+
 
 class MidModelViewSet(ModelViewSet):
     queryset = OidMapping.objects.all()

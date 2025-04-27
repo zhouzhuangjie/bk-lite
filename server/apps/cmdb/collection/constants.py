@@ -113,3 +113,10 @@ NETWORK_INTERFACES_RELATIONS = "network_topo_info_gauge"
 PROTOCOL_METRIC_MAP = {
     "mysql": ["mysql_info_gauge"],
 }
+
+# aliyun
+ALIYUN_COLLECT_CLUSTER = [
+    "aliyun_ecs_info_gauge", "aliyun_bucket_info_gauge", "aliyun_mysql_info_gauge",
+    "aliyun_pgsql_info_gauge", "aliyun_redis_info_gauge", "aliyun_mongodb_info_gauge",
+    "aliyun_kafka_info_gauge", "aliyun_clb_info_gauge"
+]
