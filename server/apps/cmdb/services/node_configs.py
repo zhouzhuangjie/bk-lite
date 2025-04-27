@@ -11,7 +11,8 @@ from abc import abstractmethod, ABCMeta
 class BaseNodeParams(metaclass=ABCMeta):
     PLUGIN_MAP = {}
     _registry = {}  # 自动收集支持的 model_id 对应的子类
-    BASE_INTERVAL_MAP = {"vmware_vc": 300, "network": 300, "network_topo": 300, "mysql_info": 300}  # 默认的采集间隔时间
+    BASE_INTERVAL_MAP = {"vmware_vc": 300, "network": 300, "network_topo": 300, "mysql_info": 300,
+                         "aliyun_info": 300}  # 默认的采集间隔时间
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -27,10 +28,12 @@ class BaseNodeParams(metaclass=ABCMeta):
         self.credential = self.instance.credential
         self.base_path = "${STARGAZER_URL}/api/collect/collect_info"
         self.host_field = "host"  # 默认的 ip字段 若不一样重新定义
+        self.timeout = "40s" if self.instance.is_cloud else "30s"
+        self.response_timeout = "40s" if self.instance.is_cloud else "30s"
 
     def get_host_ip_addr(self, host):
         if isinstance(host, dict):
-            ip_addr = host["ip_addr"]
+            ip_addr = host.get("ip_addr", "")
         else:
             ip_addr = host
         return self.host_field, ip_addr
@@ -130,8 +133,9 @@ class BaseNodeParams(metaclass=ABCMeta):
                     "type": "http",
                     "instance_id": str((self.get_instance_id(host),)),
                     "interval": self.BASE_INTERVAL_MAP.get(self.model_id, 60),
-                    "instance_type": self.get_instance_type
-                    # "task_id": self.instance.id,
+                    "instance_type": self.get_instance_type,
+                    "timeout": self.timeout,
+                    "response_timeout": self.response_timeout
                 }]
             })
         return {"object_type": "http", "nodes": nodes}
@@ -247,6 +251,32 @@ class MysqlNodeParams(BaseNodeParams):
             "port": self.credential.get("port", 3306),
             "user": self.credential.get("user", ""),
             "password": self.credential.get("password", ""),
+        }
+        return credential_data
+
+    def get_instance_id(self, instance):
+        """
+        获取实例 id
+        """
+        if self.has_set_instances:
+            return f"{self.instance.id}_{instance['inst_name']}"
+        else:
+            return f"{self.instance.id}_{instance}"
+
+
+class AliyunNodeParams(BaseNodeParams):
+    supported_model_id = "aliyun_account"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.PLUGIN_MAP.update({self.model_id: "aliyun_info"})
+
+    def set_credential(self):
+        regions_id = self.credential["regions"]["resource_id"]
+        credential_data = {
+            "access_key": self.credential.get("accessKey", ""),
+            "access_secret": self.credential.get("accessSecret", ""),
+            "region_id": regions_id
         }
         return credential_data
 
