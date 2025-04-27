@@ -1,9 +1,12 @@
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from apps.node_mgmt.filters.collector import CollectorFilter
 from apps.node_mgmt.models.sidecar import Collector
 from apps.node_mgmt.serializers.collector import CollectorSerializer
+from django.core.cache import cache
 
 
 class CollectorViewSet(ModelViewSet):
@@ -23,7 +26,15 @@ class CollectorViewSet(ModelViewSet):
         tags=['Collector']
     )
     def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        # 清除cache中的etag
+        cache.delete("collectors_etag")
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     @swagger_auto_schema(
         operation_summary="更新采集器",
