@@ -1,12 +1,10 @@
 import os
 
-from dotenv import load_dotenv
 from loguru import logger
 
 from src.core.entity.chat_history import ChatHistory
-from src.rag.native_rag.entity.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
-from src.service.chatbot_workflow.entity.chatbot_workflow_request import ChatBotWorkflowRequest
-from src.service.chatbot_workflow.graph.chatbot_workflow_graph import ChatBotWorkflowGraph
+from src.entity.agent.chatbot_workflow_request import ChatBotWorkflowRequest
+from src.agent.chatbot_workflow.chatbot_workflow_graph import ChatBotWorkflowGraph
 
 
 def test_chat():

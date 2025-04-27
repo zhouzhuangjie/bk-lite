@@ -2,14 +2,11 @@ import os
 from typing import List
 
 import pytest
-from dotenv import load_dotenv
-from langchain_community.tools import ShellTool
-from langchain_core.tools import BaseTool
 from loguru import logger
 
 from src.core.entity.tools_server import ToolsServer
-from src.service.react_agent.entity.react_agent_request import ReActAgentRequest
-from src.service.react_agent.graph.react_agent_graph import ReActAgentGraph
+from src.entity.agent.react_agent_request import ReActAgentRequest
+from src.agent.react_agent.react_agent_graph import ReActAgentGraph
 
 
 @pytest.mark.asyncio

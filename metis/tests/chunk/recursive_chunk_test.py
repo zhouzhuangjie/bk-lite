@@ -12,7 +12,7 @@ from src.loader.text_loader import TextLoader
 
 def test_recursive_chunk():
     chunk = RecursiveChunk()
-    loader = TextLoader(path='./tests/assert/full_text_loader.txt')
+    loader = TextLoader(path='./tests/assert/full_text_loader.txt',load_mode='full')
     docs = loader.load()
     rs = chunk.chunk(docs)
     logger.info(rs)

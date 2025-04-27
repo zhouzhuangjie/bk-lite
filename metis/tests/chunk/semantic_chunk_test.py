@@ -16,7 +16,7 @@ def test_semantic_chunk():
     )
 
     chunk = SemanticChunk(embeddings)
-    loader = TextLoader(path='./tests/assert/full_text_loader.txt')
+    loader = TextLoader(path='./tests/assert/full_text_loader.txt',load_mode='full')
     docs = loader.load()
     rs = chunk.chunk(docs)
     print(rs)

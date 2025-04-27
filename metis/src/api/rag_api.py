@@ -27,14 +27,14 @@ from src.loader.website_loader import WebSiteLoader
 from src.ocr.azure_ocr import AzureOCR
 from src.ocr.olm_ocr import OlmOcr
 from src.ocr.pp_ocr import PPOcr
-from src.rag.native_rag.entity.elasticsearch_document_count_request import ElasticSearchDocumentCountRequest
-from src.rag.native_rag.entity.elasticsearch_document_delete_request import ElasticSearchDocumentDeleteRequest
-from src.rag.native_rag.entity.elasticsearch_document_list_request import ElasticSearchDocumentListRequest
-from src.rag.native_rag.entity.elasticsearch_document_metadata_update_request import \
+from src.entity.rag.elasticsearch_document_count_request import ElasticSearchDocumentCountRequest
+from src.entity.rag.elasticsearch_document_delete_request import ElasticSearchDocumentDeleteRequest
+from src.entity.rag.elasticsearch_document_list_request import ElasticSearchDocumentListRequest
+from src.entity.rag.elasticsearch_document_metadata_update_request import \
     ElasticsearchDocumentMetadataUpdateRequest
-from src.rag.native_rag.entity.elasticsearch_index_delete_request import ElasticSearchIndexDeleteRequest
-from src.rag.native_rag.entity.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
-from src.rag.native_rag.entity.elasticsearch_store_request import ElasticSearchStoreRequest
+from src.entity.rag.elasticsearch_index_delete_request import ElasticSearchIndexDeleteRequest
+from src.entity.rag.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
+from src.entity.rag.elasticsearch_store_request import ElasticSearchStoreRequest
 from src.rag.native_rag.rag.elasticsearch_rag import ElasticSearchRag
 
 rag_api_router = Blueprint("rag", url_prefix="/rag")

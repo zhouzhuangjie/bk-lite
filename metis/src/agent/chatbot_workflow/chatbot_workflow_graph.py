@@ -2,10 +2,10 @@ from langgraph.constants import END
 from langgraph.graph import StateGraph
 
 from src.core.graph.basic_graph import BasicGraph
-from src.service.chatbot_workflow.entity.chatbot_workflow_request import ChatBotWorkflowRequest
-from src.service.chatbot_workflow.entity.chatbot_workflow_response import ChatBotWorkflowResponse
-from src.service.chatbot_workflow.node.chatbot_workflow_node import ChatBotWorkflowNode
-from src.service.chatbot_workflow.state.chatbot_workflow_state import ChatBotWorkflowState
+from src.entity.agent.chatbot_workflow_request import ChatBotWorkflowRequest
+from src.entity.agent.chatbot_workflow_response import ChatBotWorkflowResponse
+from src.agent.chatbot_workflow.chatbot_workflow_node import ChatBotWorkflowNode
+from src.agent.chatbot_workflow.chatbot_workflow_state import ChatBotWorkflowState
 from langgraph.pregel import RetryPolicy
 
 

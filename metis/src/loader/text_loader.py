@@ -6,7 +6,7 @@ from loguru import logger
 
 
 class TextLoader(BaseLoader):
-    def __init__(self, path, load_mode):
+    def __init__(self, path, load_mode='full'):
         self.path = path
         self.load_mode = load_mode
 
@@ -16,8 +16,7 @@ class TextLoader(BaseLoader):
         docs: List[Document] = []
 
         with open(self.path, 'r', encoding="utf-8") as f:
-
-            if self.load_mode== "full":
+            if self.load_mode == "full":
                 full_text = f.read()
                 docs.append(Document(full_text))
 

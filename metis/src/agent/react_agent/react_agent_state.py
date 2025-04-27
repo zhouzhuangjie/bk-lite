@@ -2,7 +2,7 @@ from typing import TypedDict, Annotated
 
 from langgraph.graph import add_messages
 
-from src.service.react_agent.entity.react_agent_request import ReActAgentRequest
+from src.entity.agent.react_agent_request import ReActAgentRequest
 
 
 class ReActAgentState(TypedDict):

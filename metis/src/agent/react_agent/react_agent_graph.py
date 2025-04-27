@@ -2,10 +2,10 @@ from langgraph.constants import END
 from langgraph.graph import StateGraph
 
 from src.core.graph.tools_graph import ToolsGraph
-from src.service.react_agent.entity.react_agent_request import ReActAgentRequest
-from src.service.react_agent.entity.react_agent_response import ReActAgentResponse
-from src.service.react_agent.node.react_agent_node import ReActAgentNode
-from src.service.react_agent.state.react_agent_state import ReActAgentState
+from src.entity.agent.react_agent_request import ReActAgentRequest
+from src.entity.agent.react_agent_response import ReActAgentResponse
+from src.agent.react_agent.react_agent_node import ReActAgentNode
+from src.agent.react_agent.react_agent_state import ReActAgentState
 from langgraph.pregel import RetryPolicy
 
 
