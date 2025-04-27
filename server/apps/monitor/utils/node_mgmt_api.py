@@ -41,6 +41,7 @@ class FormatChildConfig:
                 node_info = {"id": node_id, "configs": []}
                 for config in configs:
                     username, password = config.get("username", ""), config.get("password", "")
+                    timeout, response_timeout = config.get("timeout", 60), config.get("response_timeout", 60)
                     host = instance.get("host", "")
                     interval = config.get("interval", 60)
                     url = "${STARGAZER_URL}/api/monitor/vmware/metrics"
@@ -50,6 +51,8 @@ class FormatChildConfig:
                         "instance_type": instance_type,
                         "interval": interval,
                         "url": url,
+                        "timeout": timeout,
+                        "response_timeout": response_timeout,
                         "custom_headers": {"username":username, "password":password, "host":host},
                     }
                     node_info["configs"].append(config_info)

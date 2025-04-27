@@ -12,6 +12,7 @@ from apps.node_mgmt.serializers.collector_configuration import (
 )
 from apps.node_mgmt.filters.collector_configuration import CollectorConfigurationFilter
 from apps.node_mgmt.services.collector_configuration import CollectorConfigurationService
+from django.core.cache import cache
 
 
 class CollectorConfigurationViewSet(ModelViewSet):
@@ -94,6 +95,9 @@ class CollectorConfigurationViewSet(ModelViewSet):
         request_body=CollectorConfigurationCreateSerializer,
     )
     def create(self, request, *args, **kwargs):
+        # 清除cache中的etag
+        pk = kwargs.get('pk')
+        cache.delete(f"configuration_etag_{pk}")
         self.serializer_class = CollectorConfigurationCreateSerializer
         return super().create(request, *args, **kwargs)
 
@@ -103,6 +107,9 @@ class CollectorConfigurationViewSet(ModelViewSet):
         request_body=CollectorConfigurationUpdateSerializer,
     )
     def partial_update(self, request, *args, **kwargs):
+        # 清除cache中的etag
+        pk = kwargs.get('pk')
+        cache.delete(f"configuration_etag_{pk}")
         self.serializer_class = CollectorConfigurationUpdateSerializer
         return super().partial_update(request, *args, **kwargs)
 
@@ -118,6 +125,7 @@ class CollectorConfigurationViewSet(ModelViewSet):
         tags=['CollectorConfiguration']
     )
     def update(self, request, *args, **kwargs):
+
         return super().update(request, *args, **kwargs)
 
     @swagger_auto_schema(

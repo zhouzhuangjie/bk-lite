@@ -3,12 +3,13 @@
 # @Time: 2025/3/25 17:15
 # @Author: windyzhao
 from abc import ABCMeta, abstractmethod
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import requests
 
 from apps.cmdb.constants import VICTORIAMETRICS_HOST
 from apps.cmdb.models import CollectModels
+from apps.core.logger import logger
 
 
 def timestamp_gt_one_day_ago(collect_timestamp):
@@ -93,3 +94,20 @@ class CollectBase(metaclass=ABCMeta):
         self.format_data(data)
         self.format_metrics()
         return self.result
+
+    @staticmethod
+    def convert_datetime_format(time_str):
+        if not time_str:
+            return ""
+        try:
+            # 解析为 datetime 对象
+            dt = datetime.strptime(time_str, "%Y-%m-%d %H:%M:%S")
+            # 添加微秒并设置为 UTC 时区
+            dt_utc = dt.replace(tzinfo=timezone.utc)
+            # 转换为 ISO 8601 格式
+            iso_format = dt_utc.isoformat()
+        except Exception as err:
+            logger.error("==Time Change Error! error={}==".format(err))
+            iso_format = ""
+
+        return iso_format

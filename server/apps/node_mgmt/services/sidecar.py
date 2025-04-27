@@ -1,10 +1,10 @@
 import hashlib
 import logging
+from datetime import datetime, timezone
 from string import Template
 
 from django.core.cache import cache
-from django.http import JsonResponse
-from django.utils.http import quote_etag
+from django.http import JsonResponse, HttpResponse
 
 from apps.node_mgmt.constants import L_INSTALL_DOWNLOAD_URL, L_SIDECAR_DOWNLOAD_URL, W_SIDECAR_DOWNLOAD_URL, LOCAL_HOST
 from apps.node_mgmt.default_config.nats_executor import create_nats_executor_config
@@ -20,8 +20,8 @@ class Sidecar:
 
     @staticmethod
     def generate_etag(data):
-        """根据Collector列表生成ETag"""
-        return quote_etag(hashlib.md5(data.encode('utf-8')).hexdigest())
+        """根据数据生成干净的 ETag，不加引号"""
+        return hashlib.md5(data.encode('utf-8')).hexdigest()
 
     @staticmethod
     def get_version():
@@ -34,13 +34,17 @@ class Sidecar:
 
         # 获取客户端的 ETag
         if_none_match = request.headers.get('If-None-Match')
+        if if_none_match:
+            if_none_match = if_none_match.strip('"')
 
         # 从缓存中获取采集器的 ETag
         cached_etag = cache.get('collectors_etag')
 
         # 如果缓存的 ETag 存在且与客户端的相同，则返回 304 Not Modified
         if cached_etag and cached_etag == if_none_match:
-            return JsonResponse(status=304, data={}, headers={'ETag': cached_etag})
+            response = HttpResponse(status=304)
+            response['ETag'] = cached_etag
+            return response
 
         # 从数据库获取采集器列表
         collectors = list(Collector.objects.values())
@@ -63,13 +67,21 @@ class Sidecar:
 
         # 获取客户端发送的ETag
         if_none_match = request.headers.get('If-None-Match')
+        if if_none_match:
+            if_none_match = if_none_match.strip('"')
 
         # 从缓存中获取node的ETag
         cached_etag = cache.get(f"node_etag_{node_id}")
 
         # 如果缓存的ETag存��且与客户端的相同，则返回304 Not Modified
         if cached_etag and cached_etag == if_none_match:
-            return JsonResponse(status=304, data={}, headers={'ETag': cached_etag})
+
+            # 更新时间
+            Node.objects.filter(id=node_id).update(updated_at=datetime.now(timezone.utc).isoformat())
+
+            response = HttpResponse(status=304)
+            response['ETag'] = cached_etag
+            return response
 
         # 从请求体中获取数据
         request_data = dict(
@@ -97,6 +109,8 @@ class Sidecar:
             create_nats_executor_config(node)
 
         else:
+            # 更新时间
+            request_data.update(updated_at=datetime.now(timezone.utc).isoformat())
             # 更新节点
             Node.objects.filter(id=node_id).update(**request_data)
 
@@ -138,13 +152,17 @@ class Sidecar:
 
         # 获取客户端发送的 ETag
         if_none_match = request.headers.get('If-None-Match')
+        if if_none_match:
+            if_none_match = if_none_match.strip('"')
 
         # 从缓存中获取配置的 ETag
         cached_etag = cache.get(f"configuration_etag_{configuration_id}")
 
         # 对比客户端的 ETag 和缓存的 ETag
         if cached_etag and cached_etag == if_none_match:
-            return JsonResponse(status=304, data={}, headers={'ETag': cached_etag})
+            response = HttpResponse(status=304)
+            response['ETag'] = cached_etag
+            return response
 
         # 从数据库获取节点信息
         node = Node.objects.filter(id=node_id).first()
