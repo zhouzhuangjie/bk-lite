@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import mixins
 from rest_framework.decorators import action
@@ -88,6 +89,11 @@ class NodeViewSet(mixins.DestroyModelMixin,
         node_ids = serializer.validated_data["node_ids"]
         collector_configuration_id = serializer.validated_data["collector_configuration_id"]
         result, message = NodeService.batch_binding_node_configuration(node_ids, collector_configuration_id)
+
+        # 清除cache中的etag
+        for node_id in node_ids:
+            cache.delete(f"node_etag_{node_id}")
+
         if result:
             return WebUtils.response_success(message)
         else:
@@ -107,6 +113,11 @@ class NodeViewSet(mixins.DestroyModelMixin,
         collector_id = serializer.validated_data["collector_id"]
         operation = serializer.validated_data["operation"]
         NodeService.batch_operate_node_collector(node_ids, collector_id, operation)
+
+        # 清除cache中的etag
+        for node_id in node_ids:
+            cache.delete(f"node_etag_{node_id}")
+
         return WebUtils.response_success()
 
     @swagger_auto_schema(
