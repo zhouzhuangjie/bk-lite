@@ -37,7 +37,7 @@ const ProviderModal: React.FC<ProviderModalProps> = ({
       const config = model[configField as keyof Model] as ModelConfig | undefined;
       form.setFieldsValue({
         name: model.name || '',
-        modelName: model.llm_config?.model || '',
+        modelName: (model[configField as keyof Model] as ModelConfig)?.model || '',
         type: model.llm_model_type || '',
         team: model.team,
         apiKey: filterType === 'llm_model' ? model.llm_config?.openai_api_key || '' : config?.api_key || '',
@@ -82,7 +82,7 @@ const ProviderModal: React.FC<ProviderModalProps> = ({
         >
           <AntdInput placeholder={`${t('common.input')}${t('provider.form.name')}`} />
         </Form.Item>
-        {filterType === 'llm_model' && (<Form.Item
+        {filterType !== 'ocr_provider' && (<Form.Item
           name="modelName"
           label={t('provider.form.modelName')}
           rules={[{ required: true, message: `${t('common.input')}${t('provider.form.modelName')}` }]}

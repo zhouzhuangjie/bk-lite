@@ -1,29 +1,21 @@
-import json
-import os
-from datetime import datetime
-
-import yaml
-from dotenv import load_dotenv
+from kubernetes.client import ApiException
+from langchain_core.runnables import RunnableConfig
+from langchain_core.tools import tool
 from kubernetes import client, config
-from kubernetes.client.rest import ApiException
-from mcp.server.fastmcp import FastMCP
-
-load_dotenv()
-mcp = FastMCP("Kubernetes MCP", port=os.getenv("APP_PORT", 7000))
-
-if os.getenv('KUBE_CONFIG_FILE') == "":
-    config.load_incluster_config()
-else:
-    config.load_kube_config(config_fzile=os.getenv('KUBE_CONFIG_FILE'))
-
-core_v1 = client.CoreV1Api()
-apps_v1 = client.AppsV1Api()
-batch_v1 = client.BatchV1Api()
-custom_objects = client.CustomObjectsApi()
+import json
+from datetime import datetime
+import yaml
 
 
-@mcp.tool()
-def get_namespaces():
+def prepare_context(cfg):
+    if cfg['configurable']['kubeconfig_path']:
+        config.load_kube_config(cfg['configurable']['kubeconfig_path'])
+    else:
+        config.load_incluster_config()
+
+
+@tool()
+def get_kubernetes_namespaces(config: RunnableConfig):
     """
     List all namespaces in the Kubernetes cluster.
 
@@ -36,7 +28,10 @@ def get_namespaces():
     Raises:
         ApiException: If there is an error communicating with the Kubernetes API
     """
+    prepare_context(config)
+
     try:
+        core_v1 = client.CoreV1Api()
         namespaces = core_v1.list_namespace()
         result = []
         for ns in namespaces.items:
@@ -52,12 +47,12 @@ def get_namespaces():
                 }
             )
         return json.dumps(result)
-    except ApiException as e:
+    except Exception as e:
         return json.dumps({"error": str(e)}), 500
 
 
-@mcp.tool()
-def list_pods(namespace=None):
+@tool()
+def list_kubernetes_pods(namespace=None, config: RunnableConfig = None):
     """
     Lists all pods in the specified Kubernetes namespace or across all namespaces.
 
@@ -81,7 +76,8 @@ def list_pods(namespace=None):
     Raises:
         ApiException: If there is an error communicating with the Kubernetes API
     """
-
+    prepare_context(config)
+    core_v1 = client.CoreV1Api()
     try:
         if namespace:
             pods = core_v1.list_namespaced_pod(namespace)
@@ -125,10 +121,12 @@ def list_pods(namespace=None):
         return json.dumps({"error": str(e)}), 500
 
 
-@mcp.tool()
-def list_nodes():
+@tool()
+def list_kubernetes_nodes(config: RunnableConfig):
     """List all nodes and their status"""
     try:
+        prepare_context(config)
+        core_v1 = client.CoreV1Api()
         nodes = core_v1.list_node()
         result = []
         for node in nodes.items:
@@ -170,8 +168,8 @@ def list_nodes():
         return json.dumps({"error": str(e)}), 500
 
 
-@mcp.tool()
-def list_deployments(namespace=None):
+@tool()
+def list_kubernetes_deployments(namespace=None, config: RunnableConfig = None):
     """
     List deployments with optional namespace filter
 
@@ -179,6 +177,8 @@ def list_deployments(namespace=None):
         namespaces (list, optional): A list of namespace names to filter pods by.
             If None, pods from all namespaces will be returned. Defaults to None.
     """
+    prepare_context(config)
+    apps_v1 = client.AppsV1Api()
     try:
         if namespace:
             deployments = apps_v1.list_namespaced_deployment(namespace)
@@ -207,16 +207,30 @@ def list_deployments(namespace=None):
         return json.dumps({"error": str(e)}), 500
 
 
-@mcp.tool()
-def list_services(namespace=None):
+@tool()
+def list_kubernetes_services(namespace=None, config: RunnableConfig = None):
     """
     List services with optional namespace filter
 
     Args:
-        namespaces (list, optional): A list of namespace names to filter pods by.
-            If None, pods from all namespaces will be returned. Defaults to None.
+        namespace (str, optional): The namespace to filter services by.
+            If None, services from all namespaces will be returned. Defaults to None.
+        config (RunnableConfig): Configuration for the tool.
+
+    Returns:
+        str: JSON string containing an array of service objects with fields:
+            - name (str): Name of the service
+            - namespace (str): Namespace where the service is running
+            - type (str): Type of the service (ClusterIP, NodePort, LoadBalancer)
+            - cluster_ip (str): The cluster IP address assigned to the service
+            - external_ip (str): External IP address, if available
+            - ports (list): List of ports exposed by the service
+            - selector (dict): Label selector used by the service
+            - creation_time (str): Timestamp when service was created
     """
+    prepare_context(config)
     try:
+        core_v1 = client.CoreV1Api()
         if namespace:
             services = core_v1.list_namespaced_service(namespace)
         else:
@@ -261,16 +275,30 @@ def list_services(namespace=None):
         return json.dumps({"error": str(e)}), 500
 
 
-@mcp.tool()
-def list_events(namespace=None):
+@tool()
+def list_kubernetes_events(namespace=None, config: RunnableConfig = None):
     """
     List events with optional namespace filter
 
     Args:
-        namespaces (list, optional): A list of namespace names to filter pods by.
-            If None, pods from all namespaces will be returned. Defaults to None.
+        namespace (str, optional): The namespace to filter events by.
+            If None, events from all namespaces will be returned. Defaults to None.
+        config (RunnableConfig): Configuration for the tool.
+
+    Returns:
+        str: JSON string containing an array of event objects with fields:
+            - type (str): Type of event (Normal, Warning)
+            - reason (str): Short reason for the event
+            - message (str): Detailed message about the event
+            - object (str): Object involved in the event
+            - namespace (str): Namespace where the event occurred
+            - count (int): Number of times this event has occurred
+            - first_time (str): Timestamp when event first occurred
+            - last_time (str): Timestamp when event last occurred
     """
+    prepare_context(config)
     try:
+        core_v1 = client.CoreV1Api()
         if namespace:
             events = core_v1.list_namespaced_event(namespace)
         else:
@@ -294,22 +322,22 @@ def list_events(namespace=None):
                     else None,
                 }
             )
-        # Sort by last_time (newest first)
-        # TODO: fix issue with sorting
-        # result.sort(key=lambda x: x.get("last_time", ""), reverse=True)
         return json.dumps(result)
     except ApiException as e:
         return json.dumps({"error": str(e)}), 500
 
 
-@mcp.tool()
-def failed_pods():
+@tool()
+def get_failed_kubernetes_pods(config: RunnableConfig = None):
     """
     List all pods in Failed or Error state across all namespaces.
 
     Identifies pods that are in a failed state, including those in CrashLoopBackOff,
     ImagePullBackOff, or other error states. Provides detailed container status
     information to aid in troubleshooting.
+
+    Args:
+        config (RunnableConfig): Configuration for the tool.
 
     Returns:
         str: JSON string containing an array of failed pod objects with fields:
@@ -325,7 +353,9 @@ def failed_pods():
     Raises:
         ApiException: If there is an error communicating with the Kubernetes API
     """
+    prepare_context(config)
     try:
+        core_v1 = client.CoreV1Api()
         pods = core_v1.list_pod_for_all_namespaces()
         failed = []
 
@@ -380,10 +410,26 @@ def failed_pods():
         return json.dumps({"error": str(e)}), 500
 
 
-@mcp.tool()
-def pending_pods():
-    """List all pods in Pending state and why they're pending"""
+@tool()
+def get_pending_kubernetes_pods(config: RunnableConfig = None):
+    """
+    List all pods in Pending state and why they're pending
+
+    Args:
+        config (RunnableConfig): Configuration for the tool.
+
+    Returns:
+        str: JSON string containing an array of pending pod objects with fields:
+            - name (str): Name of the pod
+            - namespace (str): Namespace where the pod is running
+            - node (str): Name of the node assigned to the pod, if any
+            - reason (str): Reason why the pod is pending
+            - message (str): Detailed message about the pending reason
+            - creation_time (str): Timestamp when pod was created
+    """
+    prepare_context(config)
     try:
+        core_v1 = client.CoreV1Api()
         pods = core_v1.list_pod_for_all_namespaces()
         pending = []
 
@@ -429,17 +475,27 @@ def pending_pods():
         return json.dumps({"error": str(e)}), 500
 
 
-@mcp.tool()
-def high_restart_pods(restart_threshold=5):
+@tool()
+def get_high_restart_kubernetes_pods(restart_threshold=5, config: RunnableConfig = None):
     """
-    Find pods with high restart counts (>5)
+    Find pods with high restart counts
 
     Args:
         restart_threshold (int, optional): The minimum number of restarts
             required to include a pod in the results. Defaults to 5.
-    """
+        config (RunnableConfig): Configuration for the tool.
 
+    Returns:
+        str: JSON string containing an array of high-restart pod objects with fields:
+            - name (str): Name of the pod
+            - namespace (str): Namespace where the pod is running
+            - node (str): Name of the node running this pod
+            - containers (list): List of containers with high restart counts,
+              including name, restart_count, ready status, and image
+    """
+    prepare_context(config)
     try:
+        core_v1 = client.CoreV1Api()
         pods = core_v1.list_pod_for_all_namespaces()
         high_restart = []
 
@@ -473,8 +529,32 @@ def high_restart_pods(restart_threshold=5):
         return json.dumps({"error": str(e)}), 500
 
 
-@mcp.tool()
-def node_capacity():
+# Helper function to format bytes into human-readable format
+def format_bytes(size):
+    """
+    Format bytes to human readable string.
+
+    Converts a byte value to a human-readable string with appropriate
+    units (B, KiB, MiB, GiB, TiB).
+
+    Args:
+        size (int): Size in bytes
+
+    Returns:
+        str: Human-readable string representation of the size
+            (e.g., "2.5 MiB")
+    """
+    power = 2 ** 10
+    n = 0
+    power_labels = {0: "B", 1: "KiB", 2: "MiB", 3: "GiB", 4: "TiB"}
+    while size > power:
+        size /= power
+        n += 1
+    return f"{round(size, 2)} {power_labels[n]}"
+
+
+@tool()
+def get_kubernetes_node_capacity(config: RunnableConfig = None):
     """
     Show available capacity and resource utilization on all nodes.
 
@@ -483,8 +563,8 @@ def node_capacity():
     - CPU requests vs. allocatable CPU
     - Memory requests vs. allocatable memory
 
-    The function provides both raw values and percentage utilization to help
-    identify nodes approaching resource limits.
+    Args:
+        config (RunnableConfig): Configuration for the tool.
 
     Returns:
         str: JSON string containing an array of node capacity objects with fields:
@@ -504,11 +584,10 @@ def node_capacity():
               - allocatable_human (str): Human-readable allocatable memory
               - percent_used (float): Percentage of memory capacity in use
             - conditions (dict): Node condition statuses
-
-    Raises:
-        ApiException: If there is an error communicating with the Kubernetes API
     """
+    prepare_context(config)
     try:
+        core_v1 = client.CoreV1Api()
         nodes = core_v1.list_node()
         pods = core_v1.list_pod_for_all_namespaces()
 
@@ -609,10 +688,26 @@ def node_capacity():
         return json.dumps({"error": str(e)}), 500
 
 
-@mcp.tool()
-def orphaned_resources():
-    """List resources that might be orphaned (no owner references)"""
+@tool()
+def get_kubernetes_orphaned_resources(config: RunnableConfig = None):
+    """
+    List resources that might be orphaned (no owner references)
+
+    Args:
+        config (RunnableConfig): Configuration for the tool.
+
+    Returns:
+        str: JSON string containing categories of potentially orphaned resources:
+            - pods (list): Orphaned pod details
+            - services (list): Orphaned service details
+            - persistent_volume_claims (list): Orphaned PVC details
+            - config_maps (list): Orphaned ConfigMap details
+            - secrets (list): Orphaned Secret details
+            Each resource contains name, namespace and creation time
+    """
+    prepare_context(config)
     try:
+        core_v1 = client.CoreV1Api()
         results = {
             "pods": [],
             "services": [],
@@ -725,8 +820,8 @@ def orphaned_resources():
         return json.dumps({"error": str(e)}), 500
 
 
-@mcp.tool()
-def get_resource_yaml(namespace, resource_type, resource_name):
+@tool()
+def get_kubernetes_resource_yaml(namespace, resource_type, resource_name, config: RunnableConfig = None):
     """
     Retrieves the YAML configuration for a specified Kubernetes resource.
 
@@ -739,6 +834,7 @@ def get_resource_yaml(namespace, resource_type, resource_name):
             Supported types: 'pod', 'deployment', 'service', 'configmap',
             'secret', 'job'
         resource_name (str): The name of the specific resource to retrieve.
+        config (RunnableConfig): Configuration for the tool.
 
     Returns:
         str: YAML string representation of the resource configuration.
@@ -747,7 +843,12 @@ def get_resource_yaml(namespace, resource_type, resource_name):
         ApiException: If there is an error communicating with the Kubernetes API
         ValueError: If an unsupported resource type is specified
     """
+    prepare_context(config)
     try:
+        core_v1 = client.CoreV1Api()
+        apps_v1 = client.AppsV1Api()
+        batch_v1 = client.BatchV1Api()
+
         resource_data = None
 
         if resource_type == "pod":
@@ -776,29 +877,83 @@ def get_resource_yaml(namespace, resource_type, resource_name):
         return json.dumps({"error": str(e)}), 500
 
 
-# Helper function to format bytes into human-readable format
-def format_bytes(size):
+@tool()
+def get_kubernetes_pod_logs(namespace, pod_name, container=None, lines=100, tail=True, config: RunnableConfig = None):
     """
-    Format bytes to human readable string.
+    获取指定 Pod 中容器的日志内容。
 
-    Converts a byte value to a human-readable string with appropriate
-    units (B, KiB, MiB, GiB, TiB).
+    检索特定 Pod 内容器的日志，便于大模型进行故障诊断和异常分析。可以指定容器名称和
+    要返回的日志行数，支持获取日志的开头或结尾部分。
 
     Args:
-        size (int): Size in bytes
+        namespace (str): Pod 所在的命名空间。
+        pod_name (str): Pod 的名称。
+        container (str, optional): 容器的名称。如果 Pod 中有多个容器且未指定容器名称，
+            将返回 Pod 中第一个容器的日志。默认为 None。
+        lines (int, optional): 要返回的日志行数。默认为 100。
+        tail (bool, optional): 如果为 True，则返回日志的最后 `lines` 行；
+            如果为 False，则返回日志的前 `lines` 行。默认为 True。
+        config (RunnableConfig): 工具的配置信息。
 
     Returns:
-        str: Human-readable string representation of the size
-            (e.g., "2.5 MiB")
+        str: Pod 容器的日志内容，或者包含错误信息的 JSON 字符串。
+
+    Raises:
+        ApiException: 与 Kubernetes API 通信时出错
     """
-    power = 2 ** 10
-    n = 0
-    power_labels = {0: "B", 1: "KiB", 2: "MiB", 3: "GiB", 4: "TiB"}
-    while size > power:
-        size /= power
-        n += 1
-    return f"{round(size, 2)} {power_labels[n]}"
+    prepare_context(config)
+    try:
+        core_v1 = client.CoreV1Api()
 
+        # 先检查 Pod 是否存在，并获取容器信息
+        try:
+            pod = core_v1.read_namespaced_pod(pod_name, namespace)
+        except ApiException as e:
+            if e.status == 404:
+                return json.dumps({"error": f"Pod '{pod_name}' not found in namespace '{namespace}'"}), 404
+            raise
 
-if __name__ == "__main__":
-    mcp.run(transport="sse")
+        # 如果未指定容器名称且 Pod 有多个容器，获取容器列表
+        if not container and pod.spec.containers and len(pod.spec.containers) > 1:
+            containers = [c.name for c in pod.spec.containers]
+            container_info = {"containers": containers}
+            return json.dumps({
+                "warning": f"Pod '{pod_name}' contains multiple containers. Please specify one of the following containers:",
+                "containers": containers
+            })
+
+        # 如果未指定容器且只有一个容器，使用该容器
+        if not container and pod.spec.containers and len(pod.spec.containers) == 1:
+            container = pod.spec.containers[0].name
+
+        # 获取日志
+        logs = core_v1.read_namespaced_pod_log(
+            name=pod_name,
+            namespace=namespace,
+            container=container,
+            tail_lines=lines if tail else None,
+            limit_bytes=None if lines else 1024 * 1024  # 如果获取全部日志，限制最大 1MB
+        )
+
+        # 如果获取日志的开头部分，需要手动截取
+        if not tail and logs:
+            logs_lines = logs.splitlines()
+            if len(logs_lines) > lines:
+                logs = "\n".join(logs_lines[:lines])
+
+        # 返回日志内容或空日志提示
+        if not logs:
+            return "No logs available for the specified container."
+        
+        return logs
+
+    except ApiException as e:
+        error_message = str(e)
+        if "ContainerCreating" in error_message:
+            return json.dumps({"error": "Container is still being created. Logs are not available yet."}), 400
+        elif "ContainerNotFound" in error_message:
+            return json.dumps({"error": f"Container '{container}' not found in pod '{pod_name}'"}), 404
+        else:
+            return json.dumps({"error": error_message}), 500
+    except Exception as e:
+        return json.dumps({"error": str(e)}), 500

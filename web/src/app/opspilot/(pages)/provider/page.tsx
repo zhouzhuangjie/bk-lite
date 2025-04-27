@@ -99,6 +99,7 @@ const ProviderPage: React.FC = () => {
           payload.rerank_model_type = "langserve";
         }
         payload[configField] = {
+          model: values.modelName,
           base_url: values.url,
           api_key: values.apiKey,
         };

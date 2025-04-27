@@ -186,7 +186,7 @@ export const useConfigColumns = ({
               cancelText={t('common.cancel')}
               onConfirm={() => modifydeleteconfirm(item.key)}
             >
-              <Button variant="link" color="primary">
+              <Button variant="link" color="primary" disabled={!!item.nodes?.length}>
                 {t('common.delete')}
               </Button>
             </Popconfirm>
