@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from apps.node_mgmt.models.sidecar import Node, Collector, CollectorConfiguration, Action
 from apps.node_mgmt.serializers.node import NodeSerializer
 
@@ -35,6 +37,18 @@ class NodeService:
                 configuration_obj = configuration_dict.get(collector['configuration_id'])
                 collector['configuration_name'] = configuration_obj.name if configuration_obj else None
 
+        # 计算节点活跃度，一分钟内为活跃
+        for node in node_data:
+            now_timestamp = int(datetime.now(timezone.utc).timestamp())
+            # 解析成 datetime 对象
+            updated_at_timestamp = int(datetime.strptime(node["updated_at"], "%Y-%m-%dT%H:%M:%S%z").timestamp())
+            # 计算时间差
+            time_diff = now_timestamp - updated_at_timestamp
+            # 判断是否活跃
+            if time_diff < 60:
+                node["active"] = True
+            else:
+                node["active"] = False
         return node_data
 
     @staticmethod

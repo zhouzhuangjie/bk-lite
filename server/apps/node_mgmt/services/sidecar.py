@@ -75,6 +75,10 @@ class Sidecar:
 
         # 如果缓存的ETag存��且与客户端的相同，则返回304 Not Modified
         if cached_etag and cached_etag == if_none_match:
+
+            # 更新时间
+            Node.objects.filter(id=node_id).update(updated_at=datetime.now(timezone.utc).isoformat())
+
             response = HttpResponse(status=304)
             response['ETag'] = cached_etag
             return response
