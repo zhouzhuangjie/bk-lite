@@ -113,10 +113,9 @@ def invoke_one_document(document, is_show=False):
             form_data.update(source_data)
             res = requests.post(source_remote, headers=headers, data=form_data, verify=False).json()
         remote_docs = res.get("documents", [])
-        if not remote_docs:
-            logger.error(f"获取不到文档，返回结果为： {res}")
         document.chunk_size = res.get("chunks_size", 0)
-        print("分块数量 ： " + str(document.chunk_size))
+        if not document.chunk_size:
+            logger.error(f"获取不到文档，返回结果为： {res}")
         knowledge_docs.extend(remote_docs)
     except Exception as e:
         logger.exception(e)
@@ -155,14 +154,14 @@ def format_invoke_kwargs(knowledge_document: KnowledgeDocument, preview=False):
         semantic_embed_config = knowledge_document.semantic_chunk_parse_embedding_model.embed_config
         semantic_embed_model_name = knowledge_document.semantic_chunk_parse_embedding_model.name
     ocr_config = {}
-    if knowledge_document.ocr_model:
+    if knowledge_document.enable_ocr_parse:
         if knowledge_document.ocr_model.name == "AzureOCR":
             ocr_config = {
                 "ocr_type": "azure_ocr",
                 "azure_api_key": knowledge_document.ocr_model.ocr_config["api_key"],
                 "azure_endpoint": knowledge_document.ocr_model.ocr_config["base_url"],
             }
-        elif knowledge_document.ocr_model.name == "":
+        elif knowledge_document.ocr_model.name == "OlmOCR":
             ocr_config = {
                 "ocr_type": "olm_ocr",
                 "olm_base_url": knowledge_document.ocr_model.ocr_config["base_url"],
