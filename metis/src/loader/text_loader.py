@@ -6,14 +6,19 @@ from loguru import logger
 
 
 class TextLoader(BaseLoader):
-    def __init__(self, path):
+    def __init__(self, path, load_mode):
         self.path = path
+        self.load_mode = load_mode
 
     def load(self) -> List[Document]:
         logger.info(f"解析TXT文件[{self.path}]")
 
         docs: List[Document] = []
+
         with open(self.path, 'r', encoding="utf-8") as f:
-            full_text = f.read()
-            docs.append(Document(full_text))
+
+            if self.load_mode== "full":
+                full_text = f.read()
+                docs.append(Document(full_text))
+
         return docs
