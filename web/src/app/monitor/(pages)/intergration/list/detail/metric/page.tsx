@@ -372,9 +372,14 @@ const Configure = () => {
       id: item.id,
       sort_order: index,
     }));
-    await post('/monitor/api/metrics/set_order/', updatedOrder);
-    message.success(t('common.updateSuccess'));
-    getInitData();
+    post('/monitor/api/metrics/set_order/', updatedOrder)
+      .then(() => {
+        message.success(t('common.updateSuccess'));
+        getInitData();
+      })
+      .catch(() => {
+        setLoading(false);
+      });
   };
 
   const onToggle = (id: string, isOpen: boolean) => {
