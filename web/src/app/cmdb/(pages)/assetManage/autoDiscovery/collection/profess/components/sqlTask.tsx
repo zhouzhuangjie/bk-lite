@@ -32,7 +32,7 @@ const SQLTask: React.FC<SQLTaskFormProps> = ({
   const { t } = useTranslation();
   const baseRef = useRef<BaseTaskRef>(null);
   const localeContext = useLocale();
-  const { id: modelId } = modelItem;
+  const { model_id: modelId } = modelItem;
 
   const {
     form,
@@ -52,13 +52,12 @@ const SQLTask: React.FC<SQLTaskFormProps> = ({
       const collectType = baseRef.current?.collectionType;
       const ipRange = values.ipRange?.length ? values.ipRange : undefined;
       const driverType = selectedNode.tabItems?.find(
-        (item) => item.id === modelId
+        (item) => item.model_id === modelId
       )?.type;
 
       const accessPoint = baseRef.current?.accessPoints.find(
         (item: any) => item.value === values.accessPointId
       );
-      console.log('values', values);
       return {
         name: values.taskName,
         input_method: values.enterType === ENTER_TYPE.APPROVAL ? 1 : 0,

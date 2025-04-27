@@ -7,6 +7,7 @@ import K8sTask from './components/k8sTask';
 import VMTask from './components/vmTask';
 import SNMPTask from './components/snmpTask';
 import SQLTask from './components/sqlTask';
+import CloudTask from './components/cloudTask';
 import TaskDetail from './components/taskDetail';
 import useApiClient from '@/utils/request';
 import CustomTable from '@/components/custom-table';
@@ -96,7 +97,7 @@ const ProfessionalCollection: React.FC = () => {
     page: stateRef.current.pagination.current,
     page_size: stateRef.current.pagination.pageSize,
     model_id:
-      selectedRef.current.node?.tabItems?.[0]?.id || selectedRef.current.nodeId,
+      selectedRef.current.node?.tabItems?.[0]?.model_id || selectedRef.current.nodeId,
     search: stateRef.current.searchText,
     ...(stateRef.current.currentExecStatus !== undefined && {
       exec_status: stateRef.current.currentExecStatus,
@@ -335,14 +336,15 @@ const ProfessionalCollection: React.FC = () => {
       modelItem: modelItem as ModelItem,
       editId: editingId,
     };
-
     if (selectedRef.current.nodeId === 'k8s') {
       return <K8sTask {...props} />;
     } else if (['network_topo', 'network'].includes(selectedRef.current.nodeId)) {
       return <SNMPTask {...props} />;
     } else if (selectedRef.current.nodeId === 'databases') {
       return <SQLTask {...props} />;
-    }
+    } else if (selectedRef.current.nodeId === 'cloud') {
+      return <CloudTask {...props} />;
+    }    
     return <VMTask {...props} />;
   };
 

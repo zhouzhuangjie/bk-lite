@@ -27,7 +27,7 @@ const K8sTaskForm: React.FC<K8sTaskFormProps> = ({
   const { t } = useTranslation();
   const baseRef = useRef<BaseTaskRef>(null);
   const localeContext = useLocale();
-  const { id: modelId } = modelItem;
+  const { model_id: modelId } = modelItem;
 
   const {
     form,
@@ -47,7 +47,7 @@ const K8sTaskForm: React.FC<K8sTaskFormProps> = ({
         (item: any) => item.value === values.instId
       );
       const driverType = selectedNode.tabItems?.find(
-        (item) => item.id === modelId
+        (item) => item.model_id === modelId
       )?.type;
 
       return {
