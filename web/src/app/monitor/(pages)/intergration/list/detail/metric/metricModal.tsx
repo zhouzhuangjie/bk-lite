@@ -53,6 +53,8 @@ const genPresets = (presets = presetPalettes) => {
   }));
 };
 
+const INIT_UNIT_ITEM = { name: null, id: null, color: '#000000' };
+
 const MetricModal = forwardRef<ModalRef, ModalProps>(
   ({ onSuccess, groupList, monitorObject, pluginId }, ref) => {
     const { post, put } = useApiClient();
@@ -79,9 +81,7 @@ const MetricModal = forwardRef<ModalRef, ModalProps>(
       { name: '' },
     ]);
     const [instanceIdKeys, setInstanceIdKeys] = useState<(string | null)[]>([]);
-    const [enumList, setEnumList] = useState<EnumItem[]>([
-      { id: null, name: null, color: null },
-    ]);
+    const [enumList, setEnumList] = useState<EnumItem[]>([]);
 
     useImperativeHandle(ref, () => ({
       showModal: ({ type, form, title }) => {
@@ -95,7 +95,7 @@ const MetricModal = forwardRef<ModalRef, ModalProps>(
             formData.type = 'metric';
             setDimensions([{ name: '' }]);
             setInstanceIdKeys([null]);
-            setEnumList([{ name: null, id: null, color: null }]);
+            setEnumList([INIT_UNIT_ITEM]);
           } else {
             setDimensions(
               formData.dimensions?.length ? formData.dimensions : [{ name: '' }]
@@ -109,7 +109,10 @@ const MetricModal = forwardRef<ModalRef, ModalProps>(
               formData.unit = findCascaderPath(unitList.current, formData.unit);
             } else {
               formData.data_type = 'Enum';
-              const _enumList = JSON.parse(formData.unit);
+              const _enumList = JSON.parse(formData.unit).map(
+                (item: EnumItem) =>
+                  Object.assign({ name: null, id: null, color: null }, item)
+              );
               setEnumList(_enumList);
             }
           }
@@ -179,7 +182,7 @@ const MetricModal = forwardRef<ModalRef, ModalProps>(
 
     const addEnumItem = () => {
       const _enumList = deepClone(enumList);
-      _enumList.push({ name: null, id: null, color: null });
+      _enumList.push(INIT_UNIT_ITEM);
       setEnumList(_enumList);
     };
 
@@ -420,8 +423,10 @@ const MetricModal = forwardRef<ModalRef, ModalProps>(
                 prevValues.data_type !== currentValues.data_type
               }
             >
-              {({ getFieldValue }) =>
-                getFieldValue('data_type') === 'Number' ? (
+              {({ getFieldValue }) => {
+                const dataType = getFieldValue('data_type');
+                if (!dataType) return null;
+                return dataType === 'Number' ? (
                   <Form.Item<MetricInfo>
                     label={t('common.unit')}
                     name="unit"
@@ -478,9 +483,7 @@ const MetricModal = forwardRef<ModalRef, ModalProps>(
                             />
                             <ColorPicker
                               className="w-[160px] ml-2"
-                              value={
-                                item.color ? (item.color as string) : '#000000'
-                              }
+                              value={item.color as string}
                               showText
                               presets={presets}
                               placement="bottom"
@@ -505,8 +508,8 @@ const MetricModal = forwardRef<ModalRef, ModalProps>(
                       ))}
                     </ul>
                   </Form.Item>
-                )
-              }
+                );
+              }}
             </Form.Item>
             <Form.Item<MetricInfo>
               label={t('common.description')}
