@@ -113,9 +113,9 @@ def invoke_one_document(document, is_show=False):
             form_data.update(source_data)
             res = requests.post(source_remote, headers=headers, data=form_data, verify=False).json()
         remote_docs = res.get("documents", [])
-        if not remote_docs:
+        document.chunk_size = res.get("chunks_size", 0)
+        if not document.chunk_size:
             logger.error(f"获取不到文档，返回结果为： {res}")
-        document.chunk_size = len(remote_docs)
         knowledge_docs.extend(remote_docs)
     except Exception as e:
         logger.exception(e)
@@ -154,14 +154,14 @@ def format_invoke_kwargs(knowledge_document: KnowledgeDocument, preview=False):
         semantic_embed_config = knowledge_document.semantic_chunk_parse_embedding_model.embed_config
         semantic_embed_model_name = knowledge_document.semantic_chunk_parse_embedding_model.name
     ocr_config = {}
-    if knowledge_document.ocr_model:
+    if knowledge_document.enable_ocr_parse:
         if knowledge_document.ocr_model.name == "AzureOCR":
             ocr_config = {
                 "ocr_type": "azure_ocr",
                 "azure_api_key": knowledge_document.ocr_model.ocr_config["api_key"],
                 "azure_endpoint": knowledge_document.ocr_model.ocr_config["base_url"],
             }
-        elif knowledge_document.ocr_model.name == "":
+        elif knowledge_document.ocr_model.name == "OlmOCR":
             ocr_config = {
                 "ocr_type": "olm_ocr",
                 "olm_base_url": knowledge_document.ocr_model.ocr_config["base_url"],
@@ -177,7 +177,7 @@ def format_invoke_kwargs(knowledge_document: KnowledgeDocument, preview=False):
         "knowledge_id": str(knowledge_document.id),
         "embed_model_base_url": embed_config.get("base_url", ""),
         "embed_model_api_key": embed_config.get("api_key", ""),
-        "embed_model_name": embed_model_name,
+        "embed_model_name": embed_config.get("model", embed_model_name),
         "chunk_mode": knowledge_document.chunk_type,
         "chunk_size": knowledge_document.general_parse_chunk_size,
         "chunk_overlap": knowledge_document.general_parse_chunk_overlap,
@@ -186,7 +186,7 @@ def format_invoke_kwargs(knowledge_document: KnowledgeDocument, preview=False):
         if semantic_embed_config.get("base_url", "")
         else [],
         "semantic_chunk_model_api_key": semantic_embed_config.get("api_key", ""),
-        "semantic_chunk_model": semantic_embed_model_name,
+        "semantic_chunk_model": semantic_embed_config.get("model", semantic_embed_model_name),
         "preview": "true" if preview else "false",
         "metadata": json.dumps({"enabled": True}),
     }
