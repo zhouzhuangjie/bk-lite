@@ -227,6 +227,15 @@ COLLECT_OBJ_TREE = [
              "type": CollectDriverTypes.PROTOCOL}
         ],
     },
+    {
+        "id": "cloud",
+        "name": "云平台",
+        "children": [
+            {"id": "aliyun", "model_id": "aliyun_account", "name": "阿里云", "task_type": CollectPluginTypes.CLOUD,
+             "type": CollectDriverTypes.PROTOCOL}
+        ],
+    },
+
 
 ]
 

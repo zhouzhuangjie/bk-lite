@@ -2,16 +2,16 @@
 # @File: node_configs.py
 # @Time: 2025/3/21 14:19
 # @Author: windyzhao
-import copy
 import ipaddress
-import urllib.parse
+import json
 from abc import abstractmethod, ABCMeta
 
 
 class BaseNodeParams(metaclass=ABCMeta):
     PLUGIN_MAP = {}
     _registry = {}  # 自动收集支持的 model_id 对应的子类
-    BASE_INTERVAL_MAP = {"vmware_vc": 300, "network": 300, "network_topo": 300, "mysql_info": 300}  # 默认的采集间隔时间
+    BASE_INTERVAL_MAP = {"vmware_vc": 300, "network": 300, "network_topo": 300, "mysql_info": 300,
+                         "aliyun_account": 300}  # 默认的采集间隔时间
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -27,10 +27,12 @@ class BaseNodeParams(metaclass=ABCMeta):
         self.credential = self.instance.credential
         self.base_path = "${STARGAZER_URL}/api/collect/collect_info"
         self.host_field = "host"  # 默认的 ip字段 若不一样重新定义
+        self.timeout = 40 if self.instance.is_cloud else 30
+        self.response_timeout = 40 if self.instance.is_cloud else 30
 
     def get_host_ip_addr(self, host):
         if isinstance(host, dict):
-            ip_addr = host["ip_addr"]
+            ip_addr = host.get("ip_addr", "")
         else:
             ip_addr = host
         return self.host_field, ip_addr
@@ -86,16 +88,17 @@ class BaseNodeParams(metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    @property
-    def format_server_path(self):
+    def custom_headers(self, host):
         """
         格式化服务器的路径
         """
+        _key, _value = self.get_host_ip_addr(host)
         params = self.set_credential()
-        params.update({"plugin_name": self.model_plugin_name})
-        encoded_params = {k: urllib.parse.quote(str(v), safe='@') for k, v in params.items()}
-        url = f"{self.base_path}?" + "&".join(f"{k}={v}" for k, v in encoded_params.items())
-        return url
+        params.update({"plugin_name": self.model_plugin_name, _key: _value})
+        _params = {f"_cmdb_{k}": v for k, v in params.items()}
+        json_str = json.dumps(_params)
+        result = json_str.replace(":", "=")
+        return result
 
     @property
     def get_instance_type(self):
@@ -116,13 +119,10 @@ class BaseNodeParams(metaclass=ABCMeta):
         """
         生成节点管理创建配置的参数
         """
-        url = self.format_server_path
         node = self.instance.access_point[0]
         nodes = []
         for host in self.hosts:
-            _url = copy.deepcopy(url)
-            _key, _value = self.get_host_ip_addr(host)
-            _url += "&{}={}".format(_key, _value)
+            _url = self.base_path
             nodes.append({
                 "id": node["id"],
                 "configs": [{
@@ -130,8 +130,10 @@ class BaseNodeParams(metaclass=ABCMeta):
                     "type": "http",
                     "instance_id": str((self.get_instance_id(host),)),
                     "interval": self.BASE_INTERVAL_MAP.get(self.model_id, 60),
-                    "instance_type": self.get_instance_type
-                    # "task_id": self.instance.id,
+                    "instance_type": self.get_instance_type,
+                    "timeout": self.timeout,
+                    "response_timeout": self.response_timeout,
+                    "custom_headers": self.custom_headers(host=host)
                 }]
             })
         return {"object_type": "http", "nodes": nodes}
@@ -247,6 +249,32 @@ class MysqlNodeParams(BaseNodeParams):
             "port": self.credential.get("port", 3306),
             "user": self.credential.get("user", ""),
             "password": self.credential.get("password", ""),
+        }
+        return credential_data
+
+    def get_instance_id(self, instance):
+        """
+        获取实例 id
+        """
+        if self.has_set_instances:
+            return f"{self.instance.id}_{instance['inst_name']}"
+        else:
+            return f"{self.instance.id}_{instance}"
+
+
+class AliyunNodeParams(BaseNodeParams):
+    supported_model_id = "aliyun_account"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.PLUGIN_MAP.update({self.model_id: "aliyun_info"})
+
+    def set_credential(self):
+        regions_id = self.credential["regions"]["resource_id"]
+        credential_data = {
+            "access_key": self.credential.get("accessKey", ""),
+            "access_secret": self.credential.get("accessSecret", ""),
+            "region_id": regions_id
         }
         return credential_data
 
