@@ -94,7 +94,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
     },
     ref
   ) => {
-    const { id: modelId } = modelItem;
+    const { model_id: modelId } = modelItem;
     const { t } = useTranslation();
     const { post, get } = useApiClient();
     const form = Form.useFormInstance();
@@ -135,7 +135,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
       items: NETWORK_DEVICE_OPTIONS,
     };
     
-    const isDatabasesNode = nodeId === 'databases';
+    const isCommonSelectInstNode = ['databases', 'cloud'].includes(nodeId as string);
 
     const instColumns = [
       {
@@ -186,7 +186,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
 
     const handleOpenDrawer = () => {
       setInstVisible(true);
-      if (isDatabasesNode) {
+      if (isCommonSelectInstNode) {
         fetchInstData(modelId);
       }
     };
@@ -448,7 +448,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
             </Form.Item>
 
             {/* 实例选择 */}
-            {['vmware', 'k8s'].includes(nodeId as string) && (
+            {['vmware', 'k8s', 'cloud'].includes(nodeId as string) && (
               <Form.Item label={instPlaceholder} required>
                 <Space>
                   <Form.Item name="instId" rules={rules.instId} noStyle>
@@ -532,7 +532,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                   >
                     <div>
                       <Space>
-                        {isDatabasesNode ? (
+                        {isCommonSelectInstNode ? (
                           <Button type="primary" onClick={handleOpenDrawer}>
                             {t('common.select')}
                           </Button>
@@ -657,7 +657,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
         />
 
         <Drawer
-          title={isDatabasesNode ? t('Collection.chooseAsset') : `选择${dropdownItems.items.find((item) => item.key === relateType)?.label || '资产'}`}
+          title={isCommonSelectInstNode ? t('Collection.chooseAsset') : `选择${dropdownItems.items.find((item) => item.key === relateType)?.label || '资产'}`}
           width={620}
           open={instVisible}
           onClose={handleDrawerClose}
@@ -683,7 +683,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
             scroll={{ y: 'calc(100vh - 280px)' }}
             pagination={{
               ...instPagination,
-              onChange: (page, pageSize) => fetchInstData(isDatabasesNode ? modelId : relateType, page, pageSize),
+              onChange: (page, pageSize) => fetchInstData(isCommonSelectInstNode ? modelId : relateType, page, pageSize),
             }}
             rowSelection={{
               type: 'checkbox',

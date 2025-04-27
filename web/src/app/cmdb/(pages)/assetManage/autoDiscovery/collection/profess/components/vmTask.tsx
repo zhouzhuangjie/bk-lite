@@ -34,7 +34,7 @@ const VMTask: React.FC<VMTaskFormProps> = ({
   const { t } = useTranslation();
   const baseRef = useRef<BaseTaskRef>(null);
   const localeContext = useLocale();
-  const { id: modelId } = modelItem;
+  const { model_id: modelId } = modelItem;
 
   const {
     form,
@@ -57,7 +57,7 @@ const VMTask: React.FC<VMTaskFormProps> = ({
         (item: any) => item.value === values.accessPointId
       );
       const driverType = selectedNode.tabItems?.find(
-        (item) => item.id === modelId
+        (item) => item.model_id === modelId
       )?.type;
 
       return {
