@@ -73,3 +73,7 @@ Blueking Lite是一个AI First的轻量版运维产品，由以下模块共同�
 项目基于 MIT 协议，详细请参考 [LICENSE](LICENSE.txt)。
 
 我们承诺未来不会更改适用于交付给任何人的当前项目版本的开源许可证（MIT 协议）。
+
+## Contributors
+
+![](https://contrib.nn.ci/api?repo=TencentBlueKing/bk-lite)
