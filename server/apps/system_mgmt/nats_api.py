@@ -194,3 +194,18 @@ def get_user_rules(app, group_id, username):
     if not rules:
         return {}
     return rules.group_rule.rules
+
+
+@nats_client.register
+def get_group_id(group_name):
+    kwargs = {
+        "first": 0,
+        "max": 1,
+        "search": group_name,
+        "exact": True,
+    }
+    client = KeyCloakClient()
+    res = client.realm_client.get_groups(kwargs)
+    if not res:
+        return {"result": False, "message": f"group named '{group_name}' not exists."}
+    return {"result": True, "data": res[0]["id"]}
