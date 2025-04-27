@@ -64,10 +64,10 @@ class CollectService(object):
     def list_regions(self):
         try:
             plugin_class = self.import_plugin(self.plugin_name)
-            plugin_instance = plugin_class(**self.params)
+            plugin_instance = plugin_class(self.params)
             result = plugin_instance.list_regions()
-            return result
+            return {"result": result, "success": True}
         except Exception as e:
             logger.info(f"Error list_regions plugin {self.plugin_name}: {traceback.format_exc()}")
             # 生成错误指标数据，直接转换为Prometheus文本格式
-            return {"result": False, "data": []}
+            return {"result": [], "success": False}
