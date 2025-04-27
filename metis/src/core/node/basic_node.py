@@ -42,7 +42,7 @@ class BasicNode:
             return state
 
         naive_rag_request = config["configurable"]["graph_request"].naive_rag_request
-        if len(naive_rag_request)==0:
+        if len(naive_rag_request) == 0:
             return state
 
         for rag_search_request in naive_rag_request:

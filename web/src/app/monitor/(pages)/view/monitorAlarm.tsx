@@ -86,11 +86,9 @@ const Alert: React.FC<ViewModalProps> = ({
     },
     {
       title: t('monitor.events.alertName'),
-      dataIndex: 'title',
-      key: 'title',
+      dataIndex: 'content',
+      key: 'content',
       width: 120,
-      ellipsis: true,
-      render: (_, record) => <>{record.content || '--'}</>,
     },
     {
       title: t('monitor.events.state'),
