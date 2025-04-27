@@ -6,13 +6,11 @@ from apps.node_mgmt.models.sidecar import CollectorConfiguration, ChildConfig
 CONFIG_MAP = {
     "switch": """[[inputs.snmp]]
     interval = "${interval}s"
+    ${snmp_config}
     [inputs.snmp.tags]
         instance_id = "${instance_id}"
         instance_type = "${instance_type}"
         collect_type = "snmp"
-    
-    ${snmp_config}
-
     [[inputs.snmp.field]]
         oid = "RFC1213-MIB::sysUpTime.0"
         name = "uptime"
@@ -31,13 +29,11 @@ CONFIG_MAP = {
 
     "router": """[[inputs.snmp]]
     interval = "${interval}s"
+    ${snmp_config}
     [inputs.snmp.tags]
         instance_id = "${instance_id}"
         instance_type = "${instance_type}"
         collect_type = "snmp"
-        
-    ${snmp_config}
-
     [[inputs.snmp.field]]
         oid = "RFC1213-MIB::sysUpTime.0"
         name = "uptime"
@@ -56,13 +52,11 @@ CONFIG_MAP = {
 
     "firewall": """[[inputs.snmp]]
     interval = "${interval}s"
+    ${snmp_config}
     [inputs.snmp.tags]
         instance_id = "${instance_id}"
         instance_type = "${instance_type}"
         collect_type = "snmp"
-        
-    ${snmp_config}
-
     [[inputs.snmp.field]]
         oid = "RFC1213-MIB::sysUpTime.0"
         name = "uptime"
@@ -81,13 +75,11 @@ CONFIG_MAP = {
 
     "loadbalance": """[[inputs.snmp]]
     interval = "${interval}s"
+    ${snmp_config}
     [inputs.snmp.tags]
         instance_id = "${instance_id}"
         instance_type = "${instance_type}"
         collect_type = "snmp"
-
-    ${snmp_config}
-
     [[inputs.snmp.field]]
         oid = "RFC1213-MIB::sysUpTime.0"
         name = "uptime"
@@ -106,13 +98,11 @@ CONFIG_MAP = {
 
     "detection_device": """[[inputs.snmp]]
     interval = "${interval}s"
+    ${snmp_config}
     [inputs.snmp.tags]
         instance_id = "${instance_id}"
         instance_type = "${instance_type}"
         collect_type = "snmp"
-        
-    ${snmp_config}
-
     [[inputs.snmp.field]]
         oid = "RFC1213-MIB::sysUpTime.0"
         name = "uptime"
@@ -131,13 +121,11 @@ CONFIG_MAP = {
 
     "scanning_device": """[[inputs.snmp]]
     interval = "${interval}s"
+    ${snmp_config}
     [inputs.snmp.tags]
         instance_id = "${instance_id}"
         instance_type = "${instance_type}"
         collect_type = "snmp"
-        
-    ${snmp_config}
-
     [[inputs.snmp.field]]
         oid = "RFC1213-MIB::sysUpTime.0"
         name = "uptime"
@@ -156,13 +144,11 @@ CONFIG_MAP = {
 
     "bastion_host": """[[inputs.snmp]]
     interval = "${interval}s"
+    ${snmp_config}
     [inputs.snmp.tags]
         instance_id = "${instance_id}"
         instance_type = "${instance_type}"
         collect_type = "snmp"
-        
-    ${snmp_config}
-
     [[inputs.snmp.field]]
         oid = "RFC1213-MIB::sysUpTime.0"
         name = "uptime"
@@ -181,13 +167,11 @@ CONFIG_MAP = {
 
     "storage": """[[inputs.snmp]]
     interval = "${interval}s"
+    ${snmp_config}
     [inputs.snmp.tags]
         instance_id = "${instance_id}"
         instance_type = "${instance_type}"
         collect_type = "snmp"
-        
-    ${snmp_config}
-
     [[inputs.snmp.field]]
         oid = "RFC1213-MIB::sysUpTime.0"
         name = "uptime"
@@ -206,13 +190,11 @@ CONFIG_MAP = {
 
     "hardware_server": """[[inputs.snmp]]
     interval = "${interval}s"
+    ${snmp_config}
     [inputs.snmp.tags]
         instance_id = "${instance_id}"
         instance_type = "${instance_type}"
         collect_type = "snmp"
-        
-    ${snmp_config}
-
     [[inputs.snmp.field]]
         oid = "RFC1213-MIB::sysUpTime.0"
         name = "uptime"
@@ -240,8 +222,7 @@ class SnmpConfig:
         for node in nodes:
             node_id = node["id"]
             node_configs = node["configs"]
-            base_config = CollectorConfiguration.objects.filter(nodes__id=node_id, name=f'telegraf-{node_id}',
-                                                                is_pre=True).first()
+            base_config = CollectorConfiguration.objects.filter(nodes__id=node_id, collector__name="Telegraf").first()
             base_config_id = base_config.id
             base_config_ids.append(base_config_id)
             for node_config in node_configs:

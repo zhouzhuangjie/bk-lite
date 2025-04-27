@@ -209,9 +209,9 @@ class LLMService:
         chat_kwargs, doc_map, title_map = self.format_chat_server_kwargs(kwargs, llm_model)
 
         # 调用聊天服务
-        url = f"{settings.CHAT_SERVER_URL}/api/agent/invoke_chatbot_workflow"
+        url = f"{settings.METIS_SERVER_URL}/api/agent/invoke_chatbot_workflow"
         if kwargs["skill_type"] == SkillTypeChoices.BASIC_TOOL:
-            url = f"{settings.CHAT_SERVER_URL}/api/agent/invoke_tool_agent"
+            url = f"{settings.METIS_SERVER_URL}/api/agent/invoke_react_agent"
         result = ChatServerHelper.post_chat_server(chat_kwargs, url)
         data = result["message"]
 

@@ -125,19 +125,15 @@ const Alert: React.FC = () => {
     },
     {
       title: t('monitor.events.alertName'),
-      dataIndex: 'title',
-      key: 'title',
+      dataIndex: 'content',
+      key: 'content',
       width: 120,
-      ellipsis: true,
-      render: (_, record) => <>{record.content || '--'}</>,
     },
     {
       title: t('monitor.asset'),
-      dataIndex: 'asset',
-      key: 'asset',
+      dataIndex: 'monitor_instance_name',
+      key: 'monitor_instance_name',
       width: 200,
-      ellipsis: true,
-      render: (_, record) => <>{record.monitor_instance_name || '--'}</>,
     },
     {
       title: t('monitor.events.assetType'),
@@ -298,23 +294,20 @@ const Alert: React.FC = () => {
         add_policy_count: true,
       },
     });
-    const groupedData = data.reduce(
-      (acc, item) => {
-        if (!acc[item.type]) {
-          acc[item.type] = {
-            label: item.display_type,
-            title: item.type,
-            options: [],
-          };
-        }
-        acc[item.type].options.push({
-          label: item.display_name,
-          value: item.id,
-        });
-        return acc;
-      },
-      {} as Record<string, any>
-    );
+    const groupedData = data.reduce((acc, item) => {
+      if (!acc[item.type]) {
+        acc[item.type] = {
+          label: item.display_type,
+          title: item.type,
+          options: [],
+        };
+      }
+      acc[item.type].options.push({
+        label: item.display_name,
+        value: item.id,
+      });
+      return acc;
+    }, {} as Record<string, any>);
     setGroupObjects(Object.values(groupedData));
     setObjects(data);
   };

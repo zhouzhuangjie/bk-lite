@@ -24,7 +24,6 @@ import {
   ControllerInstallProps,
 } from '@/app/node-manager/types/cloudregion';
 import controllerInstallSyle from './index.module.scss';
-import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useSearchParams } from 'next/navigation';
 import {
   useInstallWays,
@@ -36,11 +35,12 @@ import {
   EditOutlined,
   PlusCircleOutlined,
   MinusCircleOutlined,
+  ArrowLeftOutlined,
 } from '@ant-design/icons';
 import { cloneDeep, isNumber, uniqueId } from 'lodash';
 const { Option } = Select;
 import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
-import useCloudId from '@/app/node-manager/hooks/useCloudid';
+import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 import ControllerTable from './controllerTable';
 import ManualInstall from './manualInstall';
 import { useUserInfoContext } from '@/context/userInfo';
@@ -63,8 +63,13 @@ const ControllerInstall: React.FC<ControllerInstallProps> = ({
   const cloudId = useCloudId();
   const searchParams = useSearchParams();
   const [form] = Form.useForm();
-  const instRef = useRef<ModalRef>(null);
+  const installWays = useInstallWays();
   const name = searchParams.get('name') || '';
+  const groupList = (commonContext?.groups || []).map((item) => ({
+    label: item.name,
+    value: item.id,
+  }));
+  const instRef = useRef<ModalRef>(null);
   const [pageLoading, setPageLoading] = useState<boolean>(false);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [installMethod, setInstallMethod] = useState<string>('remoteInstall');
@@ -79,11 +84,6 @@ const ControllerInstall: React.FC<ControllerInstallProps> = ({
       id: '0',
     },
   ]);
-  const installWays = useInstallWays();
-  const groupList = (commonContext?.groups || []).map((item) => ({
-    label: item.name,
-    value: item.id,
-  }));
 
   const tableColumns = useMemo(() => {
     const columns: any = [
@@ -357,7 +357,7 @@ const ControllerInstall: React.FC<ControllerInstallProps> = ({
   const getSidecarList = async () => {
     setPageLoading(true);
     try {
-      const data = await getPackages({ os: config.os });
+      const data = await getPackages({ os: config.os, object: 'Controller' });
       setSidecarVersionList(data);
     } finally {
       setPageLoading(false);
@@ -380,7 +380,7 @@ const ControllerInstall: React.FC<ControllerInstallProps> = ({
         password: item.password,
       }));
       const params = {
-        cloud_region_id: +cloudId,
+        cloud_region_id: cloudId,
         nodes,
         work_node: name,
         package_id: values.sidecar_package || '',

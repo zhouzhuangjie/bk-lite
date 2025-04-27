@@ -103,3 +103,10 @@ class SystemMgmt(object):
         """
         return_data = self.client.run("get_user_rules", app=app, group_id=group_id, username=username)
         return return_data
+
+    def get_group_id(self, group_name):
+        """
+        :param group_name: 组名
+        """
+        return_data = self.client.run("get_group_id", group_name=group_name)
+        return return_data

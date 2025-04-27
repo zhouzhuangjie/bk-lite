@@ -1,6 +1,7 @@
 import { useTranslation } from '@/utils/i18n';
 import { Button, Tag, Popconfirm } from 'antd';
 import type { TableColumnsType } from 'antd';
+import PermissionWrapper from '@/components/permission';
 import {
   ConfigHookParams,
   SubConfigHookParams,
@@ -142,46 +143,54 @@ export const useConfigColumns = ({
       width: 180,
       render: (key, item) => (
         <div className="flex justify-center">
-          <Button
-            color="primary"
-            variant="link"
-            onClick={() => {
-              applyconfigurationClick(item);
-            }}
-          >
-            {t('common.apply')}
-          </Button>
-          <Button
-            color="primary"
-            variant="link"
-            onClick={() => {
-              configurationClick(key);
-            }}
-          >
-            {t('common.edit')}
-          </Button>
-          <Button
-            color="primary"
-            variant="link"
-            onClick={() => {
-              openSub(key, item);
-            }}
-          >
-            {t('node-manager.cloudregion.Configuration.subconfiguration')}
-          </Button>
-          <Popconfirm
-            title={t('common.prompt')}
-            description={t(
-              'node-manager.cloudregion.Configuration.modifydelinfo'
-            )}
-            okText={t('common.confirm')}
-            cancelText={t('common.cancel')}
-            onConfirm={() => modifydeleteconfirm(item.key)}
-          >
-            <Button variant="link" color="primary">
-              {t('common.delete')}
+          <PermissionWrapper requiredPermissions={['Apply']}>
+            <Button
+              color="primary"
+              variant="link"
+              onClick={() => {
+                applyconfigurationClick(item);
+              }}
+            >
+              {t('common.apply')}
             </Button>
-          </Popconfirm>
+          </PermissionWrapper>
+          <PermissionWrapper requiredPermissions={['Edit']}>
+            <Button
+              color="primary"
+              variant="link"
+              onClick={() => {
+                configurationClick(key);
+              }}
+            >
+              {t('common.edit')}
+            </Button>
+          </PermissionWrapper>
+          <PermissionWrapper requiredPermissions={['SubConfiguration']}>
+            <Button
+              color="primary"
+              variant="link"
+              onClick={() => {
+                openSub(key, item);
+              }}
+            >
+              {t('node-manager.cloudregion.Configuration.subconfiguration')}
+            </Button>
+          </PermissionWrapper>
+          <PermissionWrapper requiredPermissions={['Delete']}>
+            <Popconfirm
+              title={t('common.prompt')}
+              description={t(
+                'node-manager.cloudregion.Configuration.modifydelinfo'
+              )}
+              okText={t('common.confirm')}
+              cancelText={t('common.cancel')}
+              onConfirm={() => modifydeleteconfirm(item.key)}
+            >
+              <Button variant="link" color="primary" disabled={!!item.nodes?.length}>
+                {t('common.delete')}
+              </Button>
+            </Popconfirm>
+          </PermissionWrapper>
         </div>
       ),
     },

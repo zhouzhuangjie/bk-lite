@@ -65,31 +65,6 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
 
   const verticalMenuItems = (
     <>
-      <Menu.Item key="set">
-        <PermissionWrapper requiredPermissions={['Set']}>
-          <Button
-            type="link"
-            className="w-full text-left"
-            disabled={isDisabled}
-            onClick={() => onSet(record)}
-          >
-            {t('common.set')}
-          </Button>
-        </PermissionWrapper>
-      </Menu.Item>
-      <Menu.Item key="train">
-        <PermissionWrapper requiredPermissions={['Train']}>
-          <Button
-            type="link"
-            className="w-full text-left"
-            onClick={() => onTrain([record.id])}
-            loading={singleTrainLoading[record.id.toString()]}
-            disabled={isDisabled}
-          >
-            {t('common.train')}
-          </Button>
-        </PermissionWrapper>
-      </Menu.Item>
       <Menu.Item key="delete">
         <PermissionWrapper requiredPermissions={['Delete']}>
           <Button
@@ -102,6 +77,16 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           </Button>
         </PermissionWrapper>
       </Menu.Item>
+      <Menu.Item key="download">
+        <Button
+          type='link'
+          className="w-full text-left"
+          disabled={isDisabled}
+          onClick={() => onFileAction(record, 'download')}
+        >
+          {t('common.download')}
+        </Button>
+      </Menu.Item>
     </>
   );
 
@@ -111,6 +96,27 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
 
   return (
     <>
+      <PermissionWrapper requiredPermissions={['Set']}>
+        <Button
+          type="link"
+          className='mr-[10px]'
+          disabled={isDisabled}
+          onClick={() => onSet(record)}
+        >
+          {t('common.set')}
+        </Button>
+      </PermissionWrapper>
+      <PermissionWrapper requiredPermissions={['Train']}>
+        <Button
+          type="link"
+          className='mr-[10px]'
+          loading={singleTrainLoading[record.id.toString()]}
+          disabled={isDisabled}
+          onClick={() => onTrain([record.id])}
+        >
+          {t('common.train')}
+        </Button>
+      </PermissionWrapper>
       <Button
         type='link'
         className='mr-[10px]'
@@ -118,14 +124,6 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         onClick={() => onFileAction(record, 'preview')}
       >
         {t('common.preview')}
-      </Button>
-      <Button
-        type='link'
-        className='mr-[10px]'
-        disabled={isDisabled}
-        onClick={() => onFileAction(record, 'download')}
-      >
-        {t('common.download')}
       </Button>
       <Dropdown
         overlay={
@@ -135,7 +133,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         }
         trigger={['click']}
       >
-        <MoreOutlined />
+        <MoreOutlined className='text-[var(--color-primary)]' />
       </Dropdown>
     </>
   );

@@ -15,6 +15,7 @@
     height: 100%;
     position: relative;
     background: var(--color-bg-1);
+
     :global {
         .recharts-tooltip-wrapper {
             z-index: 9;
@@ -55,7 +56,7 @@
 }
 
 .tableArea {
-    width: 350px;
+    width: 360px;
     height: 100%;
     margin-left: 10px;
 }

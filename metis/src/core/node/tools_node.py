@@ -20,7 +20,7 @@ class ToolsNodes(BasicNode):
         # 初始化MCP客户端配置
         for server in request.tools_servers:
             if server.url.startswith("langchain:") is False:
-                self.mcp_config[server.name]={
+                self.mcp_config[server.name] = {
                     "url": server.url,
                     "transport": 'sse'
                 }
@@ -31,8 +31,9 @@ class ToolsNodes(BasicNode):
         # 初始化LangChain工具
         for server in request.tools_servers:
             if server.url.startswith("langchain:") is True:
-                self.tools.append(ToolsLoader.load_tools(server.url))
-
+                langchain_tools = ToolsLoader.load_tools(server.url)
+                for tool in langchain_tools:
+                    self.tools.append(tool)
 
     async def agent_node(self, state: TypedDict, config: RunnableConfig) -> TypedDict:
         # 获取完整的消息历史

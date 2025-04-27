@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import SubLayout from '@/components/sub-layout';
 import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -9,14 +9,14 @@ import type { Collectorcardprops } from '@/app/node-manager/types/index';
 const SidecarLayout = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   const { t } = useTranslation();
+  const pathname = usePathname();
+  const isDetail = pathname.includes('/detail');
   const [detaildata, setDetaildata] = useState<Collectorcardprops>({
     id: '',
     name: '',
     system: [],
     introduction: '',
   });
-  const pathname = usePathname();
-  const isDetail = pathname.includes('/detail');
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -27,7 +27,7 @@ const SidecarLayout = ({ children }: { children: React.ReactNode }) => {
       introduction: searchParams.get('introduction') || '',
     };
     setDetaildata(info);
-  },[isDetail])
+  }, [isDetail]);
 
   //顶部的组件
   const Topsection = () => {
@@ -58,9 +58,9 @@ const SidecarLayout = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <>
+    <div className="w-full">
       <SubLayout
-        layoutType= {!isDetail ? 'segmented' : 'sideMenu'}
+        layoutType={!isDetail ? 'segmented' : 'sideMenu'}
         topSection={!isDetail || <Topsection></Topsection>}
         showBackButton={true}
         intro={!isDetail || <Collectorintro></Collectorintro>}
@@ -70,8 +70,8 @@ const SidecarLayout = ({ children }: { children: React.ReactNode }) => {
       >
         {children}
       </SubLayout>
-    </>
-  )
-}
+    </div>
+  );
+};
 
 export default SidecarLayout;

@@ -26,12 +26,16 @@ class BasicGraph:
         config = {
             "graph_request": request,
             "recursion_limit": 10,
+            "configurable": {
+                **request.extra_config,
+            }
         }
 
         if request.thread_id:
             config['configurable'] = {
                 "thread_id": request.thread_id,
-                "user_id": request.user_id
+                "user_id": request.user_id,
+                **(config['configurable'] or {})
             }
             with PostgresSaver.from_conn_string(os.getenv('DB_URI')) as checkpoint:
                 graph.checkpoint = checkpoint

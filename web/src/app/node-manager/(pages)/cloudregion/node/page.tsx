@@ -6,22 +6,30 @@ import React, {
   useMemo,
   useCallback,
 } from 'react';
-import { Button, Input, message, Space, Modal, Tooltip, Tag } from 'antd';
+import {
+  Button,
+  Input,
+  message,
+  Space,
+  Modal,
+  Tooltip,
+  Tag,
+  Dropdown,
+  Segmented,
+} from 'antd';
 import { DownOutlined, ReloadOutlined } from '@ant-design/icons';
-import type { MenuProps, TableProps } from 'antd';
+import type { MenuProps, TableProps, GetProps } from 'antd';
 import nodeStyle from './index.module.scss';
-import { Dropdown, Segmented } from 'antd';
 import CollectorModal from './collectorModal';
 import { useTranslation } from '@/utils/i18n';
-import type { GetProps } from 'antd';
-import { ModalRef, TableDataItem } from '@/app/node-manager/types/index';
-import CustomTable from '@/components/custom-table/index';
+import { ModalRef, TableDataItem } from '@/app/node-manager/types';
+import CustomTable from '@/components/custom-table';
 import { useColumns } from '@/app/node-manager/hooks/node';
 import Mainlayout from '../mainlayout/layout';
 import useApiClient from '@/utils/request';
 import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
 import useApiCollector from '@/app/node-manager/api/collector';
-import useCloudId from '@/app/node-manager/hooks/useCloudid';
+import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 import { useTelegrafMap } from '@/app/node-manager/constants/cloudregion';
 import ControllerInstall from './controllerInstall';
 import ControllerUninstall from './controllerUninstall';
@@ -43,15 +51,19 @@ type TableRowSelection<T extends object = object> =
 type SearchProps = GetProps<typeof Input.Search>;
 
 const Node = () => {
-  const collectorRef = useRef<ModalRef>(null);
-  const controllerRef = useRef<ModalRef>(null);
   const { t } = useTranslation();
+  const router = useRouter();
   const cloudId = useCloudId();
   const searchParams = useSearchParams();
-  const name = searchParams.get('name') || '';
   const { isLoading, del } = useApiClient();
   const { getnodelist } = useApiCloudRegion();
   const { getCollectorlist } = useApiCollector();
+  const sidecaritems = useSidecaritems();
+  const collectoritems = useCollectoritems();
+  const statusMap = useTelegrafMap();
+  const name = searchParams.get('name') || '';
+  const collectorRef = useRef<ModalRef>(null);
+  const controllerRef = useRef<ModalRef>(null);
   const [nodelist, setNodelist] = useState<TableDataItem[]>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -65,10 +77,9 @@ const Node = () => {
     useState<boolean>(false);
   const [system, setSystem] = useState<string>('linux');
   const [activeColumns, setActiveColumns] = useState<ColumnItem[]>([]);
-  const router = useRouter();
   const checkConfig = (row: TableDataItem) => {
     const data = {
-      cloud_region_id: cloudId,
+      cloud_region_id: cloudId.toString(),
       name,
     };
     sessionStorage.setItem('cloudRegionInfo', JSON.stringify({ id: row.id }));
@@ -77,9 +88,6 @@ const Node = () => {
     router.push(targetUrl);
   };
   const columns = useColumns({ checkConfig });
-  const sidecaritems = useSidecaritems();
-  const collectoritems = useCollectoritems();
-  const statusMap = useTelegrafMap();
 
   const cancelInstall = useCallback(() => {
     setShowNodeTable(true);
@@ -201,7 +209,7 @@ const Node = () => {
     return {
       name: searchText,
       operating_system: system,
-      cloud_region_id: Number(cloudId),
+      cloud_region_id: cloudId,
     };
   };
 
@@ -244,12 +252,32 @@ const Node = () => {
     const data = await getCollectorlist({
       node_operating_system: selectedsystem,
     });
-    const columnItems = data.map((tex: TableDataItem) => {
-      if (
-        ['natsexecutor_windows', 'natsexecutor_linux'].includes(
-          tex.id as string
-        )
-      ) {
+    const natsexecutors = ['natsexecutor_windows', 'natsexecutor_linux'];
+    const columnItems = data
+      .map((tex: TableDataItem) => {
+        if (natsexecutors.includes(tex.id as string)) {
+          return {
+            title: tex.name,
+            dataIndex: tex.id,
+            render: (key: string, item: TableDataItem) => {
+              const target = (item.status.collectors || []).find(
+                (item: TableDataItem) => item.collector_id === tex.id
+              );
+              return target ? (
+                <Tooltip title={`${target?.message}`}>
+                  <Tag
+                    bordered={false}
+                    color={!target?.status ? 'success' : 'error'}
+                  >
+                    {!target?.status ? 'Running' : 'Error'}
+                  </Tag>
+                </Tooltip>
+              ) : (
+                '--'
+              );
+            },
+          };
+        }
         return {
           title: tex.name,
           dataIndex: tex.id,
@@ -259,51 +287,32 @@ const Node = () => {
             );
             return target ? (
               <Tooltip title={`${target?.message}`}>
-                <Tag
-                  bordered={false}
-                  color={!target?.status ? 'success' : 'error'}
-                >
-                  {!target?.status ? 'Running' : 'Error'}
-                </Tag>
+                <div>
+                  <span
+                    className="recordStatus"
+                    style={{
+                      backgroundColor:
+                        statusMap[target?.status]?.color || '#b2b5bd',
+                    }}
+                  ></span>
+                  <span
+                    style={{
+                      color: statusMap[target?.status]?.color || '#b2b5bd',
+                    }}
+                  >
+                    {!target?.status ? 'Running' : 'Error'}
+                  </span>
+                </div>
               </Tooltip>
             ) : (
               '--'
             );
           },
         };
-      }
-      return {
-        title: tex.name,
-        dataIndex: tex.id,
-        render: (key: string, item: TableDataItem) => {
-          const target = (item.status.collectors || []).find(
-            (item: TableDataItem) => item.collector_id === tex.id
-          );
-          return target ? (
-            <Tooltip title={`${target?.message}`}>
-              <div>
-                <span
-                  className="recordStatus"
-                  style={{
-                    backgroundColor:
-                      statusMap[target?.status]?.color || '#b2b5bd',
-                  }}
-                ></span>
-                <span
-                  style={{
-                    color: statusMap[target?.status]?.color || '#b2b5bd',
-                  }}
-                >
-                  {!target?.status ? 'Running' : 'Error'}
-                </span>
-              </div>
-            </Tooltip>
-          ) : (
-            '--'
-          );
-        },
-      };
-    });
+      })
+      .sort((item: TableDataItem) =>
+        natsexecutors.includes(item.dataIndex) ? -1 : 0
+      );
     setActiveColumns(columnItems);
   };
 
@@ -337,7 +346,7 @@ const Node = () => {
                   onChange={(e) => setSearchText(e.target.value)}
                   onSearch={onSearch}
                 />
-                <PermissionWrapper requiredPermissions={["InstallController"]}>
+                <PermissionWrapper requiredPermissions={['InstallController']}>
                   <Button
                     type="primary"
                     className="mr-[8px]"
@@ -348,6 +357,7 @@ const Node = () => {
                 </PermissionWrapper>
                 <Dropdown
                   className="mr-[8px]"
+                  overlayClassName="customMenu"
                   menu={SidecarmenuProps}
                   disabled={enableOperateSideCar}
                 >
@@ -360,6 +370,7 @@ const Node = () => {
                 </Dropdown>
                 <Dropdown
                   className="mr-[8px]"
+                  overlayClassName="customMenu"
                   menu={CollectormenuProps}
                   disabled={enableOperateCollecter}
                 >
@@ -378,7 +389,7 @@ const Node = () => {
                 columns={tableColumns}
                 loading={loading}
                 dataSource={nodelist}
-                scroll={{ y: 'calc(100vh - 400px)', x: 'calc(100vw - 300px)' }}
+                scroll={{ y: 'calc(100vh - 326px)', x: 'calc(100vw - 300px)' }}
                 rowSelection={rowSelection}
               />
             </div>

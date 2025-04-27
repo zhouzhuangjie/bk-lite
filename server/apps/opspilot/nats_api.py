@@ -1,3 +1,5 @@
+import copy
+
 import nats_client
 from apps.core.logger import logger
 from apps.opspilot.models import (
@@ -16,14 +18,16 @@ from apps.opspilot.models import (
 @nats_client.register
 def init_user_set(group_id, group_name):
     try:
-        llm_model_list = LLMModel.objects.filter(is_build_in=True)
+        llm_model_list = LLMModel.objects.filter(is_demo=True)
         add_model_list = []
         name_list = set()
-        for llm_model in llm_model_list:
+        for old_llm_model in llm_model_list:
+            llm_model = copy.deepcopy(old_llm_model)
             llm_model.id = None
             llm_model.team = [group_id]
             llm_model.consumer_team = group_id
             llm_model.is_build_in = False
+            llm_model.is_demo = False
             decrypted_llm_config = llm_model.decrypted_llm_config
             llm_model.llm_config = decrypted_llm_config
             add_model_list.append(llm_model)
