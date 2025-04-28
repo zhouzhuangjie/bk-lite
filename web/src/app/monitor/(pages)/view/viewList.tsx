@@ -26,6 +26,7 @@ import {
 import { COLLECT_TYPE_MAP } from '@/app/monitor/constants/monitor';
 import CustomTable from '@/components/custom-table';
 import TimeSelector from '@/components/time-selector';
+import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import { INDEX_CONFIG } from '@/app/monitor/constants/monitor';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import Permission from '@/components/permission';
@@ -301,7 +302,10 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
               return (
                 <>
                   <span style={{ color }}>
-                    {getEnumValueUnit(target, record[item.key])}
+                    <EllipsisWithTooltip
+                      text={getEnumValueUnit(target, record[item.key])}
+                      className="w-[100px] overflow-hidden text-ellipsis whitespace-nowrap"
+                    ></EllipsisWithTooltip>
                   </span>
                 </>
               );
@@ -442,7 +446,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
         <div className="flex items-center">
           {showTab && (
             <div>
-              <span className="text-[14px] mr-[10px]">
+              <span className="text-[14px] mr-[5px]">
                 {t('monitor.views.filterOptions')}
               </span>
               <Select
@@ -463,7 +467,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
                   <Select
                     value={namespace}
                     allowClear
-                    className="mx-[10px]"
+                    className="mx-[5px]"
                     style={{ width: 120 }}
                     placeholder={t('monitor.views.namespace')}
                     onChange={handleNameSpaceChange}
@@ -477,7 +481,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
                   <Select
                     value={workload}
                     allowClear
-                    className="mr-[10px]"
+                    className="mr-[5px]"
                     style={{ width: 120 }}
                     placeholder={t('monitor.views.workload')}
                     onChange={handleWorkloadChange}
@@ -507,7 +511,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
           )}
           <Input
             allowClear
-            className="w-[240px] ml-[8px]"
+            className="w-[240px] ml-[5px]"
             placeholder={t('common.searchPlaceHolder')}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}

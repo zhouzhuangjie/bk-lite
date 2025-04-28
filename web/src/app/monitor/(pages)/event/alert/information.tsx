@@ -10,7 +10,7 @@ import { ObectItem } from '@/app/monitor/types/monitor';
 import { findUnitNameById, showGroupName } from '@/app/monitor/utils/common';
 import { useCommon } from '@/app/monitor/context/common';
 import { Modal, message, Button } from 'antd';
-import useApiClient from '@/utils/request';
+import useMonitorApi from '@/app/monitor/api';
 import { LEVEL_MAP, useLevelList } from '@/app/monitor/constants/monitor';
 import Permission from '@/components/permission';
 
@@ -26,7 +26,7 @@ const Information: React.FC<TableDataItem> = ({
   const { convertToLocalizedTime } = useLocalizedTime();
   const LEVEL_LIST = useLevelList();
   const { confirm } = Modal;
-  const { patch } = useApiClient();
+  const { patchMonitorAlert } = useMonitorApi();
   const commonContext = useCommon();
   const authList = useRef(commonContext?.authOrganizations || []);
   const organizationList: Organization[] = authList.current;
@@ -56,7 +56,7 @@ const Information: React.FC<TableDataItem> = ({
       onOk() {
         return new Promise(async (resolve) => {
           try {
-            await patch(`/monitor/api/monitor_alert/${row.id}/`, {
+            await patchMonitorAlert(row.id, {
               status: 'closed',
             });
             message.success(t('monitor.events.successfullyClosed'));

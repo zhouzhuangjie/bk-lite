@@ -1,11 +1,11 @@
 'use client';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Segmented } from 'antd';
-import { ApartmentOutlined, BarsOutlined } from '@ant-design/icons';
 import useApiClient from '@/utils/request';
 import { deepClone } from '@/app/monitor/utils/common';
 import { ObectItem } from '@/app/monitor/types/monitor';
 import { TreeItem } from '@/app/monitor/types';
+import { useTableOptions } from '@/app/monitor/hooks/view';
 import viewStyle from './index.module.scss';
 import TreeSelector from '@/app/monitor/components/treeSelector';
 import ViewList from './viewList';
@@ -19,6 +19,7 @@ const Intergration = () => {
   const [objectId, setObjectId] = useState<React.Key>('');
   const [defaultSelectObj, setDefaultSelectObj] = useState<React.Key>('');
   const [displayType, setDisplayType] = useState<string>('list');
+  const tableOptions = useTableOptions();
 
   const showTab = useMemo(() => {
     const objectName = objects.find((item) => item.id === objectId)?.name || '';
@@ -93,10 +94,7 @@ const Intergration = () => {
         {showTab && (
           <Segmented
             className="mb-[16px]"
-            options={[
-              { value: 'list', icon: <BarsOutlined /> },
-              { value: 'view', icon: <ApartmentOutlined /> },
-            ]}
+            options={tableOptions}
             value={displayType}
             onChange={onDisplayTypeChange}
           />

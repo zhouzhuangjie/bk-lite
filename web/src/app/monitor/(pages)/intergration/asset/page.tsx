@@ -9,6 +9,7 @@ import {
   Tooltip,
   Dropdown,
   Tag,
+  Popconfirm,
 } from 'antd';
 import useApiClient from '@/utils/request';
 import assetStyle from './index.module.scss';
@@ -100,13 +101,21 @@ const Asset = () => {
             {t('common.detail')}
           </Button>
           <Permission requiredPermissions={['Delete']}>
-            <Button
-              type="link"
-              onClick={() => showDeleteInstConfirm(record)}
-              className="ml-[10px]"
+            <Popconfirm
+              title={t('common.deleteTitle')}
+              description={t('common.deleteContent')}
+              okText={t('common.confirm')}
+              cancelText={t('common.cancel')}
+              onConfirm={() => deleteInstConfirm(record)}
             >
-              {t('common.remove')}
-            </Button>
+              <Button
+                type="link"
+                // onClick={() => showDeleteInstConfirm(record)}
+                className="ml-[10px]"
+              >
+                {t('common.remove')}
+              </Button>
+            </Popconfirm>
           </Permission>
         </>
       ),
@@ -392,31 +401,44 @@ const Asset = () => {
     });
   };
 
-  const showDeleteInstConfirm = (row: any) => {
-    confirm({
-      title: t('common.deleteTitle'),
-      content: t('common.deleteContent'),
-      centered: true,
-      onOk() {
-        return new Promise(async (resolve) => {
-          try {
-            await post(
-              `/monitor/api/monitor_instance/remove_monitor_instance/`,
-              {
-                instance_ids: [row.instance_id],
-                clean_child_config: true,
-              }
-            );
-            message.success(t('common.successfullyDeleted'));
-            getObjects();
-            getAssetInsts(objectId);
-          } finally {
-            resolve(true);
-          }
-        });
-      },
-    });
-  };
+  // const showDeleteInstConfirm = (row: any) => {
+  //   confirm({
+  //     title: t('common.deleteTitle'),
+  //     content: t('common.deleteContent'),
+  //     centered: true,
+  //     onOk() {
+  //       return new Promise(async (resolve) => {
+  //         try {
+  //           await post(
+  //             `/monitor/api/monitor_instance/remove_monitor_instance/`,
+  //             {
+  //               instance_ids: [row.instance_id],
+  //               clean_child_config: true,
+  //             }
+  //           );
+  //           message.success(t('common.successfullyDeleted'));
+  //           getObjects();
+  //           getAssetInsts(objectId);
+  //         } finally {
+  //           resolve(true);
+  //         }
+  //       });
+  //     },
+  //   });
+  // };
+
+  const deleteInstConfirm = async (row: any) => {
+    await post(
+      `/monitor/api/monitor_instance/remove_monitor_instance/`,
+      {
+        instance_ids: [row.instance_id],
+        clean_child_config: true,
+      }
+    );
+    message.success(t('common.successfullyDeleted'));
+    getObjects();
+    getAssetInsts(objectId);
+  }
 
   const clearText = () => {
     setSearchText('');
