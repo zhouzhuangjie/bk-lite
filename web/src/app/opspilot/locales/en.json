@@ -249,6 +249,7 @@
     "label": "Label",
     "description": "Description",
     "mcpUrl": "URL",
+    "variables": "Variables",
     "general": "General",
     "search": "Search",
     "maintenance": "Maintenance",
