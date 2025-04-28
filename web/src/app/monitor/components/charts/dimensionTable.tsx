@@ -116,9 +116,6 @@ const DimensionFilter: React.FC<DimensionFilterProps> = ({
       width: 100,
       ellipsis: true,
       fixed: 'left',
-      render: (_: any, row: TableDataItem) => (
-        <>{row[item.name as string] || '--'}</>
-      ),
     }));
     return [
       {
@@ -147,7 +144,7 @@ const DimensionFilter: React.FC<DimensionFilterProps> = ({
         className="w-full"
         rowKey="id"
         size="small"
-        scroll={{ x: 386, y: 'calc(100vh - 450px)' }}
+        scroll={{ x: 340, y: 'calc(100vh - 450px)' }}
         dataSource={tableData}
         columns={columns}
       />

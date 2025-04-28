@@ -82,7 +82,6 @@ const Configure = () => {
       dataIndex: 'data_type',
       key: 'data_type',
       width: 100,
-      render: (_, record) => <>{record.data_type || '--'}</>,
     },
     {
       title: t('common.unit'),
@@ -98,8 +97,6 @@ const Configure = () => {
       dataIndex: 'display_description',
       key: 'display_description',
       width: 150,
-      ellipsis: true,
-      render: (_, record) => <>{record.display_description || '--'}</>,
     },
     {
       title: t('common.action'),
@@ -375,9 +372,14 @@ const Configure = () => {
       id: item.id,
       sort_order: index,
     }));
-    await post('/monitor/api/metrics/set_order/', updatedOrder);
-    message.success(t('common.updateSuccess'));
-    getInitData();
+    post('/monitor/api/metrics/set_order/', updatedOrder)
+      .then(() => {
+        message.success(t('common.updateSuccess'));
+        getInitData();
+      })
+      .catch(() => {
+        setLoading(false);
+      });
   };
 
   const onToggle = (id: string, isOpen: boolean) => {
@@ -416,7 +418,7 @@ const Configure = () => {
             </Button>
           </Permission>
           <Permission requiredPermissions={['Add Metric']}>
-            <Button onClick={() => openMetricModal('Add Metric')}>
+            <Button onClick={() => openMetricModal('add')}>
               {t('monitor.intergrations.addMetric')}
             </Button>
           </Permission>

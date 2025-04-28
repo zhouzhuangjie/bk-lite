@@ -5,13 +5,20 @@
 from apps.cmdb.constants import CollectPluginTypes
 from apps.cmdb.models.collect_model import CollectModels
 from apps.cmdb.collection.service import MetricsCannula, CollectK8sMetrics, CollectVmwareMetrics, \
-    CollectNetworkMetrics, ProtocolCollectMetrics
+    CollectNetworkMetrics, ProtocolCollectMetrics, AliyunCollectMetrics
 
 
 class ProtocolCollect(object):
     def __init__(self, task, default_metrics=None):
         self.task = task
         self.default_metrics = default_metrics
+
+    @property
+    def collect_cloud_manage(self):
+        data = {
+            "aliyun": self.collect_aliyun,
+        }
+        return data
 
     @property
     def collect_manage(self):
@@ -21,6 +28,7 @@ class ProtocolCollect(object):
             CollectPluginTypes.K8S: self.collect_k8s,
             CollectPluginTypes.PROTOCOL: self.collect_protocol
         }
+        result.update(self.collect_cloud_manage)
         return result
 
     def get_instance(self):
@@ -45,6 +53,15 @@ class ProtocolCollect(object):
     def collect_protocol(self):
         data = ProtocolTaskCollect(self.task.id)()
         return data
+
+    def collect_aliyun(self):
+        instance = self.get_instance()
+        if not instance:
+            return None, None
+        aliyun_collect = AliyunCollect(instance)
+        result = aliyun_collect.collect()
+        format_data = aliyun_collect.format_collect_data(result)
+        return result, format_data
 
     def main(self):
         return self.collect_manage[self.task.task_type]()
@@ -143,3 +160,7 @@ class NetworkCollect(BaseCollect):
 
 class ProtocolTaskCollect(BaseCollect):
     COLLECT_PLUGIN = ProtocolCollectMetrics
+
+
+class AliyunCollect(BaseCollect):
+    COLLECT_PLUGIN = AliyunCollectMetrics

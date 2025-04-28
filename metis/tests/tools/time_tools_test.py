@@ -1,9 +1,11 @@
 from loguru import logger
-
-from src.tools.time_tools import current_time_tool
+from src.tools.time_tools import get_current_time
 
 
 def test_current_time_tool_returns_string():
-    result = current_time_tool.run("")
+    result = get_current_time.run("", config={
+        'configurable': {
+            'user_id': '1'
+        }
+    })
     logger.info(result)
-

@@ -38,7 +38,7 @@ def package_version_upload(_type, options):
         logger.warning(f"{_type} 包版本已存在!")
         return
 
-    with path_obj.open("r") as f:
+    with path_obj.open("rb") as f:
         file_content = f.read()
 
     # 创建 Django 的 ContentFile 对象

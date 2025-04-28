@@ -5,9 +5,10 @@ from src.ocr.base_ocr import BaseOCR
 
 
 class ImageLoader:
-    def __init__(self, path, ocr: BaseOCR):
+    def __init__(self, path, ocr: BaseOCR, load_mode='full'):
         self.path = path
         self.ocr = ocr
+        self.load_mode = load_mode
 
     def load(self):
         logger.info(f"解析图片: {self.path}")

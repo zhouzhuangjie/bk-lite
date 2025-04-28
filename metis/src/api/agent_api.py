@@ -1,13 +1,12 @@
 from loguru import logger
 from sanic import Blueprint, json
+from sanic_ext import validate
 
 from src.core.web.api_auth import auth
-from src.service.chatbot_workflow.entity.chatbot_workflow_request import ChatBotWorkflowRequest
-from sanic_ext import validate
-from src.service.chatbot_workflow.entity.chatbot_workflow_response import ChatBotWorkflowResponse
-from src.service.chatbot_workflow.graph.chatbot_workflow_graph import ChatBotWorkflowGraph
-from src.service.react_agent.entity.react_agent_request import ReActAgentRequest
-from src.service.react_agent.graph.react_agent_graph import ReActAgentGraph
+from src.entity.agent.chatbot_workflow_request import ChatBotWorkflowRequest
+from src.agent.chatbot_workflow.chatbot_workflow_graph import ChatBotWorkflowGraph
+from src.entity.agent.react_agent_request import ReActAgentRequest
+from src.agent.react_agent.react_agent_graph import ReActAgentGraph
 
 agent_api_router = Blueprint("agent", url_prefix="/agent")
 

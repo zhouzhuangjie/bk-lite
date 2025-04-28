@@ -16,7 +16,7 @@ class KnowledgeSearchService:
         embed_mode_config: Dict[str, Any],
         rerank_model,
         kwargs: Dict[str, Any],
-        score_threshold: int,
+        score_threshold: float,
     ) -> Dict[str, Any]:
         """构建搜索参数
 
@@ -34,7 +34,7 @@ class KnowledgeSearchService:
         if kwargs["enable_rerank"]:
             rerank_model_address = rerank_model.rerank_config["base_url"]
             rerank_model_api_key = rerank_model.rerank_config["api_key"]
-            rerank_model_name = rerank_model.name
+            rerank_model_name = rerank_model.rerank_config.get("model", rerank_model.name)
         params = {
             "index_name": knowledge_base_folder.knowledge_index_name(),
             "search_query": query,
@@ -51,7 +51,7 @@ class KnowledgeSearchService:
             "enable_rerank": kwargs["enable_rerank"],
             "embed_model_base_url": embed_mode_config["base_url"],
             "embed_model_api_key": embed_mode_config["api_key"],
-            "embed_model_name": embed_mode_config["name"],
+            "embed_model_name": embed_mode_config["model"],
             "rerank_model_base_url": rerank_model_address,
             "rerank_model_api_key": rerank_model_api_key,
             "rerank_model_name": rerank_model_name,
@@ -83,7 +83,8 @@ class KnowledgeSearchService:
         rerank_model = None
         if kwargs["enable_rerank"]:
             rerank_model = RerankProvider.objects.get(id=kwargs["rerank_model"])
-        embed_mode_config["name"] = embed_mode.name
+        if "model" not in embed_mode_config:
+            embed_mode_config["model"] = embed_mode.name
         # 构建搜索参数
         params = cls._build_search_params(
             knowledge_base_folder, query, embed_mode_config, rerank_model, kwargs, score_threshold

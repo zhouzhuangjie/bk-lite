@@ -131,7 +131,7 @@ const Variable = () => {
         </div>
         <div className="tablewidth">
           <CustomTable
-            scroll={{ y: 'calc(100vh - 400px)', x: 'calc(100vw - 300px)' }}
+            scroll={{ y: 'calc(100vh - 326px)', x: 'calc(100vw - 300px)' }}
             loading={loading}
             columns={columns}
             dataSource={data}
