@@ -232,6 +232,13 @@ export const useKnowledgeApi = () => {
     return get(`/opspilot/knowledge_mgmt/knowledge_document/${id}/`);
   };
 
+  /**
+   * Fetches tasks assigned to the current user.
+   */
+  const fetchMyTasks = async (params: any): Promise<any[]> => {
+    return get('/opspilot/knowledge_mgmt/knowledge_document/get_my_tasks/',  { params });
+  };
+
   return {
     fetchEmbeddingModels,
     fetchKnowledgeBase,
@@ -260,5 +267,6 @@ export const useKnowledgeApi = () => {
     previewChunk,
     getDocListConfig,
     getDocumentConfig,
+    fetchMyTasks,
   };
 };

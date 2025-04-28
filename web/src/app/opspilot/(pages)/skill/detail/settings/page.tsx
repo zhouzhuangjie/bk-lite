@@ -12,6 +12,7 @@ import CustomChat from '@/app/opspilot/components/custom-chat';
 import PermissionWrapper from '@/components/permission';
 import KnowledgeBaseSelector from '@/app/opspilot/components/skill/knowledgeBaseSelector';
 import { KnowledgeBase, RagScoreThresholdItem, KnowledgeBaseRagSource } from '@/app/opspilot/types/skill';
+import { SelectTool } from '@/app/opspilot/types/tool';
 import ToolSelector from '@/app/opspilot/components/skill/toolSelector';
 import { useSkillApi } from '@/app/opspilot/api/skill';
 
@@ -44,7 +45,7 @@ const SkillSettingsPage: React.FC = () => {
   });
   const [saveLoading, setSaveLoading] = useState(false);
   const [quantity, setQuantity] = useState<number>(10);
-  const [selectedTools, setSelectedTools] = useState<number[]>([]);
+  const [selectedTools, setSelectedTools] = useState<SelectTool[]>([]);
   const [skillType, setSkillType] = useState<number | null>(null);
 
   useEffect(() => {
@@ -134,7 +135,12 @@ const SkillSettingsPage: React.FC = () => {
         conversation_window_size: chatHistoryEnabled ? quantity : undefined,
         temperature: temperature,
         show_think: values.show_think,
-        tools: selectedTools
+        tools: selectedTools.map((tool: any) => ({
+          id: tool.id,
+          name: tool.name,
+          icon: tool.icon,
+          kwargs: tool.kwargs,
+        })),
       };
       setSaveLoading(true);
       await saveSkillDetail(id, payload);
@@ -351,7 +357,12 @@ const SkillSettingsPage: React.FC = () => {
                         <Switch size="small" className="ml-2" checked={showToolEnabled} onChange={changeToolEnable} />
                       </div>
                       <p className="pb-4 text-xs text-[var(--color-text-4)]">{t('skill.toolTip')}</p>
-                      {showToolEnabled && (<ToolSelector selectedToolIds={selectedTools} onChange={setSelectedTools} />)}
+                      {showToolEnabled && (
+                        <ToolSelector
+                          defaultTools={selectedTools}
+                          onChange={(selected: SelectTool[]) => setSelectedTools(selected)}
+                        />
+                      )}
                     </Form>
                   </div>
                 )}

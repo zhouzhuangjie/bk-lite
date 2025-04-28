@@ -6,25 +6,24 @@ import { useTranslation } from '@/utils/i18n';
 
 interface Task {
   id: number;
-  name: string;
+  task_name: string;
   train_progress: number;
 }
 
 const TaskProgress: React.FC = () => {
   const { t } = useTranslation();
   const [tasks, setTasks] = useState<Task[]>([]);
-  const { fetchDocuments } = useKnowledgeApi();
+  const { fetchMyTasks } = useKnowledgeApi();
   const searchParams = useSearchParams();
   const id = searchParams ? searchParams.get('id') : null;
 
   useEffect(() => {
-    const params = {
-      train_status: 0,
-      knowledge_base_id: id
-    };
     const fetchTasks = async () => {
       try {
-        const data = await fetchDocuments(params);
+        const params = {
+          knowledge_base_id: id
+        };
+        const data = await fetchMyTasks(params);
         setTasks(data);
       } catch (error) {
         console.error(`${t('common.fetchFailed')}: ${error}`);
@@ -41,8 +40,10 @@ const TaskProgress: React.FC = () => {
       {tasks.map((task) => (
         <div key={task.id} className="mb-2">
           <div className="flex justify-between items-center text-xs mb-1">
-            <span>{task.name}</span>
-            <span>{task.train_progress}%</span>
+            <span className="flex-1 truncate" title={task.task_name}>
+              {task.task_name}
+            </span>
+            <span className="ml-2 flex-shrink-0">{task.train_progress}%</span>
           </div>
           <div className={`w-full h-2 rounded relative overflow-hidden ${styles.progressContainer}`}>
             <div className={`${styles.progressBar} h-full w-full`}></div>
