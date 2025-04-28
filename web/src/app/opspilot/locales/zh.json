@@ -249,6 +249,7 @@
     "label": "标签",
     "description": "描述",
     "mcpUrl": "链接",
+    "variables": "变量",
     "general": "通用",
     "search": "搜索",
     "maintenance": "运维",
