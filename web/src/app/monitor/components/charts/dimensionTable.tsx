@@ -116,9 +116,6 @@ const DimensionFilter: React.FC<DimensionFilterProps> = ({
       width: 100,
       ellipsis: true,
       fixed: 'left',
-      render: (_: any, row: TableDataItem) => (
-        <>{row[item.name as string] || '--'}</>
-      ),
     }));
     return [
       {

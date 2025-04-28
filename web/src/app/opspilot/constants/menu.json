@@ -171,7 +171,7 @@
           "name": "my_quota"
         },
         {
-          "title": "接口秘密值",
+          "title": "密钥",
           "url": "/opspilot/settings/key",
           "icon": "key",
           "name": "api_secret_key"
