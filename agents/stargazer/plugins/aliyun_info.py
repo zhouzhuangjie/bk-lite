@@ -1494,12 +1494,13 @@ serverless"""
     def format_aliyun_mysql(data_list):
         result = []
         for data in data_list:
+            zone_slave = ",".join([data[i] for i in data if i.startswith("ZoneIdSlave")])
             result.append({
                 "resource_name": data.get("DBInstanceDescription"),
                 "resource_id": data.get("DBInstanceId"),
                 "region": data.get("RegionId"),
                 "zone": data.get("ZoneId"),
-                "zone_slave": ",".format([data[i] for i in data if i.startswith("ZoneIdSlave")]),
+                "zone_slave": zone_slave,
                 "engine": data.get("Engine"),
                 "version": data.get("EngineVersion"),
                 "type": data.get("DBInstanceType"),
@@ -1521,12 +1522,13 @@ serverless"""
     def format_aliyun_pgsql(data_list):
         result = []
         for data in data_list:
+            zone_slave = ",".join([data[i] for i in data if i.startswith("ZoneIdSlave")])
             result.append({
                 "resource_name": data.get("DBInstanceDescription"),
                 "resource_id": data.get("DBInstanceId"),
                 "region": data.get("RegionId"),
                 "zone": data.get("ZoneId"),
-                "zone_slave": ",".format([data[i] for i in data if i.startswith("ZoneIdSlave")]),
+                "zone_slave": zone_slave,
                 "engine": data.get("Engine"),
                 "version": data.get("EngineVersion"),
                 "type": data.get("DBInstanceType"),
@@ -1567,7 +1569,7 @@ serverless"""
                 "package_type": data["PackageType"],
                 "charge_type": data["ChargeType"],
                 "create_time": utc_to_dts(data.get("CreateTime")),
-                "end_time": utc_to_dts(data.get("ExpireTime")),
+                "end_time": utc_to_dts(data.get("EndTime")),
             })
         return result
 
@@ -1575,12 +1577,13 @@ serverless"""
     def format_aliyun_mongodb(data_list):
         result = []
         for data in data_list:
+            zone_slave = ",".join([data.get("SecondaryZoneId", "") or data.get("HiddenZoneId", "")])
             result.append({
                 "resource_name": data.get("DBInstanceDescription"),
                 "resource_id": data.get("DBInstanceId"),
                 "region": data.get("RegionId"),
                 "zone": data.get("ZoneId"),
-                "zone_slave": ",".join([data.get("SecondaryZoneId", ""), data.get("HiddenZoneId", "")]),
+                "zone_slave":zone_slave ,
                 "engine": data.get("Engine"),
                 "version": data.get("EngineVersion"),
                 "type": data.get("DBInstanceType"),
