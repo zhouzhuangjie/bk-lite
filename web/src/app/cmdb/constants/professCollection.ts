@@ -127,6 +127,16 @@ export const SQL_FORM_INITIAL_VALUES = {
   timeout: 60,
 };
 
+export const CLOUD_FORM_INITIAL_VALUES = {
+  instId: undefined,
+  cycle: CYCLE_OPTIONS.ONCE,
+  enterType: ENTER_TYPE.APPROVAL,
+  accessKey: '',
+  accessSecret: '',
+  regionId: '',
+  timeout: 600
+}
+
 export const validateCycleTime = (
   type: string,
   value: any,

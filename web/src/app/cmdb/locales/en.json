@@ -265,6 +265,12 @@
             "encryptAlgorithm": "Encryption algorithm",
             "encryptKey": "Encryption key"
         },
+        "cloudTask": {
+            "accessKey": "AccessKey",
+            "accessSecret": "AccessSecret",
+            "region": "Region",
+            "cloudAccount": "Cloud account"
+        },
         "table": {
             "taskName": "Task Name",
             "execStatus": "Execution Status",

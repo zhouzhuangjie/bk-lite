@@ -261,6 +261,12 @@
             "encryptAlgorithm": "加密算法",
             "encryptKey": "加密密钥"
         },
+        "cloudTask": {
+            "accessKey": "秘匙",
+            "accessSecret": "秘钥",
+            "region": "区域",
+            "cloudAccount": "云账号"
+        },
         "table": {
             "taskName": "任务名称",
             "execStatus": "执行状态",

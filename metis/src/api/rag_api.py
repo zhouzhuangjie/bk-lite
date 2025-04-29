@@ -3,11 +3,9 @@ import tempfile
 import traceback
 import uuid
 import time
-from datetime import datetime
 
 from langchain_openai import OpenAIEmbeddings
 from sanic import Blueprint, json
-from sanic.log import logger
 from sanic_ext import validate
 from loguru import logger
 from src.chunk.fixed_size_chunk import FixedSizeChunk
@@ -15,6 +13,8 @@ from src.chunk.full_chunk import FullChunk
 from src.chunk.recursive_chunk import RecursiveChunk
 from src.chunk.semantic_chunk import SemanticChunk
 from src.core.web.api_auth import auth
+from src.enhance.qa_enhance import QAEnhance
+from src.entity.rag.qa_enhance_request import QAEnhanceRequest
 from src.loader.doc_loader import DocLoader
 from src.loader.excel_loader import ExcelLoader
 from src.loader.image_loader import ImageLoader
@@ -27,14 +27,14 @@ from src.loader.website_loader import WebSiteLoader
 from src.ocr.azure_ocr import AzureOCR
 from src.ocr.olm_ocr import OlmOcr
 from src.ocr.pp_ocr import PPOcr
-from src.rag.native_rag.entity.elasticsearch_document_count_request import ElasticSearchDocumentCountRequest
-from src.rag.native_rag.entity.elasticsearch_document_delete_request import ElasticSearchDocumentDeleteRequest
-from src.rag.native_rag.entity.elasticsearch_document_list_request import ElasticSearchDocumentListRequest
-from src.rag.native_rag.entity.elasticsearch_document_metadata_update_request import \
+from src.entity.rag.elasticsearch_document_count_request import ElasticSearchDocumentCountRequest
+from src.entity.rag.elasticsearch_document_delete_request import ElasticSearchDocumentDeleteRequest
+from src.entity.rag.elasticsearch_document_list_request import ElasticSearchDocumentListRequest
+from src.entity.rag.elasticsearch_document_metadata_update_request import \
     ElasticsearchDocumentMetadataUpdateRequest
-from src.rag.native_rag.entity.elasticsearch_index_delete_request import ElasticSearchIndexDeleteRequest
-from src.rag.native_rag.entity.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
-from src.rag.native_rag.entity.elasticsearch_store_request import ElasticSearchStoreRequest
+from src.entity.rag.elasticsearch_index_delete_request import ElasticSearchIndexDeleteRequest
+from src.entity.rag.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
+from src.entity.rag.elasticsearch_store_request import ElasticSearchStoreRequest
 from src.rag.native_rag.rag.elasticsearch_rag import ElasticSearchRag
 
 rag_api_router = Blueprint("rag", url_prefix="/rag")
@@ -65,7 +65,7 @@ def get_file_loader(file_path, file_extension, load_mode, request=None):
     elif file_extension in ['xlsx', 'xls', 'csv']:
         return ExcelLoader(file_path, load_mode)
     elif file_extension in ['md']:
-        return MarkdownLoader(file_path,load_mode)
+        return MarkdownLoader(file_path, load_mode)
     else:
         raise ValueError(f"不支持的文件类型: {file_extension}")
 
@@ -202,6 +202,26 @@ async def count_index_document(request, body: ElasticSearchDocumentCountRequest)
         error_detail = traceback.format_exc()
         logger.error(f"[{request_id}] 计数索引文档请求失败: {str(e)}\n{error_detail}")
         return json({"status": "error", "message": str(e)})
+
+
+@rag_api_router.post("/qa_pair_generate")
+@auth.login_required
+@validate(json=QAEnhanceRequest)
+async def qa_pair_generate(request, body: QAEnhanceRequest):
+    """
+    QA 问答对生成
+    :param request:
+    :return:
+    """
+    """
+    生成问答对
+    :param request:
+    :return:
+    """
+    logger.info(f"问答对生成请求开始, 参数: {body}")
+    qa_enhance = QAEnhance(body)
+    result = qa_enhance.generate_qa()
+    return json({"status": "success", "message": result})
 
 
 @rag_api_router.post("/custom_content_ingest")

@@ -35,7 +35,7 @@ const SNMPTask: React.FC<SNMPTaskFormProps> = ({
   const [snmpVersion, setSnmpVersion] = useState('v2');
   const [securityLevel, setSecurityLevel] = useState('authNoPriv');
   const localeContext = useLocale();
-  const { id: modelId } = modelItem;
+  const { model_id: modelId } = modelItem;
 
   const {
     form,
@@ -56,7 +56,7 @@ const SNMPTask: React.FC<SNMPTaskFormProps> = ({
       const version = values.version;
       const ipRange = values.ipRange?.length ? values.ipRange : undefined;
       const driverType = selectedNode.tabItems?.find(
-        (item) => item.id === modelId
+        (item) => item.model_id === modelId
       )?.type;
 
       const accessPoint = baseRef.current?.accessPoints.find(

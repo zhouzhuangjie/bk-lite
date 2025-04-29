@@ -2,15 +2,14 @@ import os
 
 from langchain_core.documents import Document
 
-from dotenv import load_dotenv
 from loguru import logger
 
-from src.rag.native_rag.entity.elasticsearch_document_delete_request import ElasticSearchDocumentDeleteRequest
-from src.rag.native_rag.entity.elasticsearch_document_metadata_update_request import \
+from src.entity.rag.elasticsearch_document_delete_request import ElasticSearchDocumentDeleteRequest
+from src.entity.rag.elasticsearch_document_metadata_update_request import \
     ElasticsearchDocumentMetadataUpdateRequest
-from src.rag.native_rag.entity.elasticsearch_index_delete_request import ElasticSearchIndexDeleteRequest
-from src.rag.native_rag.entity.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
-from src.rag.native_rag.entity.elasticsearch_store_request import ElasticSearchStoreRequest
+from src.entity.rag.elasticsearch_index_delete_request import ElasticSearchIndexDeleteRequest
+from src.entity.rag.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
+from src.entity.rag.elasticsearch_store_request import ElasticSearchStoreRequest
 from src.rag.native_rag.rag.elasticsearch_rag import ElasticSearchRag
 
 
