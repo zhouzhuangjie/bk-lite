@@ -10,8 +10,7 @@ class ChatBotWorkflowNode(BasicNode):
         message = state["messages"]
         message.append(config["configurable"]["graph_request"].user_message)
         llm = self.get_llm_client(config["configurable"]["graph_request"])
+        message = llm.invoke(message)
         return {
-            "messages": [
-                llm.invoke(message)
-            ]
+            "messages": [message]
         }

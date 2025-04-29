@@ -35,25 +35,7 @@ class ToolsNodes(BasicNode):
                 for tool in langchain_tools:
                     self.tools.append(tool)
 
-    async def agent_node(self, state: TypedDict, config: RunnableConfig) -> TypedDict:
-        # 获取完整的消息历史
-        messages = state["messages"]
 
-        # 检查最后一条消息，如果是工具消息并且有错误，记录日志
-        if messages and isinstance(messages[-1], ToolMessage) and messages[-1].status == 'error':
-            print(f"Tool execution error: {messages[-1].content}")
-
-        # 创建一个绑定了工具的LLM
-        llm = self.get_llm_client(config["configurable"]["graph_request"])
-        llm_with_tools = llm.bind_tools(self.tools)
-
-        # 调用LLM生成回复（可能包含工具调用）
-        response = await llm_with_tools.ainvoke(messages)
-
-        # 更新消息列表
-        state["messages"].append(response)
-
-        return state
 
     async def build_tools_node(self) -> ToolNode:
         if self.tools:

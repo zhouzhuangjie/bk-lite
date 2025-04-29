@@ -41,3 +41,4 @@ langchain-huggingface==0.1.2
 
 python-jenkins==1.8.2
 kubernetes==32.0.1
+pyarmor==9.1.5

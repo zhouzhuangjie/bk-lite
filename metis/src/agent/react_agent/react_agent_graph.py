@@ -22,13 +22,10 @@ class ReActAgentGraph(ToolsGraph):
 
         last_edge = self.prepare_graph(graph_builder, node_builder)
 
-        tools_node = await node_builder.build_tools_node()
-        graph_builder.add_node("tools", tools_node, retry=RetryPolicy(max_attempts=5))
         graph_builder.add_node("agent", node_builder.agent_node, retry=RetryPolicy(max_attempts=5))
 
         graph_builder.add_edge(last_edge, "agent")
-        graph_builder.add_conditional_edges("agent", self.should_continue, ["tools", END])
-        graph_builder.add_edge("tools", "agent")
+        graph_builder.add_edge("agent", END)
 
         graph = graph_builder.compile()
         return graph
