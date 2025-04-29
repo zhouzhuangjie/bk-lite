@@ -54,7 +54,7 @@ class KnowledgeBaseViewSet(AuthViewSet):
                 return JsonResponse(
                     {"result": False, "message": _("The knowledge base is training and cannot be modified.")}
                 )
-            retrain_all.delay(instance.id)
+            retrain_all.delay(instance.id, username=request.user.username)
         return super().update(request, *args, **kwargs)
 
     @action(methods=["POST"], detail=True)

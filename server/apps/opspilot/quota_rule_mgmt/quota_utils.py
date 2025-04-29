@@ -30,7 +30,7 @@ class QuotaUtils(object):
         file_size_map = {"shared": [], "private": []}
         type_map = {"shared": "shared", "uniform": "private"}
         if not self.quota_list:
-            return -1, 0, False
+            return 0, 0, False
         for quota in self.quota_list:
             file_size_map[type_map[quota["rule_type"]]].append(quota["file_size"] * unit_map[quota["unit"]])
         if file_size_map["private"]:
@@ -51,7 +51,7 @@ class QuotaUtils(object):
         skill_count_map = {"shared": [], "private": []}
         type_map = {"shared": "shared", "uniform": "private"}
         if not self.quota_list:
-            return -1, 0, False
+            return 0, 0, False
         for quota in self.quota_list:
             skill_count_map[type_map[quota["rule_type"]]].append(quota["skill_count"])
         if skill_count_map["private"]:
@@ -71,7 +71,7 @@ class QuotaUtils(object):
         bot_count_map = {"shared": [], "private": []}
         type_map = {"shared": "shared", "uniform": "private"}
         if not self.quota_list:
-            return -1, 0, False
+            return 0, 0, False
         for quota in self.quota_list:
             bot_count_map[type_map[quota["rule_type"]]].append(quota["bot_count"])
         if bot_count_map["private"]:
@@ -121,7 +121,7 @@ class QuotaUtils(object):
         unit_map = {"thousand": 1000, "million": 1000000}
         llm_model_list = []
         for quota in quota_list:
-            token_config = quota["token_set"]
+            token_config = quota.token_set
             for llm_model_name, value in token_config.items():
                 if llm_model_name == llm_model:
                     llm_model_list.append(int(value["value"]) * unit_map.get(value["unit"], 1))

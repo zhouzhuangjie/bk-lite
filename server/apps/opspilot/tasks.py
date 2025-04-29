@@ -1,3 +1,4 @@
+import datetime
 import json
 
 import requests
@@ -7,48 +8,60 @@ from tqdm import tqdm
 
 from apps.core.logger import celery_logger as logger
 from apps.opspilot.knowledge_mgmt.models.knowledge_document import DocumentStatus
+from apps.opspilot.knowledge_mgmt.models.knowledge_task import KnowledgeTask
 from apps.opspilot.knowledge_mgmt.services.knowledge_search_service import KnowledgeSearchService
 from apps.opspilot.models import FileKnowledge, KnowledgeBase, KnowledgeDocument, ManualKnowledge, WebPageKnowledge
 from apps.opspilot.utils.chat_server_helper import ChatServerHelper
 
 
 @shared_task
-def general_embed(knowledge_document_id_list):
+def general_embed(knowledge_document_id_list, username):
     logger.info(f"general_embed: {knowledge_document_id_list}")
     document_list = KnowledgeDocument.objects.filter(id__in=knowledge_document_id_list)
-    general_embed_by_document_list(document_list)
+    general_embed_by_document_list(document_list, username=username)
     logger.info(f"knowledge training finished: {knowledge_document_id_list}")
 
 
 @shared_task
-def retrain_all(knowledge_base_id):
+def retrain_all(knowledge_base_id, username):
     logger.info("Start retraining")
     knowledge_base = KnowledgeBase.objects.get(id=knowledge_base_id)
     knowledge_base.recreate_es_index()
     document_list = KnowledgeDocument.objects.filter(knowledge_base_id=knowledge_base_id)
     document_list.update(train_status=DocumentStatus.CHUNKING)
-    general_embed_by_document_list(document_list)
+    general_embed_by_document_list(document_list, username=username)
 
 
-def general_embed_by_document_list(document_list, is_show=False):
+def general_embed_by_document_list(document_list, is_show=False, username=""):
     if is_show:
         res, remote_docs = invoke_one_document(document_list[0], is_show)
         docs = [i["page_content"] for i in remote_docs][:10]
         return docs
+    knowledge_base_id = document_list[0].knowledge_base_id
+    task_obj = KnowledgeTask.objects.create(
+        created_by=username,
+        knowledge_base_id=knowledge_base_id,
+        task_name=f"{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}-{username}",
+        knowledge_ids=[doc.id for doc in document_list],
+        train_progress=0,
+    )
+    train_progress = round(float(1 / len(task_obj.knowledge_ids)) * 100, 2)
     for index, document in tqdm(enumerate(document_list)):
-        invoke_document_to_es.delay(document.id)
+        invoke_document_to_es(document=document)
+        task_obj.train_progress += train_progress
+        task_obj.save()
+    task_obj.delete()
 
 
 @shared_task
-def invoke_document_to_es(document_id):
-    document = KnowledgeDocument.objects.filter(id=document_id).first()
+def invoke_document_to_es(document_id=0, document=None):
+    if document_id:
+        document = KnowledgeDocument.objects.filter(id=document_id).first()
     if not document:
         logger.error(f"document {document_id} not found")
         return
-
-    document.train_status = DocumentStatus.CHUNKING
+    document.train_status = DocumentStatus.TRAINING
     document.chunk_size = 0
-    document.train_progress = 0
     document.save()
     logger.info(f"document {document.name} progress: {document.train_progress}")
     KnowledgeSearchService.delete_es_content(document.knowledge_index_name(), document_id, document.name)
@@ -58,7 +71,6 @@ def invoke_document_to_es(document_id):
         document.save()
         return
     document.train_status = DocumentStatus.READY
-    document.train_progress = 100
     document.save()
     logger.info(f"document {document.name} progress: {document.train_progress}")
 

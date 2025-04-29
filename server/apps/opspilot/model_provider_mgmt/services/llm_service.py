@@ -170,7 +170,13 @@ class LLMService:
         user_message, image_data = self._process_user_message_and_images(kwargs["user_message"])
         # 处理聊天历史
         chat_history = self._process_chat_history(kwargs["chat_history"], kwargs["conversation_window_size"])
-        tools = SkillTools.objects.filter(name__in=kwargs.get("tools", [])).values_list("params", flat=True)
+        tool_map = {i["id"]: {u["key"]: u["value"] for u in i["kwargs"] if u["key"]} for i in kwargs.get("tools", [])}
+        tools = list(SkillTools.objects.filter(id__in=list(tool_map.keys())).values_list("params", flat=True))
+        for i in tools:
+            i.pop("kwargs", None)
+        extra_config = {}
+        for i in tool_map.values():
+            extra_config.update(i)
         # 构建聊天参数
         chat_kwargs = {
             "openai_api_base": llm_model.decrypted_llm_config["openai_base_url"],
@@ -189,7 +195,8 @@ class LLMService:
         if kwargs.get("thread_id"):
             chat_kwargs["thread_id"] = str(kwargs["thread_id"])
         if kwargs["skill_type"] == SkillTypeChoices.BASIC_TOOL:
-            chat_kwargs.update({"tools_servers": list(tools)})
+            chat_kwargs.update({"tools_servers": tools})
+            chat_kwargs.update({"extra_config": extra_config})
         return chat_kwargs, doc_map, title_map
 
     def invoke_chat(self, kwargs: Dict[str, Any]) -> Tuple[Dict, Dict, Dict]:
@@ -203,7 +210,7 @@ class LLMService:
             处理后的数据、文档映射和标题映射
         """
         llm_model = LLMModel.objects.get(id=kwargs["llm_model"])
-        self.validate_remaining_token(llm_model)
+        # self.validate_remaining_token(llm_model)
         show_think = kwargs.pop("show_think", True)
         # 处理用户消息和图片
         chat_kwargs, doc_map, title_map = self.format_chat_server_kwargs(kwargs, llm_model)
