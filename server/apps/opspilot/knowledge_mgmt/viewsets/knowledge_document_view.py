@@ -7,15 +7,15 @@ from django.utils.translation import gettext as _
 from django_filters import filters
 from django_filters.rest_framework import FilterSet
 from django_minio_backend import MinioBackend
-from langserve import RemoteRunnable
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
 from apps.core.logger import logger
 from apps.opspilot.knowledge_mgmt.models.knowledge_document import DocumentStatus
+from apps.opspilot.knowledge_mgmt.models.knowledge_task import KnowledgeTask
 from apps.opspilot.knowledge_mgmt.serializers import KnowledgeDocumentSerializer
 from apps.opspilot.knowledge_mgmt.services.knowledge_search_service import KnowledgeSearchService
-from apps.opspilot.model_provider_mgmt.models import EmbedProvider, OCRProvider
+from apps.opspilot.model_provider_mgmt.models import EmbedProvider
 from apps.opspilot.models import (
     ConversationTag,
     FileKnowledge,
@@ -57,8 +57,20 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
         if type(knowledge_document_ids) is not list:
             knowledge_document_ids = [knowledge_document_ids]
         KnowledgeDocument.objects.filter(id__in=knowledge_document_ids).update(train_status=DocumentStatus.TRAINING)
-        general_embed.delay(knowledge_document_ids)
+        general_embed.delay(knowledge_document_ids, request.user.username)
         return JsonResponse({"result": True})
+
+    @action(methods=["GET"], detail=False)
+    def get_my_tasks(self, request):
+        knowledge_base_id = request.GET.get("knowledge_base_id", 0)
+        if not knowledge_base_id:
+            return JsonResponse({"result": False, "message": _("knowledge_base_id is required")})
+        task_list = (
+            KnowledgeTask.objects.filter(created_by=request.user.username, knowledge_base_id=knowledge_base_id)
+            .values("task_name", "train_progress")
+            .order_by("-id")
+        )
+        return JsonResponse({"result": True, "data": list(task_list)})
 
     @action(methods=["POST"], detail=False)
     def testing(self, request):
@@ -210,52 +222,7 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
 
     @action(methods=["POST"], detail=False)
     def submit_settings(self, request):
-        kwargs = request.data
-        knowledge_document_list = kwargs.pop("knowledge_document_list", [])
-        document_map = {int(i.pop("id")): i for i in knowledge_document_list}
-        knowledge_source_type = kwargs.pop("knowledge_source_type")
-        ids = list(document_map.keys())
-        return_data = []
-        remote_runnable = RemoteRunnable(settings.DOC_PARSE_SERVICE_URL)
-        if knowledge_source_type == "file":
-            file_list = FileKnowledge.objects.filter(knowledge_document_id__in=ids)
-            for i in file_list:
-                file_params = document_map.get(i.knowledge_document_id)
-                ocr_config = {}
-                if file_params["enable_ocr_parse"]:
-                    ocr_config = OCRProvider.objects.filter(id=file_params["ocr_model"]).first().ocr_config
-                parse_params = {
-                    "ocr_config": ocr_config,
-                    "source_type": "file",
-                    "files": [i.file.file],
-                    "mode": file_params["parse_type"],
-                }
-                res = remote_runnable.invoke(parse_params)
-                if res["result"]:
-                    return_data.append({"id": i.knowledge_document_id, "data": res["data"]})
-        elif knowledge_source_type == "web_page":
-            web_page_obj = WebPageKnowledge.objects.filter(knowledge_document_id__in=ids).first()
-            parse_params = {
-                "ocr_config": {},
-                "source_type": "web_page",
-                "mode": "full",
-                "url": web_page_obj.url,
-                "max_depth": web_page_obj.max_depth,
-            }
-            res = remote_runnable.invoke(parse_params)
-            return_data.append({"id": ids[0], "data": res["data"]})
-
-        else:
-            manual_txt = ManualKnowledge.objects.filter(knowledge_document_id__in=ids).first().content
-            parse_params = {
-                "ocr_config": {},
-                "source_type": "web_page",
-                "mode": "full",
-                "content": manual_txt,
-            }
-            res = remote_runnable.invoke(parse_params)
-            return_data.append({"id": ids[0], "data": res["data"]})
-        return JsonResponse({"result": True, "data": return_data})
+        return JsonResponse({"result": True})
 
     @action(methods=["POST"], detail=False)
     def update_parse_settings(self, request):
@@ -282,6 +249,7 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
             semantic_chunk_parse_embedding_model_id=kwargs.get("semantic_chunk_parse_embedding_model", None),
             chunk_type=kwargs.get("chunk_type", "fixed_size"),
         )
+        general_embed.delay(knowledge_document_list, request.user.username)
         return JsonResponse({"result": True})
 
     @action(methods=["POST"], detail=False)
@@ -311,5 +279,5 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
             document.semantic_chunk_parse_embedding_model = EmbedProvider.objects.get(
                 id=kwargs["semantic_chunk_parse_embedding_model"]
             )
-        res = general_embed_by_document_list([document], is_show=True)
+        res = general_embed_by_document_list([document], is_show=True, username=request.user.username)
         return JsonResponse({"result": True, "data": res})
