@@ -61,14 +61,4 @@ class BasicNode:
         state["messages"].append(HumanMessage(content=config["configurable"]["graph_request"].user_message))
         return state
 
-    def chatbot_node(self, state: TypedDict, config: RunnableConfig) -> TypedDict:
-        message = state["messages"]
-        message.append(config["configurable"]["graph_request"].user_message)
-        llm = self.get_llm_client(config["configurable"]["graph_request"])
-        return {
-            "messages": [
-                llm.invoke(message)
-            ]
-        }
 
-        return execute

@@ -18,6 +18,8 @@ def invoke_chatbot_workflow(request, body: ChatBotWorkflowRequest):
     workflow = ChatBotWorkflowGraph()
     for i in body.naive_rag_request:
         i.search_query = body.user_message
+
+    logger.debug(f"执行ChatBotWorkflowGraph,用户的问题:[{body.user_message}]")
     result = workflow.execute(body)
     response_content = result.model_dump()
     logger.info(f"执行ChatBotWorkflowGraph成功,用户的问题:[{body.user_message}]，结果:[{response_content}]")
@@ -31,7 +33,9 @@ async def invoke_react_agent(request, body: ReActAgentRequest):
     graph = ReActAgentGraph()
     for i in body.naive_rag_request:
         i.search_query = body.user_message
+
+    logger.debug(f"执行ReActAgentGraph,用户的问题:[{body.user_message}]")
     result = await graph.execute(body)
     response_content = result.model_dump()
-    logger.info(f"执行ReActGraph成功，用户的问题:[{body.user_message}],结果:[{response_content}]")
+    logger.info(f"执行ReActAgentGraph成功，用户的问题:[{body.user_message}],结果:[{response_content}]")
     return json(response_content)

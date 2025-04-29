@@ -16,7 +16,7 @@ class ProtocolCollect(object):
     @property
     def collect_cloud_manage(self):
         data = {
-            "aliyun": self.collect_aliyun,
+            "aliyun_account": self.collect_aliyun,
         }
         return data
 
@@ -55,15 +55,12 @@ class ProtocolCollect(object):
         return data
 
     def collect_aliyun(self):
-        instance = self.get_instance()
-        if not instance:
-            return None, None
-        aliyun_collect = AliyunCollect(instance)
-        result = aliyun_collect.collect()
-        format_data = aliyun_collect.format_collect_data(result)
-        return result, format_data
+        data = AliyunCollect(self.task.id)()
+        return data
 
     def main(self):
+        if self.task.is_cloud:
+            return self.collect_cloud_manage[self.task.model_id]()
         return self.collect_manage[self.task.task_type]()
 
 
