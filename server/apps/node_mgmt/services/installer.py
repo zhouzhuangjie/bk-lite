@@ -66,6 +66,7 @@ class InstallerService:
                 os=task_node.os,
                 organizations=task_node.organizations,
                 port=task_node.port,
+                status=task_node.status,
                 result=task_node.result,
             ))
         return result
