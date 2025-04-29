@@ -187,11 +187,29 @@ class CwAliyun(object):
         for k, v in kwargs.items():
             setattr(self, k, v)
 
+        # 猴子补丁：为CredentialModel类添加缺失的provider_name属性
+        from alibabacloud_credentials.models import CredentialModel
+        if not hasattr(CredentialModel, "provider_name"):
+            setattr(CredentialModel, "provider_name", None)
+
+        # 如果get_credential方法也缺失，也添加这个方法
+        if not hasattr(CredentialModel, "get_credential"):
+            setattr(CredentialModel, "get_credential", lambda self: self)
+
+        # 创建ACS客户端
         self.client = client.AcsClient(
             self.AccessKey, self.AccessSecret, self.RegionId, timeout=30, connect_timeout=30, max_retry_time=3
         )
+
+        # 创建OSS认证对象
         self.auth = oss2.Auth(self.AccessKey, self.AccessSecret)
-        self.auth_config = open_api_models.Config(access_key_id=self.AccessKey, access_key_secret=self.AccessSecret)
+
+        # 创建配置 - 不使用credential对象，直接设置access_key_id和access_key_secret
+        self.auth_config = open_api_models.Config(
+            access_key_id=self.AccessKey,
+            access_key_secret=self.AccessSecret
+        )
+        self.auth_config.region_id = self.RegionId
 
     def __getattr__(self, item):
         """
@@ -909,7 +927,8 @@ class Aliyun(object):
                 bucket.update(result.get("Bucket", {}))
             return {"result": True, "data": buckets}
         except Exception as e:
-            print("list_buckets error")
+            import traceback
+            print("list_buckets error. error={}".format(traceback.format_exc()))
             return {"result": False, "message": repr(e)}
 
     def list_rds(self, **kwargs):
@@ -937,7 +956,8 @@ class Aliyun(object):
                 describe_db_instances_request.page_number += 1
             return {"result": True, "data": rds_instances}
         except Exception as e:
-            print("list_rds error")
+            import traceback
+            print("list_rds error. error={}".format(traceback.format_exc()))
             return {"result": False, "message": repr(e)}
 
     def list_redis(self):
@@ -961,7 +981,8 @@ class Aliyun(object):
                 describe_instances_request.page_number += 1
             return {"result": True, "data": redis_instances}
         except Exception as e:
-            print("list_redis error")
+            import traceback
+            print("list_redis error. error={}".format(traceback.format_exc()))
             return {"result": False, "message": repr(e)}
 
     def list_mongodb(self):
@@ -994,7 +1015,8 @@ serverless"""
                     describe_db_instances_request.page_number += 1
             return {"result": True, "data": mongodb_instances}
         except Exception as e:
-            print("list_mongodb error")
+            import traceback
+            print("list_mongodb error. error={}".format(traceback.format_exc()))
             return {"result": False, "message": repr(e)}
 
     def list_kafka(self):
@@ -1010,7 +1032,7 @@ serverless"""
             kafka_instances = result.get("InstanceList", {}).get("InstanceVO", [])
             return {"result": True, "data": kafka_instances}
         except Exception as e:
-            print("list_kafka error")
+            print("list_kafka error. error={}".format(e))
             return {"result": False, "message": repr(e)}
 
     def list_kafka_consumer_group(self, **kwargs):
@@ -1142,7 +1164,8 @@ serverless"""
                 describe_load_balancers_request.page_number += 1
             return {"result": True, "data": clb_instances}
         except Exception as e:
-            print("list_slb error")
+            import traceback
+            print("list_slb error. error={}".format(traceback.format_exc()))
             return {"result": False, "message": repr(e)}
 
     def list_k8s_clusters(self):
@@ -1583,7 +1606,7 @@ serverless"""
                 "resource_id": data.get("DBInstanceId"),
                 "region": data.get("RegionId"),
                 "zone": data.get("ZoneId"),
-                "zone_slave":zone_slave ,
+                "zone_slave": zone_slave,
                 "engine": data.get("Engine"),
                 "version": data.get("EngineVersion"),
                 "type": data.get("DBInstanceType"),
