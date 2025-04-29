@@ -10,6 +10,7 @@ import {
 } from '@/app/monitor/constants/monitor';
 import { useSearchParams } from 'next/navigation';
 import useApiClient from '@/utils/request';
+import useMonitorApi from '@/app/monitor/api';
 import { useFormItems } from '@/app/monitor/hooks/intergration';
 import CodeEditor from '@/app/monitor/components/codeEditor';
 import { TableDataItem } from '@/app/monitor/types';
@@ -20,7 +21,8 @@ const AutomaticConfiguration: React.FC = () => {
   const [form] = Form.useForm();
   const { t } = useTranslation();
   const searchParams = useSearchParams();
-  const { post, isLoading } = useApiClient();
+  const { isLoading } = useApiClient();
+  const { checkMonitorInstance } = useMonitorApi();
   const pluginName = searchParams.get('collect_type') || '';
   const objId = searchParams.get('id') || '';
   const objectName = searchParams.get('name') || '';
@@ -170,13 +172,17 @@ const AutomaticConfiguration: React.FC = () => {
   const getConfigText = async (params: TableDataItem) => {
     try {
       setConfirmLoading(true);
-      await post(
-        `/monitor/api/monitor_instance/${objId}/check_monitor_instance/`,
-        {
-          instance_id: params.instance_id,
-          instance_name: params.instance_id,
-        }
-      );
+      // await post(
+      //   `/monitor/api/monitor_instance/${objId}/check_monitor_instance/`,
+      //   {
+      //     instance_id: params.instance_id,
+      //     instance_name: params.instance_id,
+      //   }
+      // );
+      await checkMonitorInstance(objId, {
+        instance_id: params.instance_id,
+        instance_name: params.instance_id,
+      });
       let _configMsg = deepClone(configText);
       if (collectType === 'snmp') {
         _configMsg = _configMsg[`v${params.version}`];

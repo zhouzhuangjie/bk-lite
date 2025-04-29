@@ -7,6 +7,7 @@ import React, {
   useCallback,
 } from 'react';
 import useApiClient from '@/utils/request';
+import useMonitorApi from '@/app/monitor/api';
 import { useTranslation } from '@/utils/i18n';
 import {
   MetricItem,
@@ -38,7 +39,8 @@ const { Option } = Select;
 const HEXAGON_AREA = 6400; // 格子的面积
 
 const ViewHive: React.FC<ViewListProps> = ({ objects, objectId }) => {
-  const { get, post, isLoading } = useApiClient();
+  const { isLoading } = useApiClient();
+  const { getInstanceSearch, getInstanceQueryParams, getMonitorMetrics } = useMonitorApi();
   const { t } = useTranslation();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const modalRef = useRef<ModalRef>(null);
@@ -280,21 +282,25 @@ const ViewHive: React.FC<ViewListProps> = ({ objects, objectId }) => {
     const objParams = {
       monitor_object_id: objectId,
     };
-    const getInstList = post(
-      `/monitor/api/monitor_instance/${objectId}/search/`,
-      params
-    );
-    const getQueryParams = get(
-      `/monitor/api/monitor_instance/query_params_enum/${name}/`,
-      {
-        params: objParams,
-      }
-    );
+    // const getInstList = post(
+    //   `/monitor/api/monitor_instance/${objectId}/search/`,
+    //   params
+    // );
+    const getInstList = await getInstanceSearch(objectId, params)
+
+    // const getQueryParams = get(
+    //   `/monitor/api/monitor_instance/query_params_enum/${name}/`,
+    //   {
+    //     params: objParams,
+    //   }
+    // );
+    const getQueryParams = await getInstanceQueryParams(name, objParams);
     setTableLoading(true);
     try {
-      const metricsData = await get('/monitor/api/metrics/', {
-        params: objParams,
-      });
+      // const metricsData = await get('/monitor/api/metrics/', {
+      //   params: objParams,
+      // });
+      const metricsData = await getMonitorMetrics(objParams);
       setMertics(metricsData || []);
       const tagetMerticItem = metricsData.find(
         (item: MetricItem) =>
@@ -409,10 +415,11 @@ const ViewHive: React.FC<ViewListProps> = ({ objects, objectId }) => {
     }
     try {
       setTableLoading(type !== 'timer');
-      const data = await post(
-        `/monitor/api/monitor_instance/${objectId}/search/`,
-        params
-      );
+      // const data = await post(
+      //   `/monitor/api/monitor_instance/${objectId}/search/`,
+      //   params
+      // );
+      const data = await getInstanceSearch(objectId, params);
       const chartConfig = {
         data: data.results || [],
         metricsData: metricList,

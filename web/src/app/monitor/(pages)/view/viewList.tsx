@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { Input, Button, Progress, Select } from 'antd';
 import useApiClient from '@/utils/request';
+import useMonitorApi from '@/app/monitor/api';
 import { useTranslation } from '@/utils/i18n';
 import {
   deepClone,
@@ -34,7 +35,13 @@ import { ListItem } from '@/types';
 const { Option } = Select;
 
 const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
-  const { get, isLoading } = useApiClient();
+  const { isLoading } = useApiClient();
+  const { 
+    getMonitorMetrics, 
+    getInstanceList, 
+    getInstanceQueryParams, 
+    getMonitorPlugin 
+  } = useMonitorApi();
   const { t } = useTranslation();
   const router = useRouter();
   const { convertToLocalizedTime } = useLocalizedTime();
@@ -217,21 +224,25 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
     };
     const objName = objects.find((item) => item.id === objectId)?.name;
 
-    const getInstList = get(`/monitor/api/monitor_instance/${objectId}/list/`, {
-      params,
-    });
-    const getQueryParams = get(
-      `/monitor/api/monitor_instance/query_params_enum/${objName}/`,
-      {
-        params: objParams,
-      }
-    );
-    const getMetrics = get('/monitor/api/metrics/', {
-      params: objParams,
-    });
-    const getPlugins = get('/monitor/api/monitor_plugin/', {
-      params: objParams,
-    });
+    // const getInstList = get(`/monitor/api/monitor_instance/${objectId}/list/`, {
+    //   params,
+    // });
+    const getInstList = getInstanceList(objectId, params);
+    // const getQueryParams = get(
+    //   `/monitor/api/monitor_instance/query_params_enum/${objName}/`,
+    //   {
+    //     params: objParams,
+    //   }
+    // );
+    const getQueryParams = getInstanceQueryParams(objName as string, objParams);
+    // const getMetrics = get('/monitor/api/metrics/', {
+    //   params: objParams,
+    // });
+    const getMetrics = getMonitorMetrics(objParams);
+    // const getPlugins = get('/monitor/api/monitor_plugin/', {
+    //   params: objParams,
+    // });
+    const getPlugins = getMonitorPlugin(objParams);
     setTableLoading(true);
     try {
       const res = await Promise.all([
@@ -343,12 +354,13 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
     }
     try {
       setTableLoading(type !== 'timer');
-      const data = await get(
-        `/monitor/api/monitor_instance/${objectId}/list/`,
-        {
-          params,
-        }
-      );
+      // const data = await get(
+      //   `/monitor/api/monitor_instance/${objectId}/list/`,
+      //   {
+      //     params,
+      //   }
+      // );
+      const data = await getInstanceList(objectId, params);
       setTableData(data.results || []);
       setPagination((prev: Pagination) => ({
         ...prev,

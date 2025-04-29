@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import useApiClient from '@/utils/request';
+import useMonitorApi from '@/app/monitor/api';
 import templateStyle from './index.module.scss';
 import { TreeItem, TableDataItem } from '@/app/monitor/types';
 import { ObectItem } from '@/app/monitor/types/monitor';
@@ -11,7 +12,8 @@ import TreeSelector from '@/app/monitor/components/treeSelector';
 import EntityList from '@/components/entity-list';
 
 const Template: React.FC = () => {
-  const { get, post, isLoading } = useApiClient();
+  const { isLoading } = useApiClient();
+  const { getPolicyTemplate, getMonitorObject } = useMonitorApi();
   const searchParams = useSearchParams();
   const objId = searchParams.get('objId');
   const router = useRouter();
@@ -44,7 +46,8 @@ const Template: React.FC = () => {
       const params = {
         monitor_object_name: monitorName,
       };
-      const data = await post(`/monitor/api/monitor_policy/template/`, params);
+      // const data = await post(`/monitor/api/monitor_policy/template/`, params);
+      const data = await getPolicyTemplate(params)
       const list = data.map((item: TableDataItem, index: number) => ({
         ...item,
         id: index,
@@ -60,7 +63,8 @@ const Template: React.FC = () => {
   const getObjects = async () => {
     try {
       setTreeLoading(true);
-      const data: ObectItem[] = await get('/monitor/api/monitor_object/');
+      // const data: ObectItem[] = await get('/monitor/api/monitor_object/');
+      const data: ObectItem[] = await getMonitorObject();
       const _treeData = getTreeData(deepClone(data));
       setDefaultSelectObj(objId ? +objId : data[0]?.id);
       setTreeData(_treeData);

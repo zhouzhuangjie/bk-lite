@@ -3,6 +3,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { Input, Button, Modal, message, Spin, Segmented, Empty } from 'antd';
 import useApiClient from '@/utils/request';
+import useMonitorApi from '@/app/monitor/api';
 import metricStyle from './index.module.scss';
 import { useTranslation } from '@/utils/i18n';
 import CustomTable from '@/components/custom-table';
@@ -25,7 +26,16 @@ const { confirm } = Modal;
 import Permission from '@/components/permission';
 
 const Configure = () => {
-  const { get, del, isLoading, post } = useApiClient();
+  const { isLoading } = useApiClient();
+  const {
+    getMonitorObject,
+    deleteMonitorMetrics,
+    deleteMetricsGroup,
+    getMetricsGroup,
+    getMonitorMetrics,
+    updateMetricsGroup,
+    updateMonitorMetrics,
+  } = useMonitorApi();
   const { t } = useTranslation();
   const commonContext = useUserInfoContext();
   const superRef = useRef(commonContext?.isSuperUser || false);
@@ -146,7 +156,8 @@ const Configure = () => {
           Docker: 'Container Management',
           Cluster: 'K8S',
         };
-        const data = await get(`/monitor/api/monitor_object/`);
+        // const data = await get(`/monitor/api/monitor_object/`);
+        const data = await getMonitorObject();
         const _items = data
           .filter((item: ObectItem) => item.type === typeMaps[groupName])
           .sort((a: ObectItem, b: ObectItem) => a.id - b.id)
@@ -174,7 +185,8 @@ const Configure = () => {
       onOk() {
         return new Promise(async (resolve) => {
           try {
-            await del(`/monitor/api/metrics/${row.id}/`);
+            // await del(`/monitor/api/metrics/${row.id}/`);
+            await deleteMonitorMetrics(row.id);
             message.success(t('common.successfullyDeleted'));
             getInitData();
           } finally {
@@ -193,7 +205,8 @@ const Configure = () => {
       onOk() {
         return new Promise(async (resolve) => {
           try {
-            await del(`/monitor/api/metrics_group/${row.id}/`);
+            // await del(`/monitor/api/metrics_group/${row.id}/`);
+            await deleteMetricsGroup(row.id);
             message.success(t('common.successfullyDeleted'));
             getInitData();
           } finally {
@@ -209,17 +222,26 @@ const Configure = () => {
       monitor_object_id: +objId,
       monitor_plugin_id: +pluginID,
     };
-    const getGroupList = get(`/monitor/api/metrics_group/`, {
-      params: {
-        ...params,
-        name: searchText,
-      },
+    // const getGroupList = get(`/monitor/api/metrics_group/`, {
+    //   params: {
+    //     ...params,
+    //     name: searchText,
+    //   },
+    // });
+    const getGroupList = getMetricsGroup({
+      ...params,
+      name: searchText
     });
-    const getMetrics = get('/monitor/api/metrics/', {
-      params: {
-        ...params,
-        monitor_plugin_id: +pluginID,
-      },
+
+    // const getMetrics = get('/monitor/api/metrics/', {
+    //   params: {
+    //     ...params,
+    //     monitor_plugin_id: +pluginID,
+    //   },
+    // });
+    const getMetrics = getMonitorMetrics({
+      ...params,
+      monitor_plugin_id: +pluginID,
     });
     setLoading(true);
     try {
@@ -350,7 +372,8 @@ const Configure = () => {
               sort_order: index,
             })
           );
-          await post('/monitor/api/metrics_group/set_order/', updatedOrder);
+          // await post('/monitor/api/metrics_group/set_order/', updatedOrder);
+          await updateMetricsGroup(updatedOrder);
           message.success(t('common.updateSuccess'));
           getInitData();
         } catch {
@@ -372,7 +395,16 @@ const Configure = () => {
       id: item.id,
       sort_order: index,
     }));
-    post('/monitor/api/metrics/set_order/', updatedOrder)
+    // post('/monitor/api/metrics/set_order/', updatedOrder)
+    //   .then(() => {
+    //     message.success(t('common.updateSuccess'));
+    //     getInitData();
+    //   })
+    //   .catch(() => {
+    //     setLoading(false);
+    //   });
+
+    updateMonitorMetrics(updatedOrder)
       .then(() => {
         message.success(t('common.updateSuccess'));
         getInitData();
@@ -438,7 +470,7 @@ const Configure = () => {
               <Collapse
                 className={`mb-[10px] ${
                   dragOverTargetId === metricItem.id &&
-                  draggingItemId !== dragOverTargetId
+                    draggingItemId !== dragOverTargetId
                     ? 'border-t-[1px] border-blue-200'
                     : ''
                 }`}

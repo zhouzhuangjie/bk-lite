@@ -9,6 +9,7 @@ import CustomTable from '@/components/custom-table';
 import GuageChart from '@/app/monitor/components/charts/guageChart';
 import SingleValue from '@/app/monitor/components/charts/singleValue';
 import useApiClient from '@/utils/request';
+import useMonitorApi from '@/app/monitor/api';
 import {
   MetricItem,
   ChartDataItem,
@@ -41,7 +42,8 @@ const Overview: React.FC<ViewDetailProps> = ({
   idValues,
   instanceId,
 }) => {
-  const { get, isLoading } = useApiClient();
+  const { isLoading } = useApiClient();
+  const { getMonitorMetrics, getInstanceQuery } = useMonitorApi();
   const { t } = useTranslation();
   const INTERFACE_LABEL_MAP = useInterfaceLabelMap();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -83,10 +85,13 @@ const Overview: React.FC<ViewDetailProps> = ({
       INDEX_CONFIG.find((item) => item.name === monitorObjectName)
         ?.dashboardDisplay || [];
     try {
-      get('/monitor/api/metrics/', {
-        params: {
-          monitor_object_id: monitorObjectId,
-        },
+      // get('/monitor/api/metrics/', {
+      //   params: {
+      //     monitor_object_id: monitorObjectId,
+      //   },
+      // })
+      getMonitorMetrics({
+        monitor_object_id: monitorObjectId,
       }).then((res) => {
         const interfaceConfig = indexList.find(
           (item) => item.indexId === 'interfaces'
@@ -149,9 +154,11 @@ const Overview: React.FC<ViewDetailProps> = ({
   const fetchViewData = async (data: MetricItem[], type?: string) => {
     setLoading(type !== 'timer');
     const requestQueue = data.map((item: MetricItem) =>
-      get(`/monitor/api/metrics_instance/query_range/`, {
-        params: getParams(item),
-      }).then((response) => ({ id: item.id, data: response.data.result || [] }))
+      // get(`/monitor/api/metrics_instance/query_range/`, {
+      //   params: getParams(item),
+      // })
+      getInstanceQuery(getParams(item))
+        .then((response) => ({ id: item.id, data: response.data.result || [] }))
     );
     try {
       const results = await Promise.all(requestQueue);

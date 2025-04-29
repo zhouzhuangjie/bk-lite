@@ -1,20 +1,21 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { 
-  Spin, 
-  Input, 
-  Button, 
-  // Modal, 
-  message, 
-  Switch, 
-  Popconfirm } from 'antd';
+import {
+  Spin,
+  Input,
+  Button,
+
+  message,
+  Switch,
+  Popconfirm
+} from 'antd';
 import useApiClient from '@/utils/request';
+import useMonitorApi from '@/app/monitor/api';
 import assetStyle from './index.module.scss';
 import { useTranslation } from '@/utils/i18n';
 import { ColumnItem, TreeItem, Pagination } from '@/app/monitor/types';
 import {
   ObectItem,
-  // RuleInfo,
   TableDataItem,
 } from '@/app/monitor/types/monitor';
 import CustomTable from '@/components/custom-table';
@@ -27,13 +28,13 @@ import {
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import { PlusOutlined } from '@ant-design/icons';
 import { useRouter, useSearchParams } from 'next/navigation';
-// const { confirm } = Modal;
 import TreeSelector from '@/app/monitor/components/treeSelector';
 import Permission from '@/components/permission';
 
 const Strategy: React.FC = () => {
   const { t } = useTranslation();
-  const { get, del, patch, isLoading } = useApiClient();
+  const { isLoading } = useApiClient();
+  const { getMonitorPolicy, getMonitorObject, patchMonitorPolicy, deleteMonitorPolicy } = useMonitorApi();
   const searchParams = useSearchParams();
   const { convertToLocalizedTime } = useLocalizedTime();
   const objId = searchParams.get('objId');
@@ -144,7 +145,7 @@ const Strategy: React.FC = () => {
               onConfirm={() => deleteConfirm(record.id)}
             >
               <Button type="link"
-                // onClick={() => showDeleteConfirm(record)}
+              // onClick={() => showDeleteConfirm(record)}
               >
                 {t('common.delete')}
               </Button>
@@ -182,7 +183,10 @@ const Strategy: React.FC = () => {
   const handleEffectiveChange = async (val: boolean, id: number) => {
     try {
       setEnableLoading(true);
-      await patch(`/monitor/api/monitor_policy/${id}/`, {
+      // await patch(`/monitor/api/monitor_policy/${id}/`, {
+      //   enable: val,
+      // });
+      await patchMonitorPolicy(id,{
         enable: val,
       });
       message.success(t(val ? 'common.started' : 'common.closed'));
@@ -201,9 +205,10 @@ const Strategy: React.FC = () => {
       setTableLoading(true);
       const params = getParams(text);
       params.monitor_object_id = objectId;
-      const data = await get(`/monitor/api/monitor_policy/`, {
-        params,
-      });
+      // const data = await get(`/monitor/api/monitor_policy/`, {
+      //   params,
+      // });
+      const data = await getMonitorPolicy('',params);
       setTableData(data.items || []);
       setPagination((pre) => ({
         ...pre,
@@ -217,11 +222,14 @@ const Strategy: React.FC = () => {
   const getObjects = async () => {
     try {
       setTreeLoading(true);
-      const data: ObectItem[] = await get('/monitor/api/monitor_object/', {
-        params: {
-          add_policy_count: true,
-        },
-      });
+      // const data: ObectItem[] = await get('/monitor/api/monitor_object/', {
+      //   params: {
+      //     add_policy_count: true,
+      //   },
+      // });
+      const data = await getMonitorObject({
+        add_policy_count: true,
+      })
       const _treeData = getTreeData(deepClone(data));
       setDefaultSelectObj(objId ? +objId : data[0]?.id);
       setTreeData(_treeData);
@@ -273,7 +281,8 @@ const Strategy: React.FC = () => {
   // };
 
   const deleteConfirm = async (id: number | string) => {
-    await del(`/monitor/api/monitor_policy/${id}/`);
+    // await del(`/monitor/api/monitor_policy/${id}/`);
+    await deleteMonitorPolicy(id);
     message.success(t('common.successfullyDeleted'));
     getAssetInsts(objectId);
   }

@@ -4,6 +4,7 @@ import { Spin, Select, Button, Segmented, Input, Tooltip } from 'antd';
 import { BellOutlined, CloseOutlined, PlusOutlined } from '@ant-design/icons';
 import { useConditionList } from '@/app/monitor/constants/monitor';
 import useApiClient from '@/utils/request';
+import useMonitorApi from '@/app/monitor/api';
 import TimeSelector from '@/components/time-selector';
 import Collapse from '@/components/collapse';
 import searchStyle from './index.module.scss';
@@ -41,6 +42,7 @@ const { Option } = Select;
 
 const SearchView: React.FC = () => {
   const { get, isLoading } = useApiClient();
+  const { getMonitorObject, getMonitorMetrics, getMetricsGroup, getInstanceList } = useMonitorApi();
   const { t } = useTranslation();
   const CONDITION_LIST = useConditionList();
   const searchParams = useSearchParams();
@@ -115,11 +117,14 @@ const SearchView: React.FC = () => {
   const getObjects = async () => {
     try {
       setObjLoading(true);
-      const data: ObectItem[] = await get('/monitor/api/monitor_object/', {
-        params: {
-          add_instance_count: true,
-        },
-      });
+      // const data: ObectItem[] = await get('/monitor/api/monitor_object/', {
+      //   params: {
+      //     add_instance_count: true,
+      //   },
+      // });
+      const data: ObectItem[] = await getMonitorObject({
+        add_instance_count: true,
+      })
       const _treeData = getTreeData(deepClone(data));
       setTreeData(_treeData);
       setObjects(data);
@@ -132,8 +137,10 @@ const SearchView: React.FC = () => {
   const getMetrics = async (params = {}) => {
     try {
       setMetricsLoading(true);
-      const getGroupList = get(`/monitor/api/metrics_group/`, { params });
-      const getMetrics = get('/monitor/api/metrics/', { params });
+      // const getGroupList = get(`/monitor/api/metrics_group/`, { params });
+      const getGroupList = getMetricsGroup(params);
+      // const getMetrics = get('/monitor/api/metrics/', { params });
+      const getMetrics = getMonitorMetrics(params);
       Promise.all([getGroupList, getMetrics])
         .then((res) => {
           const metricData = deepClone(res[1] || []);
@@ -166,10 +173,13 @@ const SearchView: React.FC = () => {
   const getInstList = async (id: number) => {
     try {
       setInstanceLoading(true);
-      const data = await get(`/monitor/api/monitor_instance/${id}/list/`, {
-        params: {
-          page_size: -1,
-        },
+      // const data = await get(`/monitor/api/monitor_instance/${id}/list/`, {
+      //   params: {
+      //     page_size: -1,
+      //   },
+      // });
+      const data = await getInstanceList(id,{
+        page_size: -1,
       });
       setInstances(data.results || []);
     } finally {

@@ -12,6 +12,7 @@ import {
   Popconfirm,
 } from 'antd';
 import useApiClient from '@/utils/request';
+import useMonitorApi from '@/app/monitor/api';
 import assetStyle from './index.module.scss';
 import { useTranslation } from '@/utils/i18n';
 import {
@@ -45,7 +46,15 @@ const { confirm } = Modal;
 import Permission from '@/components/permission';
 
 const Asset = () => {
-  const { get, post, del, isLoading } = useApiClient();
+  const { isLoading } = useApiClient();
+  const { 
+    getInstanceList, 
+    getInstanceGroupRule, 
+    getMonitorObject, 
+    getInstanceChildConfig,
+    deleteInstanceGroupRule,
+    deleteMonitorInstance,
+  } = useMonitorApi();
   const { t } = useTranslation();
   const commonContext = useCommon();
   const { convertToLocalizedTime } = useLocalizedTime();
@@ -304,16 +313,22 @@ const Asset = () => {
     try {
       setTableLoading(type !== 'timer');
       setExpandedRowKeys([]);
-      const data = await get(
-        `/monitor/api/monitor_instance/${objectId}/list/`,
-        {
-          params: {
-            page: pagination.current,
-            page_size: pagination.pageSize,
-            name: type === 'clear' ? '' : searchText,
-          },
-        }
-      );
+      const params = {
+        page: pagination.current,
+        page_size: pagination.pageSize,
+        name: type === 'clear' ? '' : searchText,
+      };
+      // const data = await get(
+      //   `/monitor/api/monitor_instance/${objectId}/list/`,
+      //   {
+      //     params: {
+      //       page: pagination.current,
+      //       page_size: pagination.pageSize,
+      //       name: type === 'clear' ? '' : searchText,
+      //     },
+      //   }
+      // );
+      const data = await getInstanceList(objectId, params);
       setTableData(data?.results || []);
       setPagination((prev: Pagination) => ({
         ...prev,
@@ -327,11 +342,15 @@ const Asset = () => {
   const getRuleList = async (objectId: React.Key, type?: string) => {
     try {
       setRuleLoading(type !== 'timer');
-      const data = await get(`/monitor/api/monitor_instance_group_rule/`, {
-        params: {
-          monitor_object_id: objectId,
-        },
-      });
+      const params = {
+        monitor_object_id: objectId,
+      }
+      // const data = await get(`/monitor/api/monitor_instance_group_rule/`, {
+      //   params: {
+      //     monitor_object_id: objectId,
+      //   },
+      // });
+      const data = await getInstanceGroupRule(params);
       setRuleList(data || []);
     } finally {
       setRuleLoading(false);
@@ -341,12 +360,17 @@ const Asset = () => {
   const getObjects = async (type?: string) => {
     try {
       setTreeLoading(type !== 'timer');
-      const data = await get(`/monitor/api/monitor_object/`, {
-        params: {
-          name: '',
-          add_instance_count: true,
-        },
-      });
+      const params = {
+        name: '',
+        add_instance_count: true,
+      }
+      // const data = await get(`/monitor/api/monitor_object/`, {
+      //   params: {
+      //     name: '',
+      //     add_instance_count: true,
+      //   },
+      // });
+      const data = await getMonitorObject(params);
       setObjects(data);
       const _treeData = getTreeData(deepClone(data));
       setTreeData(_treeData);
@@ -390,7 +414,8 @@ const Asset = () => {
       onOk() {
         return new Promise(async (resolve) => {
           try {
-            await del(`/monitor/api/monitor_instance_group_rule/${row.id}/`);
+            // await del(`/monitor/api/monitor_instance_group_rule/${row.id}/`);
+            await deleteInstanceGroupRule(row.id as number);
             message.success(t('common.successfullyDeleted'));
             getRuleList(objectId);
           } finally {
@@ -428,13 +453,18 @@ const Asset = () => {
   // };
 
   const deleteInstConfirm = async (row: any) => {
-    await post(
-      `/monitor/api/monitor_instance/remove_monitor_instance/`,
-      {
-        instance_ids: [row.instance_id],
-        clean_child_config: true,
-      }
-    );
+    const data = {
+      instance_ids: [row.instance_id],
+      clean_child_config: true,
+    };
+    // await post(
+    //   `/monitor/api/monitor_instance/remove_monitor_instance/`,
+    //   {
+    //     instance_ids: [row.instance_id],
+    //     clean_child_config: true,
+    //   }
+    // );
+    await deleteMonitorInstance(data);
     message.success(t('common.successfullyDeleted'));
     getObjects();
     getAssetInsts(objectId);
@@ -454,16 +484,24 @@ const Asset = () => {
       if (targetIndex != -1 && expanded) {
         _dataSource[targetIndex].loading = true;
         setTableData(_dataSource);
-        const res = await post(
-          `/monitor/api/node_mgmt/get_instance_child_config/`,
-          {
-            instance_id: row.instance_id,
-            instance_type:
-              OBJECT_INSTANCE_TYPE_MAP[
-                objects.find((item) => item.id === objectId)?.name || ''
-              ],
-          }
-        );
+        const data = {
+          instance_id: row.instance_id,
+          instance_type:
+            OBJECT_INSTANCE_TYPE_MAP[
+              objects.find((item) => item.id === objectId)?.name || ''
+            ],
+        };
+        // const res = await post(
+        //   `/monitor/api/node_mgmt/get_instance_child_config/`,
+        //   {
+        //     instance_id: row.instance_id,
+        //     instance_type:
+        //       OBJECT_INSTANCE_TYPE_MAP[
+        //         objects.find((item) => item.id === objectId)?.name || ''
+        //       ],
+        //   }
+        // );
+        const res = await getInstanceChildConfig(data);
         _dataSource[targetIndex].dataSource = res.map(
           (item: TableDataItem, index: number) => ({
             ...item,
