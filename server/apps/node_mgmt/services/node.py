@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 
+from apps.node_mgmt.models import NodeCollectorInstallStatus
 from apps.node_mgmt.models.sidecar import Node, Collector, CollectorConfiguration, Action
 from apps.node_mgmt.serializers.node import NodeSerializer
 
@@ -8,7 +9,6 @@ class NodeService:
     @staticmethod
     def process_node_data(node_data):
         """处理节点数据列表，并补充每个节点的采集器名称和采集器配置名称"""
-        collector_ids = set()
         configuration_ids = set()
 
         # 收集所有需要的 collector_id 和 configuration_id
@@ -16,18 +16,36 @@ class NodeService:
             if 'collectors' not in node['status']:
                 continue
             for collector in node['status']['collectors']:
-                collector_ids.add(collector['collector_id'])
                 configuration_ids.add(collector['configuration_id'])
 
         # 批量查询所有需要的 Collector 和 CollectorConfiguration
-        collectors = Collector.objects.filter(id__in=collector_ids)
+        collectors = Collector.objects.all()
         collector_dict = {collector.id: collector for collector in collectors}
 
         configurations = CollectorConfiguration.objects.filter(id__in=configuration_ids)
         configuration_dict = {config.id: config for config in configurations}
 
+        node_ids = [node["id"] for node in node_data]
+        node_install_map = {}
+        objs = NodeCollectorInstallStatus.objects.filter(node__in=node_ids)
+        for obj in objs:
+            if obj.status == "success":
+                status = 11
+            elif obj.status == "error":
+                status = 12
+            else:
+                status = 10
+
+
+            node_install_map.setdefault(obj.node_id, []).append(
+                dict( collector_id=obj.collector_id, status=status, message=obj.result)
+            )
+
         # 处理节点数据
         for node in node_data:
+            node_collector_install = node_install_map.get(node["id"], [])
+            if node_collector_install:
+                node["status"]["collectors_install"] = node_collector_install
             if 'collectors' not in node['status']:
                 continue
             for collector in node['status']['collectors']:

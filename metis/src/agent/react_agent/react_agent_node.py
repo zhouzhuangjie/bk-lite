@@ -1,5 +1,23 @@
+from typing import TypedDict
+
+from langchain_core.runnables import RunnableConfig
+from langgraph.prebuilt import create_react_agent
+
 from src.core.node.tools_node import ToolsNodes
 
 
 class ReActAgentNode(ToolsNodes):
-    pass
+    async def agent_node(self, state: TypedDict, config: RunnableConfig) -> TypedDict:
+        messages = state["messages"]
+        llm = self.get_llm_client(config["configurable"]["graph_request"])
+        agent_executor = create_react_agent(llm, self.tools,
+                                            debug=True,
+                                            prompt=config["configurable"]["graph_request"].system_message_prompt)
+
+        agent_response = await agent_executor.ainvoke(
+            {"messages": messages}
+        )
+
+        # 更新消息列表
+        state["messages"] = agent_response['messages']
+        return state
