@@ -29,6 +29,7 @@ class InstallerService:
                 port=node["port"],
                 username=node["username"],
                 password=node["password"],
+                status="waiting",
             ))
         ControllerTaskNode.objects.bulk_create(creates, batch_size=100)
         return task_obj.id
@@ -51,6 +52,7 @@ class InstallerService:
                 port=node["port"],
                 username=node["username"],
                 password=node["password"],
+                status="waiting",
             ))
         ControllerTaskNode.objects.bulk_create(creates, batch_size=100)
         return task_obj.id
