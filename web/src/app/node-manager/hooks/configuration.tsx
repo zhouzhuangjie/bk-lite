@@ -22,7 +22,7 @@ export const useApplyColumns = ({
     },
     {
       title: t('node-manager.cloudregion.Configuration.system'),
-      dataIndex: 'operatingsystem',
+      dataIndex: 'operatingSystem',
     },
     {
       title: t('node-manager.cloudregion.Configuration.sidecar'),
@@ -82,8 +82,8 @@ export const useConfigColumns = ({
   configurationClick,
   openSub,
   nodeClick,
-  modifydeleteconfirm,
-  applyconfigurationClick,
+  modifyDeleteconfirm,
+  applyConfigurationClick,
   filter,
 }: ConfigHookParams) => {
   const { t } = useTranslation();
@@ -120,10 +120,10 @@ export const useConfigColumns = ({
     },
     {
       title: t('node-manager.cloudregion.node.system'),
-      dataIndex: 'operatingsystem',
+      dataIndex: 'operatingSystem',
       width: 150,
       render: (_, record) =>
-        t(`node-manager.cloudregion.Configuration.${record.operatingsystem}`),
+        t(`node-manager.cloudregion.Configuration.${record.operatingSystem}`),
     },
     {
       title: t('node-manager.cloudregion.Configuration.sidecar'),
@@ -148,7 +148,7 @@ export const useConfigColumns = ({
               color="primary"
               variant="link"
               onClick={() => {
-                applyconfigurationClick(item);
+                applyConfigurationClick(item);
               }}
             >
               {t('common.apply')}
@@ -184,7 +184,7 @@ export const useConfigColumns = ({
               )}
               okText={t('common.confirm')}
               cancelText={t('common.cancel')}
-              onConfirm={() => modifydeleteconfirm(item.key)}
+              onConfirm={() => modifyDeleteconfirm(item.key)}
             >
               <Button variant="link" color="primary" disabled={!!item.nodes?.length}>
                 {t('common.delete')}
@@ -232,7 +232,7 @@ export const useSubConfigColumns = ({
                 nodes: nodeData.nodes || [],
                 collector: nodeData.collector,
                 nodesList: nodeData.nodesList,
-                configinfo: record.content,
+                configInfo: record.content,
                 operating_system: nodeData.operating_system,
               });
             }}

@@ -6,7 +6,7 @@ import PermissionWrapper from '@/components/permission';
 export const useVarColumns = ({
   openUerModal,
   getFormDataById,
-  delconfirm,
+  delConfirm,
 }: VariableProps): TableColumnsType<TableDataItem> => {
   const { t } = useTranslation();
   const columns: TableColumnsType<TableDataItem> = [
@@ -46,7 +46,7 @@ export const useVarColumns = ({
               okText={t('common.confirm')}
               cancelText={t('common.cancel')}
               onConfirm={() => {
-                delconfirm(key, text);
+                delConfirm(key, text);
               }}
             >
               <Button color="primary" variant="link">

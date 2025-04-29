@@ -13,8 +13,8 @@ import type { GetProps } from 'antd';
 import { useApplyColumns } from '@/app/node-manager/hooks/configuration';
 import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
 import {
-  nodeItemtRes,
-  mappedNodeItem,
+  NodeItemRes,
+  MappedNodeItem,
 } from '@/app/node-manager/types/cloudregion';
 import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 
@@ -24,11 +24,11 @@ const { Search } = Input;
 const ApplyModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
   const { t } = useTranslation();
   const cloudId = useCloudId();
-  const { getnodelist, applyconfig, cancelApply, getAssoNodes } =
+  const { getNodeList, applyConfig, cancelApply, getAssoNodes } =
     useApiCloudRegion();
   const [configVisible, setConfigVisible] = useState<boolean>(false);
   const [configForm, setConfigForm] = useState<TableDataItem>();
-  const [applydata, setApplydata] = useState<mappedNodeItem[]>();
+  const [applyData, setApplyData] = useState<MappedNodeItem[]>();
   const [type, setType] = useState<string>('apply');
   const [loading, setLoading] = useState<boolean>(false);
   const [searchText, setSearchText] = useState<string>('');
@@ -36,7 +36,7 @@ const ApplyModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
   //处理应用的事件
   const handleApply = async (row: TableDataItem) => {
     setLoading(true);
-    const request = row.isRelated ? cancelApply : applyconfig;
+    const request = row.isRelated ? cancelApply : applyConfig;
     let params: any = {
       node_id: row.key,
       collector_configuration_id: configForm?.key,
@@ -47,7 +47,7 @@ const ApplyModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
     await request(params);
     message.success(t('common.operationSuccessful'));
     onSuccess();
-    getApplydata({
+    getApplyData({
       name: searchText,
       operating_system: configForm?.operating_system,
       id: configForm?.key,
@@ -62,7 +62,7 @@ const ApplyModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
       setConfigVisible(true);
       setType(type);
       setConfigForm(form);
-      getApplydata({
+      getApplyData({
         name: searchText,
         operating_system: form?.operating_system,
         id: form?.key,
@@ -74,12 +74,12 @@ const ApplyModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
   const handleCancel = () => {
     setConfigVisible(false);
     setLoading(false);
-    setApplydata([]);
+    setApplyData([]);
   };
 
   const onSearch: SearchProps['onSearch'] = (value) => {
     setSearchText(value);
-    getApplydata({
+    getApplyData({
       operating_system: configForm?.operating_system,
       name: value,
       id: configForm?.key,
@@ -87,10 +87,10 @@ const ApplyModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
   };
 
   //获取应用列表的数据表格
-  const getApplydata = async (params: TableDataItem) => {
+  const getApplyData = async (params: TableDataItem) => {
     try {
       setLoading(true);
-      const getNodeData = getnodelist({
+      const getNodeData = getNodeList({
         cloud_region_id: cloudId,
         name: params.name,
         operating_system: params.operating_system,
@@ -101,18 +101,18 @@ const ApplyModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
       });
       Promise.all([getNodeData, getAssoConfig])
         .then((res) => {
-          const data = (res[0] || []).map((item: nodeItemtRes) => {
+          const data = (res[0] || []).map((item: NodeItemRes) => {
             return {
               key: item.id,
               ip: item.ip,
-              operatingsystem: item.operating_system,
+              operatingSystem: item.operating_system,
               sidecar: !item.status.status ? 'Running' : 'Error',
               isRelated: !!(res[1][0]?.nodes || []).find(
                 (tex: TableDataItem) => tex.id === item.id
               ),
             };
           });
-          setApplydata(data);
+          setApplyData(data);
         })
         .finally(() => {
           setLoading(false);
@@ -147,7 +147,7 @@ const ApplyModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
           <CustomTable
             columns={applycolumns}
             scroll={{ y: 'calc(100vh - 30%)' }}
-            dataSource={applydata}
+            dataSource={applyData}
             loading={loading}
           />
         </div>

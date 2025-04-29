@@ -34,7 +34,11 @@ export const useColumns = ({
           return (
             <Tooltip title={`${item.status?.message}`}>
               <Tag bordered={false} color={value ? 'success' : 'warning'}>
-                {value ? 'Active' : 'Inactive'}
+                {t(
+                  `node-manager.cloudregion.node.${
+                    value ? 'active' : 'inactive'
+                  }`
+                )}
               </Tag>
             </Tooltip>
           );
