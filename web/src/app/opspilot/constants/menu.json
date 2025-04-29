@@ -19,7 +19,7 @@
           "name": "bot_settings"
         },
         {
-          "title": "通知",
+          "title": "通道",
           "url": "/opspilot/studio/detail/channel",
           "icon": "channel1",
           "name": "bot_channel"

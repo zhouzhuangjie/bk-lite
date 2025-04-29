@@ -40,10 +40,12 @@ const ToolSelector: React.FC<ToolSelectorProps> = ({ defaultTools, onChange }) =
           id: tool.id,
           name: tool.display_name || tool.name,
           icon: tool.icon || 'gongjuji',
-          kwargs: (tool.params.kwargs || []).map((kwarg: any) => ({
-            ...kwarg,
-            value: (defaultTool?.kwargs ?? []).find((dk: any) => dk.label === kwarg.key)?.value || kwarg.value,
-          })),
+          kwargs: (tool.params.kwargs || [])
+            .filter((kwarg: any) => kwarg.key)
+            .map((kwarg: any) => ({
+              ...kwarg,
+              value: (defaultTool?.kwargs ?? []).find((dk: any) => dk.key === kwarg.key)?.value || kwarg.value,
+            })),
         };
       });
       setTools(fetchedTools);
@@ -82,7 +84,7 @@ const ToolSelector: React.FC<ToolSelectorProps> = ({ defaultTools, onChange }) =
   const openEditModal = (tool: SelectTool) => {
     setEditingTool(tool);
     form.setFieldsValue({
-      kwargs: tool.kwargs?.map((item: { key: string; value: string }) => ({ label: item.key, value: item.value })) || [],
+      kwargs: tool.kwargs?.map((item: { key: string; value: string }) => ({ key: item.key, value: item.value })) || [],
     });
     setEditModalVisible(true);
   };
@@ -170,8 +172,8 @@ const ToolSelector: React.FC<ToolSelectorProps> = ({ defaultTools, onChange }) =
                     {...restField}
                     name={[name, 'value']}
                     fieldKey={[fieldKey ?? '', 'value']}
-                    label={form.getFieldValue(['kwargs', name, 'label'])}
-                    rules={[{ required: true, message: `${t('common.inputMsg')}${form.getFieldValue(['kwargs', name, 'label'])}` }]}
+                    label={form.getFieldValue(['kwargs', name, 'key'])}
+                    rules={[{ required: true, message: `${t('common.inputMsg')}${form.getFieldValue(['kwargs', name, 'key'])}` }]}
                   >
                     <Input />
                   </Form.Item>

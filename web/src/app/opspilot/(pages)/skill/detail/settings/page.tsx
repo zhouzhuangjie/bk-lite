@@ -139,7 +139,7 @@ const SkillSettingsPage: React.FC = () => {
           id: tool.id,
           name: tool.name,
           icon: tool.icon,
-          kwargs: tool.kwargs,
+          kwargs: tool.kwargs.filter((kwarg: any) => kwarg.key),
         })),
       };
       setSaveLoading(true);

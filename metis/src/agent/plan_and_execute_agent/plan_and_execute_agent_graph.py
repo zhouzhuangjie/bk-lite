@@ -1,12 +1,6 @@
-from typing import TypedDict
-from venv import logger
-
-from langchain_core.messages import ToolMessage
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnableConfig
-from langchain_openai import ChatOpenAI
 from langgraph.constants import END
-from langgraph.graph import StateGraph, MessagesState
+from langgraph.graph import StateGraph
+from langgraph.pregel import RetryPolicy
 
 from src.agent.plan_and_execute_agent.plan_and_execute_agent_node import PlanAndExecuteAgentNode
 from src.agent.plan_and_execute_agent.plan_and_execute_agent_state import PlanAndExecuteAgentState
@@ -15,10 +9,6 @@ from src.core.graph.tools_graph import ToolsGraph
 from src.entity.agent.plan_and_execute_agent_request import PlanAndExecuteAgentRequest
 from src.entity.agent.react_agent_request import ReActAgentRequest
 from src.entity.agent.react_agent_response import ReActAgentResponse
-from src.agent.react_agent.react_agent_node import ReActAgentNode
-from src.agent.react_agent.react_agent_state import ReActAgentState
-from langgraph.pregel import RetryPolicy
-from loguru import logger
 
 
 class PlanAndExecuteAgentGraph(ToolsGraph):
@@ -52,5 +42,7 @@ class PlanAndExecuteAgentGraph(ToolsGraph):
     async def execute(self, request: ReActAgentRequest) -> ReActAgentResponse:
         graph = await self.compile_graph(request)
         result = await self.invoke(graph, request)
-        logger.info(result)
-        return None
+        llm_response = BasicLLMResponse(
+            message=result['response'],
+        )
+        return llm_response

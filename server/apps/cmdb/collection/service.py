@@ -1092,10 +1092,20 @@ class AliyunCollectMetrics(CollectBase):
     def _metrics(self):
         return ALIYUN_COLLECT_CLUSTER
 
+    # def prom_sql(self):
+    #     sql = " or ".join(
+    #         "{}{{instance_id=\"{}\"}}".format(m, f"{self.task_id}_{self.inst_name}") for m in self._metrics)
+    #     return sql
+
     def prom_sql(self):
-        sql = " or ".join(
-            "{}{{instance_id=\"{}\"}}".format(m, f"{self.task_id}_{self.inst_name}") for m in self._metrics)
+        sql = " or ".join(m for m in self._metrics)
         return sql
+
+    def check_task_id(self, instance_id):
+        # 只要是同一个account 就认为是同一个task 为了保证不同的区域的数据能在同一个地方采集上来
+        # TODO 做下架需要修改逻辑 保证task_id
+        task_id, _ = instance_id.split("_", 1)
+        return task_id == self.task_id
 
     @staticmethod
     def set_instance_inst_name(data, *args, **kwargs):
@@ -1107,7 +1117,7 @@ class AliyunCollectMetrics(CollectBase):
         model_id = kwargs["model_id"]
         result = [
             {
-                "model_id": model_id,
+                "model_id": "aliyun_account",
                 "inst_name": self.inst_name,
                 "asst_id": "belong",
                 "model_asst_id": f"{model_id}_belong_aliyun_account"
@@ -1132,7 +1142,7 @@ class AliyunCollectMetrics(CollectBase):
                 "os_name": "os_name",
                 "vcpus": (int, "vcpus"),
                 "memory_mb": (int, "memory"),
-                "charge_type": "charge_type",  # TODO 时间格式得转换 datetime.now(timezone.utc).isoformat()
+                "charge_type": "charge_type",
                 "create_time": (self.convert_datetime_format, "create_time"),
                 "expired_time": (self.convert_datetime_format, "expired_time"),
                 self.asso: self.set_asso_instances
@@ -1283,6 +1293,10 @@ class AliyunCollectMetrics(CollectBase):
         for index_data in data["result"]:
             metric_name = index_data["metric"]["__name__"]
             value = index_data["value"]
+            instance_id = index_data["metric"]["instance_id"]
+            if not self.check_task_id(instance_id):
+                continue
+
             _time, value = value[0], value[1]
             if not self.timestamp_gt:
                 if timestamp_gt_one_day_ago(_time):
@@ -1315,4 +1329,4 @@ class AliyunCollectMetrics(CollectBase):
                         data[field] = index_data.get(key_or_func, "")
                 if data:
                     result.append(data)
-            self.result[self.model_id] = result
+            self.result[model_id] = result
