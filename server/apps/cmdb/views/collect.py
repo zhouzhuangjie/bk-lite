@@ -18,7 +18,7 @@ from django.utils.timezone import now
 from apps.cmdb.celery_tasks import sync_collect_task
 from config.drf.pagination import CustomPageNumberPagination
 from apps.core.utils.web_utils import WebUtils
-from apps.cmdb.constants import COLLECT_OBJ_TREE, CollectRunStatusType, OPERATOR_COLLECT_TASK
+from apps.cmdb.constants import COLLECT_OBJ_TREE, CollectRunStatusType, OPERATOR_COLLECT_TASK, CollectPluginTypes
 from apps.cmdb.filters.collect_filters import CollectModelFilter, OidModelFilter
 from apps.cmdb.models.collect_model import CollectModels, OidMapping
 from apps.cmdb.serializers.collect_serializer import CollectModelSerializer, CollectModelLIstSerializer, \
@@ -157,8 +157,9 @@ class CollectModelViewSet(ModelViewSet):
         """
         params = requests.GET.dict()
         task_type = params["task_type"]
-        instances = CollectModels.objects.filter(~Q(instances=[]), task_type=task_type).values_list("instances",
-                                                                                                    flat=True)
+        # 云对象可以重复选择不做过滤
+        instances = CollectModels.objects.filter(~Q(instances=[]), ~Q(task_type=CollectPluginTypes.CLOUD),
+                                                 task_type=task_type).values_list("instances", flat=True)
         result = [{"id": instance[0]["_id"], "inst_name": instance[0]["inst_name"]} for instance in instances]
         return WebUtils.response_success(result)
 
