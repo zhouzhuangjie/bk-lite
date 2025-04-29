@@ -7,7 +7,7 @@ import VariableModal from './variableModal';
 import { ModalRef, TableDataItem } from '@/app/node-manager/types';
 import { useVarColumns } from '@/app/node-manager/hooks/variable';
 import type { GetProps } from 'antd';
-import Mainlayout from '../mainlayout/layout';
+import MainLayout from '../mainlayout/layout';
 import { PlusOutlined } from '@ant-design/icons';
 import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
 import useApiClient from '@/utils/request';
@@ -87,7 +87,7 @@ const Variable = () => {
   };
 
   return (
-    <Mainlayout>
+    <MainLayout>
       <div className={`${variableStyle.variable} w-full h-full`}>
         <div className="flex justify-end mb-4">
           <Search
@@ -126,7 +126,7 @@ const Variable = () => {
           onSuccess={() => getTablelist()}
         ></VariableModal>
       </div>
-    </Mainlayout>
+    </MainLayout>
   );
 };
 export default Variable;

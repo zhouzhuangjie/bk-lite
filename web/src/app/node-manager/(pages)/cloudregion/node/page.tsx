@@ -25,7 +25,7 @@ import { useTranslation } from '@/utils/i18n';
 import { ModalRef, TableDataItem } from '@/app/node-manager/types';
 import CustomTable from '@/components/custom-table';
 import { useColumns } from '@/app/node-manager/hooks/node';
-import Mainlayout from '../mainlayout/layout';
+import MainLayout from '../mainlayout/layout';
 import useApiClient from '@/utils/request';
 import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
 import useApiCollector from '@/app/node-manager/api/collector';
@@ -77,17 +77,19 @@ const Node = () => {
     useState<boolean>(false);
   const [system, setSystem] = useState<string>('linux');
   const [activeColumns, setActiveColumns] = useState<ColumnItem[]>([]);
-  const checkConfig = (row: TableDataItem) => {
-    const data = {
-      cloud_region_id: cloudId.toString(),
-      name,
-    };
-    sessionStorage.setItem('cloudRegionInfo', JSON.stringify({ id: row.id }));
-    const params = new URLSearchParams(data);
-    const targetUrl = `/node-manager/cloudregion/configuration?${params.toString()}`;
-    router.push(targetUrl);
-  };
-  const columns = useColumns({ checkConfig });
+
+  const columns = useColumns({
+    checkConfig: (row: TableDataItem) => {
+      const data = {
+        cloud_region_id: cloudId.toString(),
+        name,
+      };
+      sessionStorage.setItem('cloudRegionInfo', JSON.stringify({ id: row.id }));
+      const params = new URLSearchParams(data);
+      const targetUrl = `/node-manager/cloudregion/configuration?${params.toString()}`;
+      router.push(targetUrl);
+    },
+  });
 
   const cancelInstall = useCallback(() => {
     setShowNodeTable(true);
@@ -260,20 +262,23 @@ const Node = () => {
             title: tex.name,
             dataIndex: tex.id,
             render: (key: string, item: TableDataItem) => {
-              const target = (item.status.collectors || []).find(
+              const collectorTarget = (item.status.collectors || []).find(
                 (item: TableDataItem) => item.collector_id === tex.id
               );
-              return target ? (
-                <Tooltip title={`${target?.message}`}>
-                  <Tag
-                    bordered={false}
-                    color={!target?.status ? 'success' : 'error'}
-                  >
-                    {!target?.status ? 'Running' : 'Error'}
+              const installTarget = (item.status.collectors_install || []).find(
+                (item: TableDataItem) => item.collector_id === tex.id
+              );
+              if (!collectorTarget && !installTarget) return '--';
+              const { title, tagColor, status } = getStatusInfo(
+                collectorTarget,
+                installTarget
+              );
+              return (
+                <Tooltip title={title}>
+                  <Tag bordered={false} color={tagColor}>
+                    {status}
                   </Tag>
                 </Tooltip>
-              ) : (
-                '--'
               );
             },
           };
@@ -282,30 +287,31 @@ const Node = () => {
           title: tex.name,
           dataIndex: tex.id,
           render: (key: string, item: TableDataItem) => {
-            const target = (item.status.collectors || []).find(
+            const collectorTarget = (item.status.collectors || []).find(
               (item: TableDataItem) => item.collector_id === tex.id
             );
-            return target ? (
-              <Tooltip title={`${target?.message}`}>
+            const installTarget = (item.status.collectors_install || []).find(
+              (item: TableDataItem) => item.collector_id === tex.id
+            );
+            if (!collectorTarget && !installTarget) return '--';
+            const { title, color, status } = getStatusInfo(
+              collectorTarget,
+              installTarget
+            );
+            return (
+              <Tooltip title={title}>
                 <div>
                   <span
                     className="recordStatus"
                     style={{
-                      backgroundColor:
-                        statusMap[target?.status]?.color || '#b2b5bd',
+                      backgroundColor: color,
                     }}
                   ></span>
-                  <span
-                    style={{
-                      color: statusMap[target?.status]?.color || '#b2b5bd',
-                    }}
-                  >
-                    {!target?.status ? 'Running' : 'Error'}
+                  <span style={{ color }} className="text-[12px]">
+                    {status}
                   </span>
                 </div>
               </Tooltip>
-            ) : (
-              '--'
             );
           },
         };
@@ -314,6 +320,27 @@ const Node = () => {
         natsexecutors.includes(item.dataIndex) ? -1 : 0
       );
     setActiveColumns(columnItems);
+  };
+
+  const getStatusInfo = (
+    collectorTarget: TableDataItem,
+    installTarget: TableDataItem
+  ) => {
+    const { action, message } = installTarget?.message || {};
+    const str = `${action ? action + ': ' : ''}${message}`;
+    const title = collectorTarget ? collectorTarget.message : str;
+    const statusCode = collectorTarget
+      ? collectorTarget.status
+      : installTarget?.status;
+    const tagColor = statusMap[statusCode]?.tagColor || 'default';
+    const color = statusMap[statusCode]?.color || '#b2b5bd';
+    const status = statusMap[statusCode]?.text || '--';
+    return {
+      title,
+      color,
+      status,
+      tagColor,
+    };
   };
 
   const handleCollector = (config = { type: '', taskId: '' }) => {
@@ -327,7 +354,7 @@ const Node = () => {
   };
 
   return (
-    <Mainlayout>
+    <MainLayout>
       {showNodeTable && (
         <div className={`${nodeStyle.node} w-full h-full`}>
           <div className="overflow-hidden">
@@ -418,7 +445,7 @@ const Node = () => {
           cancel={cancelWait}
         />
       )}
-    </Mainlayout>
+    </MainLayout>
   );
 };
 

@@ -116,7 +116,9 @@
         "telegrafConfigTips": "开启Telegraf探针时，自动初始化并绑定对应配置文件，后续如需修改，请前往“配置列表”中修改。",
         "configuration": "配置文件",
         "active": "活跃",
-        "inactive": "不活跃"
+        "inactive": "不活跃",
+        "unknown": "未知的",
+        "stop": "停止"
       },
       "Configuration": {
         "system": "操作系统",

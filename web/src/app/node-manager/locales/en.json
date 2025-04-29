@@ -116,7 +116,9 @@
         "telegrafConfigTips": "When opening the Telegraf probe, it automatically initializes and binds the corresponding configuration file. If you need to modify it later, please go to the 'Configuration List' to make changes.",
         "configuration": "Configuration",
         "active": "active",
-        "inactive": "inactive"
+        "inactive": "inactive",
+        "unknown": "unknown",
+        "stop": "stop"
       },
       "Configuration": {
         "system": "Operating System",
