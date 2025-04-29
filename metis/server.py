@@ -72,6 +72,7 @@ def startup():
     app.config.REQUEST_MAX_SIZE = 300_000_000
     app.run(
         host="0.0.0.0",
+        access_log=True,
         port=int(os.getenv('APP_PORT', 18083)),
         workers=1
     )

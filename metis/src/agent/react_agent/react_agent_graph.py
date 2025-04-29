@@ -1,6 +1,8 @@
+from langchain_core.messages import AIMessage
 from langgraph.constants import END
 from langgraph.graph import StateGraph
 
+from src.core.entity.basic_llm_response import BasicLLMResponse
 from src.core.graph.tools_graph import ToolsGraph
 from src.entity.agent.react_agent_request import ReActAgentRequest
 from src.entity.agent.react_agent_response import ReActAgentResponse
@@ -34,5 +36,16 @@ class ReActAgentGraph(ToolsGraph):
     async def execute(self, request: ReActAgentRequest) -> ReActAgentResponse:
         graph = await self.compile_graph(request)
         result = await self.invoke(graph, request)
-        response = self.parse_basic_response(result)
+
+        prompt_token = 0
+        completion_token = 0
+
+        for i in result["messages"]:
+            if type(i) == AIMessage:
+                prompt_token += i.response_metadata['token_usage']['prompt_tokens']
+                completion_token += i.response_metadata['token_usage']['completion_tokens']
+        response = BasicLLMResponse(message=result["messages"][-1].content,
+                                    total_tokens=prompt_token + completion_token,
+                                    prompt_tokens=prompt_token,
+                                    completion_tokens=completion_token)
         return response

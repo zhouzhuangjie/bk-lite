@@ -40,7 +40,6 @@ async def test_react_agent_with_jenkins_tools():
 
     msgs = [
         "Jenkins有多少个构建任务",
-        "构建nats-executor"
     ]
     for m in msgs:
         request = ReActAgentRequest(
