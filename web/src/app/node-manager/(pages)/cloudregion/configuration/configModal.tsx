@@ -34,7 +34,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
     const {
       updatecollector,
       createconfig,
-      getvariablelist,
+      getVariablelist,
       updatechildconfig,
     } = useApiCloudRegion();
     const cloudId = useCloudId();
@@ -73,7 +73,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
     const initializeVarForm = async () => {
       try {
         setTableLoading(true);
-        const res = await getvariablelist(cloudId);
+        const res = await getVariablelist(cloudId);
         const tempdata = res.map((item: VarResItem) => ({
           key: item.id,
           name: item.key,

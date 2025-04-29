@@ -11,12 +11,12 @@ const useApiCloudRegion = () => {
   const { get, post, del, patch } = useApiClient();
 
   //获取云区域列表
-  const getcloudlist = async () => {
+  const getCloudList = async () => {
     return await get('/node_mgmt/api/cloud_region/');
   };
 
   //更新云区域的介绍
-  const updatecloudintro = async (
+  const updateCloudIntro = async (
     id: string,
     data: { introduction: string }
   ) => {
@@ -219,7 +219,7 @@ const useApiCloudRegion = () => {
 
   //变量的模块
   //获取变量列表
-  const getvariablelist = async (cloud_region_id: number, search?: string) => {
+  const getVariablelist = async (cloud_region_id: number, search?: string) => {
     return await get('/node_mgmt/api/sidecar_env/', {
       params: { cloud_region_id, search },
     });
@@ -248,12 +248,12 @@ const useApiCloudRegion = () => {
   };
 
   //删除环境变量
-  const deletevariable = async (id: string) => {
+  const deleteVariable = async (id: string) => {
     return await del(`/node_mgmt/api/sidecar_env/${id}/`);
   };
   return {
-    getcloudlist,
-    updatecloudintro,
+    getCloudList,
+    updateCloudIntro,
     getnodelist,
     getsidecarstep,
     getconfiglist,
@@ -262,10 +262,10 @@ const useApiCloudRegion = () => {
     deletecollector,
     applyconfig,
     batchdeletecollector,
-    getvariablelist,
+    getVariablelist,
     createvariable,
     updatevariable,
-    deletevariable,
+    deleteVariable,
     batchbindcollector,
     batchoperationcollector,
     getnodstateenum,

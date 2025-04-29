@@ -21,14 +21,15 @@ const Variable = () => {
   const cloudId = useCloudId();
   const { t } = useTranslation();
   const { isLoading } = useApiClient();
-  const { getvariablelist, deletevariable } = useApiCloudRegion();
+  const { getVariablelist, deleteVariable } = useApiCloudRegion();
   const variableRef = useRef<ModalRef>(null);
   const [data, setData] = useState<TableDataItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [searchText, setSearchText] = useState<string>('');
 
   useEffect(() => {
     if (!isLoading) {
-      getVariablelist();
+      getTablelist();
     }
   }, [isLoading]);
 
@@ -41,65 +42,48 @@ const Variable = () => {
 
   //遍历数据，取出要回显的数据
   const getFormDataById = (key: string) => {
-    const formData = data.find((item) => item.key === key);
-    if (!formData) {
-      throw new Error(`Form data not found for key: ${key}`);
-    }
-    return formData;
+    return data.find((item) => item.key === key) || {};
   };
 
-  const delconfirm = (key: string) => {
-    deletevariable(key)
+  const delConfirm = (key: string) => {
+    setLoading(true);
+    deleteVariable(key)
       .then(() => {
         message.success(t('common.delSuccess'));
+        getTablelist();
       })
-      .finally(() => {
-        getVariablelist();
+      .catch(() => {
+        setLoading(false);
       });
   };
 
   const columns = useVarColumns({
     openUerModal,
     getFormDataById,
-    delconfirm,
+    delConfirm,
   });
 
-  const onsuccessvariablemodal = () => {
-    getVariablelist();
-  };
-
   const onSearch: SearchProps['onSearch'] = (value) => {
-    getvariablelist(cloudId, value).then((res) => {
-      const tempdata = res.map((item: any) => {
-        return {
-          key: item.id,
-          name: item.key,
-          value: item.value,
-          description: item.description,
-        };
-      });
-      setData(tempdata);
-    });
+    setSearchText(value);
+    getTablelist(value);
   };
 
   //获取表格数据
-  const getVariablelist = () => {
-    getvariablelist(cloudId)
-      .then((res) => {
-        setLoading(true);
-        const tempdata = res.map((item: any) => {
-          return {
-            key: item.id,
-            name: item.key,
-            value: item.value,
-            description: item.description,
-          };
-        });
-        setData(tempdata);
-      })
-      .finally(() => {
-        setLoading(false);
+  const getTablelist = async (search = searchText) => {
+    setLoading(true);
+    try {
+      const res = await getVariablelist(cloudId, search);
+      const tempdata = res.map((item: any) => {
+        return {
+          ...item,
+          key: item.id,
+          name: item.key,
+        };
       });
+      setData(tempdata);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -139,7 +123,7 @@ const Variable = () => {
         </div>
         <VariableModal
           ref={variableRef}
-          onSuccess={onsuccessvariablemodal}
+          onSuccess={() => getTablelist()}
         ></VariableModal>
       </div>
     </Mainlayout>

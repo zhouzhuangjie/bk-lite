@@ -19,7 +19,7 @@ interface SubConfigHookParams {
 interface VariableProps {
   openUerModal: (type: string, form: TableDataItem) => void;
   getFormDataById: (key: string) => TableDataItem;
-  delconfirm: (key: string, text: any) => void;
+  delConfirm: (key: string, text: any) => void;
 }
 
 //api返回的配置文件列表的类型
@@ -104,7 +104,7 @@ interface SubProps {
   collectors: TableDataItem[];
 }
 
-interface cloudRegionItem {
+interface CloudRegionItem {
   id: string;
   name: string;
   description: string;
@@ -167,7 +167,7 @@ interface ConfigListParams {
   cloud_region_id?: number;
   name?: string;
   node_id?: string;
-  ids?:string[];
+  ids?: string[];
 }
 
 export type {
@@ -182,7 +182,7 @@ export type {
   ConfigDate,
   SubRef,
   SubProps,
-  cloudRegionItem,
+  CloudRegionItem,
   VarSourceItem,
   VarResItem,
   CloudregioncardProps,
