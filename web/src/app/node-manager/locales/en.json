@@ -144,7 +144,8 @@
         "value": "Value",
         "desc": "Description",
         "deletevariable": "Delete Variable",
-        "deleteinfo": "Are you sure to delete this variable?"
+        "deleteinfo": "Are you sure to delete this variable?",
+        "variableNameTips": "Only characters A-Z are allowed, a-z,  0-9, and_"
       }
     },
     "collector": {

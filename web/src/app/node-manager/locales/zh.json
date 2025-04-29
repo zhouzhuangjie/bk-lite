@@ -144,7 +144,8 @@
         "value": "数值",
         "desc": "描述",
         "deletevariable": "删除变量",
-        "deleteinfo": "您确定要删除此变量吗？"
+        "deleteinfo": "您确定要删除此变量吗？",
+        "variableNameTips": "仅允许字符 A-Z, a-z, 0-9, 和 _"
       }
     },
     "collector": {

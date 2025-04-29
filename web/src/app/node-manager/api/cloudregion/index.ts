@@ -226,7 +226,7 @@ const useApiCloudRegion = () => {
   };
 
   //创建环境变量
-  const createvariable = async (data: {
+  const createVariable = async (data: {
     key: string;
     value: string;
     description?: string;
@@ -236,7 +236,7 @@ const useApiCloudRegion = () => {
   };
 
   //部分更新环境变量
-  const updatevariable = async (
+  const updateVariable = async (
     id: number,
     data: {
       key: string;
@@ -263,8 +263,8 @@ const useApiCloudRegion = () => {
     applyconfig,
     batchdeletecollector,
     getVariablelist,
-    createvariable,
-    updatevariable,
+    createVariable,
+    updateVariable,
     deleteVariable,
     batchbindcollector,
     batchoperationcollector,
