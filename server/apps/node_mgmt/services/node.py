@@ -35,6 +35,8 @@ class NodeService:
                 status = 12
             else:
                 status = 10
+
+
             node_install_map.setdefault(obj.node_id, []).append(
                 dict( collector_id=obj.collector_id, status=status, message=obj.result)
             )
