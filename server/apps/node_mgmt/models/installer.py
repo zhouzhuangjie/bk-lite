@@ -3,7 +3,18 @@ from django.db.models import JSONField
 
 from apps.core.models.maintainer_info import MaintainerInfo
 from apps.core.models.time_info import TimeInfo
-from apps.node_mgmt.models import CloudRegion, Node
+from apps.node_mgmt.models import CloudRegion, Node, Collector
+
+
+class NodeCollectorInstallStatus(models.Model):
+    node = models.ForeignKey(Node, on_delete=models.CASCADE, verbose_name="节点")
+    collector = models.ForeignKey(Collector, on_delete=models.CASCADE, verbose_name="采集器")
+    status = models.CharField(max_length=100, verbose_name="状态")
+    result = JSONField(default=dict, verbose_name="结果")
+
+    class Meta:
+        verbose_name = "节点采集器状态"
+        verbose_name_plural = "节点采集器状态"
 
 
 class ControllerTask(TimeInfo, MaintainerInfo):
@@ -28,6 +39,7 @@ class ControllerTaskNode(models.Model):
     port = models.IntegerField(verbose_name="端口")
     username = models.CharField(max_length=100, verbose_name="用户名")
     password = models.CharField(max_length=100, verbose_name="密码")
+    status = models.CharField(max_length=100, default="", verbose_name="任务状态")
     result = JSONField(default=dict, verbose_name="结果")
 
     class Meta:

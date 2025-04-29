@@ -2,7 +2,7 @@ from celery import shared_task
 
 from apps.node_mgmt.constants import CONTROLLER_INSTALL_DIR, COLLECTOR_INSTALL_DIR, LINUX_OS, \
     CONTROLLER_DIR_DELETE_COMMAND
-from apps.node_mgmt.models import ControllerTask, CollectorTask, PackageVersion, Node
+from apps.node_mgmt.models import ControllerTask, CollectorTask, PackageVersion, Node, NodeCollectorInstallStatus
 from apps.node_mgmt.utils.installer import download_to_remote, exec_command_to_remote, download_to_local, \
     exec_command_to_local, get_install_command, get_uninstall_command
 from config.components.nats import NATS_NAMESPACE
@@ -47,11 +47,13 @@ def install_controller(task_id):
             # 解压包，并执行运行脚步
             exec_command_to_remote(task_obj.work_node, node_obj.ip, node_obj.username, node_obj.password, install_command)
             node_obj.result.update(run={"status": "success"})
+            node_obj.status = "success"
         except Exception as e:
             if "send" not in node_obj.result:
                 node_obj.result.update(send={"status": "failed", "message": str(e)})
             elif "run" not in node_obj.result:
                 node_obj.result.update(run={"status": "failed", "message": str(e)})
+            node_obj.status = "error"
 
         node_obj.save()
 
@@ -94,6 +96,8 @@ def uninstall_controller(task_id):
             Node.objects.filter(cloud_region_id=task_obj.cloud_region_id, ip=node_obj.ip).delete()
             node_obj.result.update(delete_node={"status": "success"})
 
+            node_obj.status = "success"
+
         except Exception as e:
 
             if "stop_run" not in node_obj.result:
@@ -102,6 +106,8 @@ def uninstall_controller(task_id):
                 node_obj.result.update(delete_dir={"status": "failed", "message": str(e)})
             elif "delete_node" not in node_obj.result:
                 node_obj.result.update(delete_node={"status": "failed", "message": str(e)})
+
+            node_obj.status = "error"
 
         node_obj.save()
 
@@ -145,9 +151,20 @@ def install_collector(task_id):
                 node_obj.result.update(set_exe={"status": "success"})
             else:
                 node_obj.result.update(set_exe={"status": "success"})
+            node_obj.status = "success"
         except Exception as e:
             node_obj.result.update(send={"status": "failed", "message": str(e)})
-
+            node_obj.status = "error"
+        NodeCollectorInstallStatus.objects.update_or_create(
+            node_id=node_obj.node_id,
+            collector_id=package_obj.name,
+            defaults={
+                "node": node_obj.node_id,
+                "collector": package_obj.name,
+                "status": node_obj.status,
+                "result": node_obj.result,
+            },
+        )
         node_obj.save()
 
     # 更新任务状态
