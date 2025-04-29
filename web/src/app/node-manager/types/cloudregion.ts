@@ -7,8 +7,8 @@ interface ConfigHookParams {
   configurationClick: (key: string) => void;
   openSub: (key: string, item?: any) => void;
   nodeClick: () => void;
-  modifydeleteconfirm: (key: string) => void;
-  applyconfigurationClick: (item: TableDataItem) => void;
+  modifyDeleteconfirm: (key: string) => void;
+  applyConfigurationClick: (item: TableDataItem) => void;
   filter: ColumnFilterItem[];
 }
 // 子配置页面table的列定义
@@ -62,7 +62,7 @@ interface updateConfigReq {
 }
 
 //节点模块返回的数据
-interface nodeItemtRes {
+interface NodeItemRes {
   id: string;
   ip: string;
   operating_system: string;
@@ -73,10 +73,10 @@ interface nodeItemtRes {
 }
 
 //节点处理后的数据格式
-interface mappedNodeItem {
+interface MappedNodeItem {
   key: string;
   ip: string;
-  operatingsystem: string;
+  operatingSystem: string;
   sidecar: string;
 }
 
@@ -85,9 +85,9 @@ interface ConfigDate {
   name: string;
   collector?: string;
   collector_id?: string;
-  operatingsystem: string;
-  nodecount: number;
-  configinfo: string;
+  operatingSystem: string;
+  nodeCount: number;
+  configInfo: string;
   nodes: string[];
   nodesList?: ListItem;
   operating_system?: string;
@@ -177,8 +177,8 @@ export type {
   CollectorItem,
   NodeExpanddata,
   updateConfigReq,
-  nodeItemtRes,
-  mappedNodeItem,
+  NodeItemRes,
+  MappedNodeItem,
   ConfigDate,
   SubRef,
   SubProps,

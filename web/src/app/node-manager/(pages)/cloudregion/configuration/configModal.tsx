@@ -32,21 +32,21 @@ const { Option } = Select;
 const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
   ({ onSuccess, config: { collectors = [] } }, ref) => {
     const {
-      updatecollector,
-      createconfig,
-      getVariablelist,
-      updatechildconfig,
+      updateCollector,
+      createConfig,
+      getVariableList,
+      updateChildConfig,
     } = useApiCloudRegion();
     const cloudId = useCloudId();
     const { t } = useTranslation();
     const columns = useConfigModalColumns();
-    const configformRef = useRef<FormInstance>(null);
+    const configFormRef = useRef<FormInstance>(null);
     const [configVisible, setConfigVisible] = useState<boolean>(false);
     const [tableLoading, setTableLoading] = useState<boolean>(false);
     const [configForm, setConfigForm] = useState<TableDataItem>();
-    const [editeConfigId, setEditeConfigId] = useState<string>('');
+    const [editConfigId, setEditConfigId] = useState<string>('');
     const [type, setType] = useState<string>('add');
-    const [vardataSource, setVardataSource] = useState<VarSourceItem[]>([]);
+    const [varDataSource, setvarDataSource] = useState<VarSourceItem[]>([]);
     const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
 
     useImperativeHandle(ref, () => ({
@@ -54,7 +54,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
         const _form = cloneDeep(form) as TableDataItem;
         setConfigVisible(true);
         setType(type);
-        setEditeConfigId(_form?.key);
+        setEditConfigId(_form?.key);
         setConfigForm(_form);
         initializeVarForm();
       },
@@ -64,22 +64,22 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
     useEffect(() => {
       if (!configVisible) return;
       // 初始化变量列表
-      configformRef.current?.resetFields();
+      configFormRef.current?.resetFields();
       if (['edit', 'edit_child'].includes(type)) {
-        configformRef.current?.setFieldsValue(configForm);
+        configFormRef.current?.setFieldsValue(configForm);
       }
     }, [configForm, configVisible]);
 
     const initializeVarForm = async () => {
       try {
         setTableLoading(true);
-        const res = await getVariablelist(cloudId);
+        const res = await getVariableList(cloudId);
         const tempdata = res.map((item: VarResItem) => ({
           key: item.id,
           name: item.key,
           description: item.description || '--',
         }));
-        setVardataSource(tempdata);
+        setvarDataSource(tempdata);
       } finally {
         setTableLoading(false);
       }
@@ -101,8 +101,8 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
         setConfirmLoading(true);
         const isAdd = type === 'add';
         await (isAdd
-          ? createconfig(params)
-          : updatecollector(editeConfigId, params));
+          ? createConfig(params)
+          : updateCollector(editConfigId, params));
         handleSuccess();
         message.success(t(`common.${isAdd ? 'addSuccess' : 'updateSuccess'}`));
       } finally {
@@ -110,17 +110,17 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
       }
     };
 
-    const handleChildUpdate = async (configinfo: string) => {
+    const handleChildUpdate = async (configInfo: string) => {
       try {
         setConfirmLoading(true);
         const isAdd = type === 'add_child';
         const { id, collect_type, config_type, collector_config } =
           configForm as TableDataItem;
-        await updatechildconfig(id as string, {
+        await updateChildConfig(id as string, {
           collect_type,
           config_type,
           collector_config,
-          content: configinfo,
+          content: configInfo,
         });
         handleSuccess();
         message.success(t(`common.${isAdd ? 'addSuccess' : 'updateSuccess'}`));
@@ -131,13 +131,13 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
 
     //处理配置编辑和子配置编辑的确定事件
     const handleConfirm = () => {
-      configformRef.current?.validateFields().then((values) => {
-        const { name, collector_id: collector, configinfo } = values;
+      configFormRef.current?.validateFields().then((values) => {
+        const { name, collector_id: collector, configInfo } = values;
         if (['edit', 'add'].includes(type)) {
           const params: ConfigParams = {
             name,
             collector_id: collector,
-            config_template: configinfo,
+            config_template: configInfo,
           };
           if (type === 'add') {
             params.cloud_region_id = cloudId;
@@ -145,18 +145,18 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
           handleCreateAndUpdate(params);
           return;
         }
-        handleChildUpdate(configinfo);
+        handleChildUpdate(configInfo);
       });
     };
 
     const ConfigEditorWithParams = ({
       value,
-      vardataSource,
+      varDataSource,
       columns,
       onChange,
     }: {
       value: string;
-      vardataSource: VarSourceItem[];
+      varDataSource: VarSourceItem[];
       columns: any;
       onChange: any;
     }) => {
@@ -192,7 +192,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
               size="small"
               className="w-full"
               scroll={{ y: '160px' }}
-              dataSource={vardataSource}
+              dataSource={varDataSource}
               loading={tableLoading}
               columns={columns}
             />
@@ -203,7 +203,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
 
     const showConfigForm = () => {
       return (
-        <Form ref={configformRef} layout="vertical" colon={false}>
+        <Form ref={configFormRef} layout="vertical" colon={false}>
           {type === 'edit_child' ? (
             <>
               <Form.Item
@@ -263,7 +263,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
                   disabled={type !== 'add'}
                   options={OPERATE_SYSTEMS}
                   onChange={() =>
-                    configformRef.current?.setFieldsValue({
+                    configFormRef.current?.setFieldsValue({
                       collector_id: null,
                     })
                   }
@@ -308,7 +308,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
             </>
           )}
           <Form.Item
-            name="configinfo"
+            name="configInfo"
             label={t('node-manager.cloudregion.Configuration.template')}
             rules={[
               {
@@ -319,7 +319,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
           >
             {
               <ConfigEditorWithParams
-                vardataSource={vardataSource}
+                varDataSource={varDataSource}
                 columns={columns}
                 value={''}
                 onChange={undefined}

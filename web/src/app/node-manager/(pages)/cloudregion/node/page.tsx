@@ -38,8 +38,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import PermissionWrapper from '@/components/permission';
 import {
   OPERATE_SYSTEMS,
-  useSidecaritems,
-  useCollectoritems,
+  useSidecarItems,
+  useCollectorItems,
 } from '@/app/node-manager/constants/cloudregion';
 import { cloneDeep } from 'lodash';
 import { ColumnItem } from '@/types';
@@ -56,15 +56,15 @@ const Node = () => {
   const cloudId = useCloudId();
   const searchParams = useSearchParams();
   const { isLoading, del } = useApiClient();
-  const { getnodelist } = useApiCloudRegion();
+  const { getNodeList } = useApiCloudRegion();
   const { getCollectorlist } = useApiCollector();
-  const sidecaritems = useSidecaritems();
-  const collectoritems = useCollectoritems();
+  const sidecarItems = useSidecarItems();
+  const collectorItems = useCollectorItems();
   const statusMap = useTelegrafMap();
   const name = searchParams.get('name') || '';
   const collectorRef = useRef<ModalRef>(null);
   const controllerRef = useRef<ModalRef>(null);
-  const [nodelist, setNodelist] = useState<TableDataItem[]>();
+  const [nodeList, setNodeList] = useState<TableDataItem[]>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [showNodeTable, setShowNodeTable] = useState<boolean>(true);
@@ -111,12 +111,12 @@ const Node = () => {
     const _columns = cloneDeep(columns);
     _columns.splice(3, 0, ...activeColumns);
     return _columns;
-  }, [columns, nodelist, statusMap, activeColumns]);
+  }, [columns, nodeList, statusMap, activeColumns]);
 
   const enableOperateCollecter = useMemo(() => {
     if (!selectedRowKeys.length) return true;
     return false;
-  }, [selectedRowKeys, nodelist]);
+  }, [selectedRowKeys, nodeList]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -137,7 +137,7 @@ const Node = () => {
 
   const handleSidecarMenuClick: MenuProps['onClick'] = (e) => {
     if (e.key === 'uninstallSidecar') {
-      const list = (nodelist || []).filter((item) =>
+      const list = (nodeList || []).filter((item) =>
         selectedRowKeys.includes(item.key)
       );
       controllerRef.current?.showModal({
@@ -174,12 +174,12 @@ const Node = () => {
   };
 
   const SidecarmenuProps = {
-    items: sidecaritems,
+    items: sidecarItems,
     onClick: handleSidecarMenuClick,
   };
 
   const CollectormenuProps = {
-    items: collectoritems,
+    items: collectorItems,
     onClick: handleCollectorMenuClick,
   };
 
@@ -225,12 +225,12 @@ const Node = () => {
   ) => {
     setLoading(true);
     try {
-      const res = await getnodelist(params || getParams());
+      const res = await getNodeList(params || getParams());
       const data = res.map((item: TableDataItem) => ({
         ...item,
         key: item.id,
       }));
-      setNodelist(data);
+      setNodeList(data);
     } finally {
       setLoading(type === 'init');
     }
@@ -244,7 +244,7 @@ const Node = () => {
   const onSystemChange = (id: string) => {
     setSystem(id);
     setActiveColumns([]);
-    setNodelist([]);
+    setNodeList([]);
     const params = getParams();
     params.operating_system = id;
     initData(params);
@@ -415,7 +415,7 @@ const Node = () => {
               <CustomTable
                 columns={tableColumns}
                 loading={loading}
-                dataSource={nodelist}
+                dataSource={nodeList}
                 scroll={{ y: 'calc(100vh - 326px)', x: 'calc(100vw - 300px)' }}
                 rowSelection={rowSelection}
               />

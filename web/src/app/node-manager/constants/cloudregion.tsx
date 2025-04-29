@@ -98,7 +98,7 @@ const useInstallWays = (): SegmentedItem[] => {
   );
 };
 
-const useCollectoritems = (): MenuProps['items'] => {
+const useCollectorItems = (): MenuProps['items'] => {
   const { t } = useTranslation();
   return useMemo(
     () => [
@@ -155,7 +155,7 @@ const useCollectoritems = (): MenuProps['items'] => {
   );
 };
 
-const useSidecaritems = (): MenuProps['items'] => {
+const useSidecarItems = (): MenuProps['items'] => {
   const { t } = useTranslation();
   return useMemo(
     () => [
@@ -206,8 +206,8 @@ export {
   useTelegrafMap,
   useInstallWays,
   useInstallMap,
-  useSidecaritems,
-  useCollectoritems,
+  useSidecarItems,
+  useCollectorItems,
   OPERATE_SYSTEMS,
   BATCH_FIELD_MAPS,
 };

@@ -21,7 +21,7 @@ const Variable = () => {
   const cloudId = useCloudId();
   const { t } = useTranslation();
   const { isLoading } = useApiClient();
-  const { getVariablelist, deleteVariable } = useApiCloudRegion();
+  const { getVariableList, deleteVariable } = useApiCloudRegion();
   const variableRef = useRef<ModalRef>(null);
   const [data, setData] = useState<TableDataItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -72,7 +72,7 @@ const Variable = () => {
   const getTablelist = async (search = searchText) => {
     setLoading(true);
     try {
-      const res = await getVariablelist(cloudId, search);
+      const res = await getVariableList(cloudId, search);
       const tempdata = res.map((item: any) => {
         return {
           ...item,
