@@ -35,11 +35,9 @@ class ChatBotWorkflowGraph(BasicGraph):
         completion_token = 0
 
         for i in result["messages"]:
-            if type(i) == AIMessage:
-                if 'prompt_tokens' in i.response_metadata['token_usage']:
-                    prompt_token += i.response_metadata['token_usage']['prompt_tokens']
-                if 'completion_tokens' in i.response_metadata['token_usage']:
-                    completion_token += i.response_metadata['token_usage']['completion_tokens']
+            if type(i) == AIMessage and 'token_usage' in i.response_metadata:
+                prompt_token += i.response_metadata['token_usage']['prompt_tokens']
+                completion_token += i.response_metadata['token_usage']['completion_tokens']
         response = BasicLLMResponse(message=result["messages"][-1].content,
                                     total_tokens=prompt_token + completion_token,
                                     prompt_tokens=prompt_token,
