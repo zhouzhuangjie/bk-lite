@@ -210,7 +210,7 @@ class LLMService:
             处理后的数据、文档映射和标题映射
         """
         llm_model = LLMModel.objects.get(id=kwargs["llm_model"])
-        # self.validate_remaining_token(llm_model)
+        self.validate_remaining_token(llm_model)
         show_think = kwargs.pop("show_think", True)
         # 处理用户消息和图片
         chat_kwargs, doc_map, title_map = self.format_chat_server_kwargs(kwargs, llm_model)
