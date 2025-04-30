@@ -1,7 +1,7 @@
 FROM ubuntu:24.04
 
 RUN apt-get update && \
-    apt-get install -y ca-certificates ipmitool vim&& \
+    apt-get install -y ca-certificates ipmitool vim \
     update-ca-certificates supervisor && \
     rm -rf /var/lib/apt/lists/*
     
