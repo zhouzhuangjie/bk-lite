@@ -25,8 +25,8 @@ L_INSTALL_DOWNLOAD_URL = f"{LOCAL_HOST}/openapi/sidecar/download_file/?file_name
 
 # 控制器下发目录
 CONTROLLER_INSTALL_DIR = {
-    LINUX_OS: "/tmp",
-    WINDOWS_OS: "C:\\gse",
+    LINUX_OS: {"storage_dir": "/tmp", "install_dir": "/opt"},
+    WINDOWS_OS: {"storage_dir": "/tmp", "install_dir": "C:\\gse"},
 }
 
 # 采集器下发目录
@@ -37,9 +37,8 @@ COLLECTOR_INSTALL_DIR = {
 
 # 解压并执行命令
 UNZIP_RUN_COMMAND = {
-    # LINUX_OS: "tar -xvf /tmp/{package_name} --transform='s,^[^/]*,fusion-collectors,' -C /opt && /opt/fusion-collectors/install.sh {server_url} {server_token}",
-    LINUX_OS: "tar -xvf /tmp/{package_name} --transform='s,^[^/]*,fusion-collectors,' -C /opt && cd /opt/fusion-collectors && ./install.sh {server_url} {server_token}",
-    WINDOWS_OS: "powershell -command \"Expand-Archive -Path {} -DestinationPath {}\"",
+    LINUX_OS: "cd /opt/fusion-collectors && ./install.sh {server_url} {server_token}",
+    WINDOWS_OS: "powershell -command \"cd C:\\gse\\fusion-collectors && .\\install.ps1 {server_url} {server_token}\"",
 }
 
 # 卸载命令
