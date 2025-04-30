@@ -10,7 +10,7 @@ RUN apt-get update && \
 
 ADD ./nats-executor /opt/nats-executor
 ADD ./support-files/startup.sh /opt/startup.sh
-ADD ./service.conf /etc/supervisor/conf.d/service.conf
+ADD ./support-files/service.conf /etc/supervisor/conf.d/service.conf
 
 RUN chmod +x /opt/startup.sh
 RUN chmod +x /opt/nats-executor
