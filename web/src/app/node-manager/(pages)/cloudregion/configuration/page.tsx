@@ -10,7 +10,7 @@ import { ModalRef, TableDataItem } from '@/app/node-manager/types';
 import { useTranslation } from '@/utils/i18n';
 import useApiClient from '@/utils/request';
 import type {
-  IConfiglistprops,
+  ConfigListProps,
   ConfigDate,
   SubRef,
 } from '@/app/node-manager/types/cloudregion';
@@ -43,7 +43,7 @@ const Configration = () => {
   ).id;
   const cloudregionId = searchParams.get('cloud_region_id') || '';
   const name = searchParams.get('name') || '';
-  const { getConfiglist, getNodeList, batchDeletecollector } =
+  const { getConfiglist, getNodeList, batchDeleteCollector } =
     useApiCloudRegion();
   const { getCollectorlist } = useApiCollector();
   const configBtachItems = useConfigBtachItems();
@@ -62,7 +62,7 @@ const Configration = () => {
   });
   const [collectorIds, setCollectorIds] = useState<string[]>([]);
   const [originNodes, setOriginNodes] = useState<TableDataItem[]>([]);
-  const [originConfigs, setOriginConfigs] = useState<IConfiglistprops[]>([]);
+  const [originConfigs, setOriginConfigs] = useState<ConfigListProps[]>([]);
   const [originCollectors, setOriginCollectors] = useState<TableDataItem[]>([]);
   const [selectedConfigurationRowKeys, setSelectedConfigurationRowKeys] =
     useState<React.Key[]>([]);
@@ -139,7 +139,7 @@ const Configration = () => {
   const modifyDeleteconfirm = async (id?: string) => {
     setLoading(true);
     const ids = id ? [id] : selectedConfigurationRowKeys;
-    await batchDeletecollector({
+    await batchDeleteCollector({
       ids: ids as string[],
     });
     if (!id) {
@@ -211,7 +211,7 @@ const Configration = () => {
       label: item?.ip,
       value: item?.id,
     }));
-    const data: any = config.configlist.map((item: IConfiglistprops) => {
+    const data: any = config.configlist.map((item: ConfigListProps) => {
       return {
         ...item,
         key: item.id,
