@@ -12,6 +12,8 @@ class Executor(object):
         self.ssh_client = RpcClient('ssh.execute')
         self.download_to_local_client = RpcClient('download.local')
         self.download_to_remote_client = RpcClient('download.remote')
+        self.transfer_file_to_remote_client = RpcClient('upload.remote')
+        self.unzip_local_client = RpcClient('unzip.local')
 
     def execute_local(self, command, timeout=60):
         """
@@ -100,4 +102,42 @@ class Executor(object):
         if password:
             request_data["password"] = password
         return_data = self.download_to_remote_client.run(self.instance_id, request_data, _timeout=timeout)
+        return return_data
+
+    def unzip_local(self, file_path, target_path, timeout=60):
+        """
+        解压本地文件
+        :param file_path: 要解压的文件路径
+        :param target_path: 解压目标路径
+        :return: 解压结果
+        """
+        request_data = {
+            "file_path": file_path,
+            "target_path": target_path,
+        }
+        return_data = self.unzip_local_client.run(self.instance_id, request_data, _timeout=timeout)
+        return return_data
+
+    def transfer_file_to_remote(self, source_path, target_path, host, username, password=None, timeout=60):
+        """
+        传递文件到远程主机
+        :param source_path: 要传递的文件路径
+        :param target_path: 远程目标路径
+        :param host: 远程主机地址
+        :param username: SSH用户名
+        :param password: SSH密码(可选)
+        :param timeout: 执行超时时间(秒)
+        :return: 传递结果
+        """
+        request_data = {
+            "source_path": source_path,
+            "target_path": target_path,
+            "host": host,
+            "user": username,
+            "execute_timeout": timeout,
+        }
+        # 添加可选参数
+        if password:
+            request_data["password"] = password
+        return_data = self.transfer_file_to_remote_client.run(self.instance_id, request_data, _timeout=timeout)
         return return_data
