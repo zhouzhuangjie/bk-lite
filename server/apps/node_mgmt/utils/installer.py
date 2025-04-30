@@ -49,3 +49,17 @@ def download_to_remote(instance_id, bucket_name, file_key, file_name, target_pat
     exe_obj = Executor(instance_id)
     result = exe_obj.download_to_remote(bucket_name, file_key, file_name, target_path, host, username, password, timeout=600)
     return result
+
+
+# 本机文件下发到远程
+def transfer_file_to_remote(instance_id, local_path, remote_path, host, username, password):
+    exe_obj = Executor(instance_id)
+    result = exe_obj.transfer_file_to_remote(local_path, remote_path, host, username, password, timeout=600)
+    return result
+
+
+# 解压文件
+def unzip_file(instance_id, file_path, target_path):
+    exe_obj = Executor(instance_id)
+    result = exe_obj.unzip_local(file_path, target_path, timeout=600)
+    return result
