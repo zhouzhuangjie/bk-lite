@@ -11,6 +11,7 @@ ADD . .
 
 ADD support-files/supervisor/service.conf /etc/supervisor/conf.d/service.conf
 
-RUN pip install -r ./requirements/requirements-core.txt ./requirements/requirements-extra.txt 
+RUN pip install -r ./requirements/requirements-core.txt 
+RUN pip install -r ./requirements/requirements-extra.txt 
 
 CMD ["supervisord", "-n"]
