@@ -199,6 +199,40 @@ class ModelProviderInitService:
                 "is_build_in": True,
             },
         )
+        SkillTools.objects.update_or_create(
+            name="Kubernetes Tools",
+            defaults={
+                "team": [self.group_id],
+                "params": {
+                    "url": "langchain:kubernetes",
+                    "name": "Kubernetes Tools",
+                    "kwargs": [{"key": "kubeconfig_path", "value": ""}],
+                },
+                "description": "Kubernetes Tools",  # noqa
+                "tags": ["maintenance"],
+                "icon": "",
+                "is_build_in": True,
+            },
+        )
+        SkillTools.objects.update_or_create(
+            name="Jenkins",
+            defaults={
+                "team": [self.group_id],
+                "params": {
+                    "url": "langchain:jenkins",
+                    "name": "Jenkins",
+                    "kwargs": [
+                        {"key": "jenkins_url", "value": ""},
+                        {"key": "jenkins_username", "value": ""},
+                        {"key": "jenkins_password", "value": ""},
+                    ],
+                },
+                "description": "",  # noqa
+                "tags": ["maintenance"],
+                "icon": "",
+                "is_build_in": True,
+            },
+        )
 
         LLMSkill.objects.filter(is_template=True).delete()
         skill_list = [LLMSkill(**skill) for skill in SKILL_LIST]
