@@ -201,17 +201,11 @@ const StrategyOperation = () => {
   };
 
   const getChannelList = async () => {
-    // const data = await get('/monitor/api/system_mgmt/search_channel_list/');
     const data = await getSystemChannelList();
     setChannelList(data);
   };
 
   const getPlugins = async () => {
-    // const data = await get('/monitor/api/monitor_plugin/', {
-    //   params: {
-    //     monitor_object_id: monitorObjId,
-    //   },
-    // });
     const data = await getMonitorPlugin({
       monitor_object_id: monitorObjId,
     });
