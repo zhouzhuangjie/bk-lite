@@ -7,7 +7,7 @@ ENV SIDECAR_GROUP "default"
 
 RUN apt-get update && \
     apt-get install -y ca-certificates ipmitool vim && \
-    update-ca-certificates && \
+    update-ca-certificates supervisor && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/fusion-collectors/
@@ -33,6 +33,9 @@ ADD ./nats-executor ./bin/nats-executor
 
 # Vector
 ADD ./vector ./bin/vector
+
+# Suporvisor
+ADD ./service.conf /etc/supervisor/conf.d/service.conf
 
 ENTRYPOINT [ "/opt/fusion-collectors/startup.sh" ]
 
