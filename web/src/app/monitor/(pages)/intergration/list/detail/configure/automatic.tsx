@@ -13,6 +13,7 @@ import {
 } from '@/app/monitor/constants/monitor';
 import { useSearchParams, useRouter } from 'next/navigation';
 import useApiClient from '@/utils/request';
+import useMonitorApi from '@/app/monitor/api';
 import { useCommon } from '@/app/monitor/context/common';
 import { Organization, ListItem, TableDataItem } from '@/app/monitor/types';
 import { IntergrationMonitoredObject } from '@/app/monitor/types/monitor';
@@ -26,7 +27,8 @@ const AutomaticConfiguration: React.FC = () => {
   const [form] = Form.useForm();
   const { t } = useTranslation();
   const searchParams = useSearchParams();
-  const { post, isLoading } = useApiClient();
+  const { isLoading } = useApiClient();
+  const { getMonitorNodeList, updateNodeChildConfig } = useMonitorApi();
   const commonContext = useCommon();
   const router = useRouter();
   const userContext = useUserInfoContext();
@@ -410,7 +412,7 @@ const AutomaticConfiguration: React.FC = () => {
   const getNodeList = async () => {
     setNodesLoading(true);
     try {
-      const data = await post('/monitor/api/node_mgmt/nodes/', {
+      const data = await getMonitorNodeList({
         cloud_region_id: 0,
         page: 1,
         page_size: -1,
@@ -524,10 +526,7 @@ const AutomaticConfiguration: React.FC = () => {
   const addNodesConfig = async (params = {}) => {
     try {
       setConfirmLoading(true);
-      await post(
-        '/monitor/api/node_mgmt/batch_setting_node_child_config/',
-        params
-      );
+      await updateNodeChildConfig(params);
       message.success(t('common.addSuccess'));
       const searchParams = new URLSearchParams({
         objId: objectId,

@@ -1,6 +1,6 @@
 import useApiClient from '@/utils/request';
 import type {
-  updateConfigReq,
+  UpdateConfigReq,
   ControllerInstallFields,
   NodeItem,
   ConfigParams,
@@ -92,7 +92,7 @@ const useApiCloudRegion = () => {
   };
 
   //获取sidecar的安装步骤
-  const getsidecarstep = async (
+  const getSidecarStep = async (
     ip: string,
     operating_system: string,
     group: string
@@ -107,7 +107,7 @@ const useApiCloudRegion = () => {
   };
 
   //批量绑定或更新节点的采集器配置
-  const batchbindcollector = async (data: updateConfigReq) => {
+  const batchBindCollector = async (data: UpdateConfigReq) => {
     return await post('/node_mgmt/api/node/batch_binding_configuration/', data);
   };
 
@@ -121,7 +121,7 @@ const useApiCloudRegion = () => {
   };
 
   //获取节点管理的状态枚举值
-  const getnodstateenum = async () => {
+  const getNodeStateEnum = async () => {
     return await get('/node_mgmt/api/node/enum/');
   };
 
@@ -156,7 +156,7 @@ const useApiCloudRegion = () => {
   };
 
   // 创建一个子配置文件
-  const createchildconfig = async (data: {
+  const createChildConfig = async (data: {
     collect_type: string;
     config_type: string;
     content: string;
@@ -184,7 +184,7 @@ const useApiCloudRegion = () => {
   };
 
   //删除采集器配置
-  const deletecollector = async (id: string) => {
+  const deleteCollector = async (id: string) => {
     return await del(`/node_mgmt/api/configuration/${id}/`);
   };
 
@@ -214,7 +214,7 @@ const useApiCloudRegion = () => {
   };
 
   //批量删除采集器配置
-  const batchDeletecollector = async (data: { ids: string[] }) => {
+  const batchDeleteCollector = async (data: { ids: string[] }) => {
     return await post('/node_mgmt/api/configuration/bulk_delete/', data);
   };
 
@@ -256,26 +256,26 @@ const useApiCloudRegion = () => {
     getCloudList,
     updateCloudIntro,
     getNodeList,
-    getsidecarstep,
+    getSidecarStep,
     getConfiglist,
     createConfig,
     updateCollector,
-    deletecollector,
+    deleteCollector,
     applyConfig,
-    batchDeletecollector,
+    batchDeleteCollector,
     getVariableList,
     createVariable,
     updateVariable,
     deleteVariable,
-    batchbindcollector,
+    batchBindCollector,
     batchOperationCollector,
-    getnodstateenum,
+    getNodeStateEnum,
     getPackages,
     installController,
     getControllerNodes,
     uninstallController,
     getChildConfig,
-    createchildconfig,
+    createChildConfig,
     updateChildConfig,
     installCollector,
     getCollectorNodes,

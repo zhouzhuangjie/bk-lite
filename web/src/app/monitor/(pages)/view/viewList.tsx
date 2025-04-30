@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { Input, Button, Progress, Select } from 'antd';
 import useApiClient from '@/utils/request';
+import useMonitorApi from '@/app/monitor/api';
 import { useTranslation } from '@/utils/i18n';
 import {
   deepClone,
@@ -26,6 +27,7 @@ import {
 import { COLLECT_TYPE_MAP } from '@/app/monitor/constants/monitor';
 import CustomTable from '@/components/custom-table';
 import TimeSelector from '@/components/time-selector';
+import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import { INDEX_CONFIG } from '@/app/monitor/constants/monitor';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import Permission from '@/components/permission';
@@ -33,7 +35,13 @@ import { ListItem } from '@/types';
 const { Option } = Select;
 
 const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
-  const { get, isLoading } = useApiClient();
+  const { isLoading } = useApiClient();
+  const {
+    getMonitorMetrics,
+    getInstanceList,
+    getInstanceQueryParams,
+    getMonitorPlugin
+  } = useMonitorApi();
   const { t } = useTranslation();
   const router = useRouter();
   const { convertToLocalizedTime } = useLocalizedTime();
@@ -215,22 +223,10 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
       monitor_object_id: objectId,
     };
     const objName = objects.find((item) => item.id === objectId)?.name;
-
-    const getInstList = get(`/monitor/api/monitor_instance/${objectId}/list/`, {
-      params,
-    });
-    const getQueryParams = get(
-      `/monitor/api/monitor_instance/query_params_enum/${objName}/`,
-      {
-        params: objParams,
-      }
-    );
-    const getMetrics = get('/monitor/api/metrics/', {
-      params: objParams,
-    });
-    const getPlugins = get('/monitor/api/monitor_plugin/', {
-      params: objParams,
-    });
+    const getInstList = getInstanceList(objectId, params);
+    const getQueryParams = getInstanceQueryParams(objName as string, objParams);
+    const getMetrics = getMonitorMetrics(objParams);
+    const getPlugins = getMonitorPlugin(objParams);
     setTableLoading(true);
     try {
       const res = await Promise.all([
@@ -301,7 +297,10 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
               return (
                 <>
                   <span style={{ color }}>
-                    {getEnumValueUnit(target, record[item.key])}
+                    <EllipsisWithTooltip
+                      text={getEnumValueUnit(target, record[item.key])}
+                      className="w-[100px] overflow-hidden text-ellipsis whitespace-nowrap"
+                    ></EllipsisWithTooltip>
                   </span>
                 </>
               );
@@ -339,12 +338,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
     }
     try {
       setTableLoading(type !== 'timer');
-      const data = await get(
-        `/monitor/api/monitor_instance/${objectId}/list/`,
-        {
-          params,
-        }
-      );
+      const data = await getInstanceList(objectId, params);
       setTableData(data.results || []);
       setPagination((prev: Pagination) => ({
         ...prev,
@@ -507,7 +501,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
           )}
           <Input
             allowClear
-            className="w-[240px] ml-[8px]"
+            className="w-[240px] ml-[10px]"
             placeholder={t('common.searchPlaceHolder')}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}

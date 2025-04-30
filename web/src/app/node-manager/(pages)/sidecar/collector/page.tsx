@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import collectorstyle from '../index.module.scss';
+import collectorStyle from '../index.module.scss';
 import { Menu, Input, Space, Select, Button } from 'antd';
 import useApiClient from '@/utils/request';
 import useApiCollector from '@/app/node-manager/api/collector/index';
@@ -147,7 +147,7 @@ const Collector = () => {
   };
 
   return (
-    <div className={`${collectorstyle.collection}`}>
+    <div className={`${collectorStyle.collection}`}>
       {/* 卡片的渲染 */}
       <EntityList
         data={collectorCards}

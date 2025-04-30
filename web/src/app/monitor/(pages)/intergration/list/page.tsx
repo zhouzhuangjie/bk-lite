@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Spin, Input, Button, Tag, message } from 'antd';
 import useApiClient from '@/utils/request';
+import useMonitorApi from '@/app/monitor/api';
 import intergrationStyle from './index.module.scss';
 import { SettingOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
@@ -22,7 +23,8 @@ import { useSearchParams } from 'next/navigation';
 import Permission from '@/components/permission';
 
 const Intergration = () => {
-  const { get, post, isLoading } = useApiClient();
+  const { isLoading } = useApiClient();
+  const { updateMonitorObject, getMonitorObject, getMonitorPlugin } = useMonitorApi();
   const { t } = useTranslation();
   const router = useRouter();
   const importRef = useRef<ModalRef>(null);
@@ -51,7 +53,7 @@ const Intergration = () => {
   const handleNodeDrag = async (data: TreeSortData[]) => {
     try {
       setTreeLoading(true);
-      await post(`/monitor/api/monitor_object/order/`, data);
+      await updateMonitorObject(data);
       message.success(t('common.updateSuccess'));
       getObjects();
     } catch {
@@ -76,9 +78,7 @@ const Intergration = () => {
     setExportDisabled(true);
     setPageLoading(true);
     try {
-      const data = await get('/monitor/api/monitor_plugin/', {
-        params,
-      });
+      const data = await getMonitorPlugin(params);
       setPluginList(data);
     } finally {
       setPageLoading(false);
@@ -88,7 +88,7 @@ const Intergration = () => {
   const getObjects = async () => {
     try {
       setTreeLoading(true);
-      const data: ObectItem[] = await get('/monitor/api/monitor_object/');
+      const data: ObectItem[] = await getMonitorObject();
       const _treeData = getTreeData(deepClone(data));
       setTreeData(_treeData);
       setObjects(data);
@@ -263,10 +263,9 @@ const Intergration = () => {
                 onClick={() => onAppClick(app)}
               >
                 <div
-                  className={`bg-[var(--color-bg-1)] shadow-sm hover:shadow-md transition-shadow duration-300 ease-in-out rounded-lg p-4 relative cursor-pointer group ${
-                    selectedApp?.id === app.id
-                      ? 'border-2 border-blue-300'
-                      : 'border'
+                  className={`bg-[var(--color-bg-1)] shadow-sm hover:shadow-md transition-shadow duration-300 ease-in-out rounded-lg p-4 relative cursor-pointer group ${selectedApp?.id === app.id
+                    ? 'border-2 border-blue-300'
+                    : 'border'
                   }`}
                 >
                   <div className="flex items-center space-x-4 my-2">

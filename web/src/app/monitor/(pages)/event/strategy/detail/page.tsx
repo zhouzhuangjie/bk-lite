@@ -15,6 +15,7 @@ import {
   Tooltip,
 } from 'antd';
 import useApiClient from '@/utils/request';
+import useMonitorApi from '@/app/monitor/api';
 import { useTranslation } from '@/utils/i18n';
 import {
   ModalRef,
@@ -66,7 +67,14 @@ const { TextArea } = Input;
 
 const StrategyOperation = () => {
   const { t } = useTranslation();
-  const { get, post, put, isLoading } = useApiClient();
+  const { post, put, isLoading } = useApiClient();
+  const {
+    getSystemChannelList,
+    getMetricsGroup,
+    getMonitorMetrics,
+    getMonitorPlugin,
+    getMonitorPolicy
+  } = useMonitorApi();
   const CONDITION_LIST = useConditionList();
   const METHOD_LIST = useMethodList();
   const LEVEL_LIST = useLevelList();
@@ -193,15 +201,13 @@ const StrategyOperation = () => {
   };
 
   const getChannelList = async () => {
-    const data = await get('/monitor/api/system_mgmt/search_channel_list/');
+    const data = await getSystemChannelList();
     setChannelList(data);
   };
 
   const getPlugins = async () => {
-    const data = await get('/monitor/api/monitor_plugin/', {
-      params: {
-        monitor_object_id: monitorObjId,
-      },
+    const data = await getMonitorPlugin({
+      monitor_object_id: monitorObjId,
     });
     const plugins = data.map((item: PluginItem) => ({
       label: COLLECT_TYPE_MAP[item.name || ''],
@@ -347,8 +353,8 @@ const StrategyOperation = () => {
   const getMetrics = async (params = {}, type = '') => {
     try {
       setMetricsLoading(true);
-      const getGroupList = get(`/monitor/api/metrics_group/`, { params });
-      const getMetrics = get('/monitor/api/metrics/', { params });
+      const getGroupList = getMetricsGroup(params);
+      const getMetrics = getMonitorMetrics(params);
       Promise.all([getGroupList, getMetrics])
         .then((res) => {
           const metricData = deepClone(res[1] || []);
@@ -382,7 +388,7 @@ const StrategyOperation = () => {
   };
 
   const getStragyDetail = async () => {
-    const data = await get(`/monitor/api/monitor_policy/${detailId}/`);
+    const data = await getMonitorPolicy(detailId);
     setFormData(data);
   };
 
@@ -1084,9 +1090,7 @@ const StrategyOperation = () => {
                             <div
                               className="flex items-center space-x-4 my-1 font-[800]"
                               style={{
-                                borderLeft: `4px solid ${
-                                  LEVEL_MAP[item.level]
-                                }`,
+                                borderLeft: `4px solid ${LEVEL_MAP[item.level]}`,
                                 paddingLeft: '10px',
                               }}
                             >

@@ -12,7 +12,7 @@ import EntityList from '@/components/entity-list';
 import PermissionWrapper from '@/components/permission';
 import type {
   CloudRegionItem,
-  CloudregioncardProps,
+  CloudRegionCardProps,
 } from '@/app/node-manager/types/cloudregion';
 
 const CloudRegion = () => {
@@ -23,7 +23,7 @@ const CloudRegion = () => {
   const cloudRegionFormRef = useRef<FormInstance>(null);
   const divRef = useRef(null);
   const [selectedRegion, setSelectedRegion] =
-    useState<CloudregioncardProps | null>(null);
+    useState<CloudRegionCardProps | null>(null);
   const [openEditCloudRegion, setOpenEditCloudRegion] = useState(false);
   const [cloudItems, setCloudItems] = useState<CloudRegionItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -34,7 +34,7 @@ const CloudRegion = () => {
     setLoading(true);
     try {
       const data = await getCloudList();
-      const regionData = (data || []).map((item: CloudregioncardProps) => {
+      const regionData = (data || []).map((item: CloudRegionCardProps) => {
         item.description = item.introduction;
         item.icon = 'yunquyu';
         return item;

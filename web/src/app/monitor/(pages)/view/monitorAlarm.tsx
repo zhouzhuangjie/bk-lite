@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Input, Button, Tag, Modal, message, Segmented } from 'antd';
 import useApiClient from '@/utils/request';
+import useMonitorApi from '@/app/monitor/api';
 import { useTranslation } from '@/utils/i18n';
 import {
   ColumnItem,
@@ -32,7 +33,8 @@ const Alert: React.FC<ViewModalProps> = ({
   objects,
   form = INIT_VIEW_MODAL_FORM,
 }) => {
-  const { get, patch, isLoading } = useApiClient();
+  const { isLoading } = useApiClient();
+  const { getMonitorAlert, patchMonitorAlert } = useMonitorApi();
   const { t } = useTranslation();
   const STATE_MAP = useStateMap();
   const LEVEL_LIST = useLevelList();
@@ -179,7 +181,7 @@ const Alert: React.FC<ViewModalProps> = ({
       onOk() {
         return new Promise(async (resolve) => {
           try {
-            await patch(`/monitor/api/monitor_alert/${row.id}/`, {
+            await patchMonitorAlert(row.id, {
               status: 'closed',
             });
             message.success(t('monitor.events.successfullyClosed'));
@@ -222,7 +224,7 @@ const Alert: React.FC<ViewModalProps> = ({
     }
     try {
       setTableLoading(type !== 'timer');
-      const data = await get('/monitor/api/monitor_alert/', { params });
+      const data = await getMonitorAlert(params);
       setTableData(data.results);
       setPagination((pre) => ({
         ...pre,
