@@ -15,4 +15,4 @@ ADD ./support-files/service.conf /etc/supervisor/conf.d/service.conf
 RUN chmod +x /opt/startup.sh
 RUN chmod +x /opt/nats-executor
 
-ENTRYPOINT [ "/opt/startup.sh" ]
+ENTRYPOINT [ "/bin/bash", "/opt/startup.sh" ]

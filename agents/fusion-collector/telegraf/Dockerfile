@@ -15,4 +15,4 @@ ADD ./startup.sh ./startup.sh
 
 RUN chmod -Rf 777 /apps/*
 
-ENTRYPOINT [ "/apps/startup.sh" ]
+ENTRYPOINT ["/bin/bash", "/apps/startup.sh" ]
