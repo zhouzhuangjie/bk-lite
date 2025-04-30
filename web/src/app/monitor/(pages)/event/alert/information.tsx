@@ -56,7 +56,7 @@ const Information: React.FC<TableDataItem> = ({
       onOk() {
         return new Promise(async (resolve) => {
           try {
-            await patchMonitorAlert(row.id, {
+            await patchMonitorAlert(row.id as string, {
               status: 'closed',
             });
             message.success(t('monitor.events.successfullyClosed'));
