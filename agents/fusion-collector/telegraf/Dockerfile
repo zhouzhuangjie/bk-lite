@@ -12,7 +12,6 @@ ADD ./mibs /usr/share/snmp/mibs
 WORKDIR /apps
 ADD ./telegraf.conf ./telegraf.conf
 COPY --from=builder /usr/bin/telegraf ./telegraf
-ADD ./telegraf ./telegraf
 ADD ./service.conf /etc/supervisor/conf.d/service.conf
 ADD ./startup.sh ./startup.sh
 
