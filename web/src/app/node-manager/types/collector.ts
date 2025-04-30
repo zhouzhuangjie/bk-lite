@@ -12,14 +12,6 @@ export interface CollectorListResponse {
   template: string;
 }
 
-export interface collectorItem {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  tagList: string[];
-}
-
 export interface CardItem {
   id: string;
   name: string;
