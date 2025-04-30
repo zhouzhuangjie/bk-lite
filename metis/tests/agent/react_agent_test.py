@@ -39,8 +39,7 @@ async def test_react_agent_with_jenkins_tools():
     ]
 
     msgs = [
-        "Jenkins有多少个构建任务",
-        # "构建nats-executor"
+        "Jenkins有多少个构建任务,最新一次构建成功的任务是哪个",
     ]
     for m in msgs:
         request = ReActAgentRequest(
@@ -53,8 +52,8 @@ async def test_react_agent_with_jenkins_tools():
             tools_servers=tools_servers,
             extra_config={
                 "jenkins_url": os.getenv("TEST_JENKINS_URL"),
-                "username": os.getenv("TEST_JENKINS_USERNAME"),
-                "password": os.getenv("TEST_JENKINS_PASSWORD"),
+                "jenkins_username": os.getenv("TEST_JENKINS_USERNAME"),
+                "jenkins_password": os.getenv("TEST_JENKINS_PASSWORD"),
             }
         )
         graph = ReActAgentGraph()

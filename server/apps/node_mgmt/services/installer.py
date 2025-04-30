@@ -29,7 +29,7 @@ class InstallerService:
                 port=node["port"],
                 username=node["username"],
                 password=node["password"],
-                result={"status": "waiting", "message": ""},
+                status="waiting",
             ))
         ControllerTaskNode.objects.bulk_create(creates, batch_size=100)
         return task_obj.id
@@ -52,7 +52,7 @@ class InstallerService:
                 port=node["port"],
                 username=node["username"],
                 password=node["password"],
-                result={"status": "waiting", "message": ""},
+                status="waiting",
             ))
         ControllerTaskNode.objects.bulk_create(creates, batch_size=100)
         return task_obj.id
@@ -68,6 +68,7 @@ class InstallerService:
                 os=task_node.os,
                 organizations=task_node.organizations,
                 port=task_node.port,
+                status=task_node.status,
                 result=task_node.result,
             ))
         return result
@@ -86,7 +87,6 @@ class InstallerService:
                 task_id=task_obj.id,
                 node_id=node_id,
                 status="waiting",
-                result={"status": "waiting", "message": ""},
             ))
         CollectorTaskNode.objects.bulk_create(creates, batch_size=100)
         return task_obj.id

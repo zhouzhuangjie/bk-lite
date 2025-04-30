@@ -20,6 +20,7 @@ export interface SelectTool {
   id: number;
   name: string;
   icon: string;
+  kwargs?: { key: string; value: string }[];
 }
 
 export interface TagOption {

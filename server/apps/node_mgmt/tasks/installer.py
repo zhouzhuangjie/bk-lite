@@ -2,7 +2,8 @@ from celery import shared_task
 
 from apps.node_mgmt.constants import CONTROLLER_INSTALL_DIR, COLLECTOR_INSTALL_DIR, LINUX_OS, \
     CONTROLLER_DIR_DELETE_COMMAND
-from apps.node_mgmt.models import ControllerTask, CollectorTask, PackageVersion, Node
+from apps.node_mgmt.models import ControllerTask, CollectorTask, PackageVersion, Node, NodeCollectorInstallStatus, \
+    Collector
 from apps.node_mgmt.utils.installer import download_to_remote, exec_command_to_remote, download_to_local, \
     exec_command_to_local, get_install_command, get_uninstall_command
 from config.components.nats import NATS_NAMESPACE
@@ -31,7 +32,9 @@ def install_controller(task_id):
     install_command = get_install_command(package_obj.os, package_obj.name, task_obj.cloud_region_id)
 
     for node_obj in nodes:
+        action, message = "", ""
         try:
+            action = "send"
             # 控制器压缩包下发
             download_to_remote(
                 task_obj.work_node,
@@ -43,16 +46,15 @@ def install_controller(task_id):
                 node_obj.username,
                 node_obj.password,
             )
-            node_obj.result.update(send={"status": "success"})
             # 解压包，并执行运行脚步
+            action = "run"
             exec_command_to_remote(task_obj.work_node, node_obj.ip, node_obj.username, node_obj.password, install_command)
-            node_obj.result.update(run={"status": "success"})
+            node_obj.status = "success"
         except Exception as e:
-            if "send" not in node_obj.result:
-                node_obj.result.update(send={"status": "failed", "message": str(e)})
-            elif "run" not in node_obj.result:
-                node_obj.result.update(run={"status": "failed", "message": str(e)})
+            message = str(e)
+            node_obj.status = "error"
 
+        node_obj.result = {"action": action, "message": message}
         node_obj.save()
 
     # 更新任务状态
@@ -63,7 +65,6 @@ def install_controller(task_id):
 @shared_task
 def uninstall_controller(task_id):
     """卸载控制器"""
-
     task_obj = ControllerTask.objects.filter(id=task_id).first()
     if not task_obj:
         return
@@ -73,14 +74,15 @@ def uninstall_controller(task_id):
     # 获取所有节点
     nodes = task_obj.controllertasknode_set.all()
     for node_obj in nodes:
+        action, message = "", ""
         try:
+            action = "stop_run"
             # 获取卸载命令
             uninstall_command = get_uninstall_command(node_obj.os)
             # 执行卸载脚步
             exec_command_to_remote(task_obj.work_node, node_obj.ip, node_obj.username, node_obj.password, uninstall_command)
-            node_obj.result.update(stop_run={"status": "success"})
-
             # 删除控制器安装目录
+            action = "delete_dir"
             exec_command_to_remote(
                 task_obj.work_node,
                 node_obj.ip,
@@ -88,21 +90,16 @@ def uninstall_controller(task_id):
                 node_obj.password,
                 CONTROLLER_DIR_DELETE_COMMAND.get(node_obj.os),
             )
-            node_obj.result.update(delete_dir={"status": "success"})
-
             # 删除node实例
+            action = "delete_node"
             Node.objects.filter(cloud_region_id=task_obj.cloud_region_id, ip=node_obj.ip).delete()
-            node_obj.result.update(delete_node={"status": "success"})
+            node_obj.status = "success"
 
         except Exception as e:
+            message = str(e)
+            node_obj.status = "error"
 
-            if "stop_run" not in node_obj.result:
-                node_obj.result.update(stop_run={"status": "failed", "message": str(e)})
-            elif "delete_dir" not in node_obj.result:
-                node_obj.result.update(delete_dir={"status": "failed", "message": str(e)})
-            elif "delete_node" not in node_obj.result:
-                node_obj.result.update(delete_node={"status": "failed", "message": str(e)})
-
+        node_obj.result = {"action": action, "message": message}
         node_obj.save()
 
     # 更新任务状态
@@ -129,8 +126,10 @@ def install_collector(task_id):
     # 获取所有节点
     nodes = task_obj.collectortasknode_set.all()
     for node_obj in nodes:
+        action, message = "", ""
         try:
             # 下发采集器
+            action = "send"
             download_to_local(
                 node_obj.node_id,
                 NATS_NAMESPACE,
@@ -138,16 +137,29 @@ def install_collector(task_id):
                 package_obj.name,
                 collector_install_dir,
             )
-            node_obj.result.update(send={"status": "success"})
             # Linux操作系统赋予执行权限
             if package_obj.os in LINUX_OS:
+                action = "set_exe"
                 exec_command_to_local(node_obj.node_id, f"chmod +x {collector_install_dir}/{package_obj.name}")
-                node_obj.result.update(set_exe={"status": "success"})
-            else:
-                node_obj.result.update(set_exe={"status": "success"})
+            node_obj.status = "success"
         except Exception as e:
-            node_obj.result.update(send={"status": "failed", "message": str(e)})
+            message = str(e)
+            node_obj.status = "error"
 
+        result = {"action": action, "message": message}
+        collector_obj = Collector.objects.filter(node_operating_system=package_obj.os, name=package_obj.object).first()
+        NodeCollectorInstallStatus.objects.update_or_create(
+            node_id=node_obj.node_id,
+            collector_id=collector_obj.id,
+            defaults={
+                "node_id": node_obj.node_id,
+                "collector_id": collector_obj.id,
+                "status": node_obj.status,
+                "result": result,
+            },
+        )
+
+        node_obj.result = result
         node_obj.save()
 
     # 更新任务状态

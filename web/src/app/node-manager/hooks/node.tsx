@@ -29,15 +29,16 @@ export const useColumns = ({
       },
       {
         title: 'Sidecar',
-        dataIndex: 'sidecar',
-        render: (key: string, item) => {
+        dataIndex: 'active',
+        render: (value: string, item) => {
           return (
             <Tooltip title={`${item.status?.message}`}>
-              <Tag
-                bordered={false}
-                color={!item.status?.status ? 'success' : 'error'}
-              >
-                {!item.status?.status ? 'Running' : 'Error'}
+              <Tag bordered={false} color={value ? 'success' : 'warning'}>
+                {t(
+                  `node-manager.cloudregion.node.${
+                    value ? 'active' : 'inactive'
+                  }`
+                )}
               </Tag>
             </Tooltip>
           );
@@ -50,7 +51,7 @@ export const useColumns = ({
         fixed: 'right',
         width: 140,
         render: (key, item) => (
-          <Permission requiredPermissions={["View"]}>
+          <Permission requiredPermissions={['View']}>
             <Button type="link" onClick={() => checkConfig(item)}>
               {t('node-manager.cloudregion.node.checkConfig')}
             </Button>

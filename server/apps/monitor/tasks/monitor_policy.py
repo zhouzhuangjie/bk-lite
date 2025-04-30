@@ -503,4 +503,5 @@ class MonitorPolicyScan:
         self.handle_alert_events(event_objs)
 
         # 事件通知
-        self.notice(event_objs)
+        if self.policy.notice:
+            self.notice(event_objs)

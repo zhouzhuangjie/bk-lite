@@ -19,7 +19,7 @@
           "name": "bot_settings"
         },
         {
-          "title": "通知",
+          "title": "通道",
           "url": "/opspilot/studio/detail/channel",
           "icon": "channel1",
           "name": "bot_channel"
@@ -171,7 +171,7 @@
           "name": "my_quota"
         },
         {
-          "title": "接口秘密值",
+          "title": "密钥",
           "url": "/opspilot/settings/key",
           "icon": "key",
           "name": "api_secret_key"

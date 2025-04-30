@@ -42,7 +42,7 @@ def convert_to_prometheus_format(data):
             labels = {
                 k: escape_value(v)
                 for k, v in item.items()
-                if not isinstance(v, (list, dict)) and v is not None
+                if v and not isinstance(v, (list, dict))
             }
             labels['model_id'] = model_id
             # 按键排序生成标签字符串

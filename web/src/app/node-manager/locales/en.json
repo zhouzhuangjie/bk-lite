@@ -114,7 +114,11 @@
         "downloadPackage": "Download package",
         "downloadTemplate": "Download Template",
         "telegrafConfigTips": "When opening the Telegraf probe, it automatically initializes and binds the corresponding configuration file. If you need to modify it later, please go to the 'Configuration List' to make changes.",
-        "configuration": "Configuration"
+        "configuration": "Configuration",
+        "active": "active",
+        "inactive": "inactive",
+        "unknown": "unknown",
+        "stop": "stop"
       },
       "Configuration": {
         "system": "Operating System",
@@ -142,7 +146,8 @@
         "value": "Value",
         "desc": "Description",
         "deletevariable": "Delete Variable",
-        "deleteinfo": "Are you sure to delete this variable?"
+        "deleteinfo": "Are you sure to delete this variable?",
+        "variableNameTips": "Only characters A-Z are allowed, a-z,  0-9, and_"
       }
     },
     "collector": {

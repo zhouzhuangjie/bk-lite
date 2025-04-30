@@ -9,16 +9,39 @@ const useTelegrafMap = (): Record<string, Record<string, string>> => {
   return useMemo(
     () => ({
       1: {
+        tagColor: 'default',
         color: '#b2b5bd',
-        text: t('node-manager.cloudregion.node.notInstalled'),
+        text: t('node-manager.cloudregion.node.unknown'),
       },
       0: {
-        color: '#2dcb56',
+        tagColor: 'success',
+        color: '#52c41a',
         text: t('node-manager.cloudregion.node.running'),
       },
       2: {
-        color: '#ea3636',
+        tagColor: 'error',
+        color: '#ff4d4f',
         text: t('node-manager.cloudregion.node.error'),
+      },
+      4: {
+        tagColor: 'default',
+        color: '#b2b5bd',
+        text: t('node-manager.cloudregion.node.stop'),
+      },
+      10: {
+        tagColor: 'processing',
+        color: '#1677ff',
+        text: t('node-manager.cloudregion.node.installing'),
+      },
+      11: {
+        tagColor: 'success',
+        color: '#52c41a',
+        text: t('node-manager.cloudregion.node.successInstall'),
+      },
+      12: {
+        tagColor: 'error',
+        color: '#ff4d4f',
+        text: t('node-manager.cloudregion.node.failInstall'),
       },
     }),
     [t]
@@ -37,28 +60,20 @@ const useInstallMap = (): Record<string, Record<string, string>> => {
         color: 'var(--color-primary)',
         text: t('node-manager.cloudregion.node.uninstalling'),
       },
-      running: {
-        color: 'var(--color-text-2)',
-        text: t('node-manager.cloudregion.node.running'),
-      },
-      runningUninstall: {
-        color: 'var(--color-text-2)',
-        text: t('node-manager.cloudregion.node.running'),
-      },
-      finished: {
-        color: '#2dcb56',
+      success: {
+        color: '#52c41a',
         text: t('node-manager.cloudregion.node.successInstall'),
       },
-      finishedUninstall: {
-        color: '#2dcb56',
+      successUninstall: {
+        color: '#52c41a',
         text: t('node-manager.cloudregion.node.successInstall'),
       },
-      failed: {
-        color: '#ea3636',
+      error: {
+        color: '#ff4d4f',
         text: t('node-manager.cloudregion.node.failInstall'),
       },
-      failedUninstall: {
-        color: '#ea3636',
+      errorUninstall: {
+        color: '#ff4d4f',
         text: t('node-manager.cloudregion.node.failUninstall'),
       },
     }),
@@ -83,7 +98,7 @@ const useInstallWays = (): SegmentedItem[] => {
   );
 };
 
-const useCollectoritems = (): MenuProps['items'] => {
+const useCollectorItems = (): MenuProps['items'] => {
   const { t } = useTranslation();
   return useMemo(
     () => [
@@ -140,7 +155,7 @@ const useCollectoritems = (): MenuProps['items'] => {
   );
 };
 
-const useSidecaritems = (): MenuProps['items'] => {
+const useSidecarItems = (): MenuProps['items'] => {
   const { t } = useTranslation();
   return useMemo(
     () => [
@@ -191,8 +206,8 @@ export {
   useTelegrafMap,
   useInstallWays,
   useInstallMap,
-  useSidecaritems,
-  useCollectoritems,
+  useSidecarItems,
+  useCollectorItems,
   OPERATE_SYSTEMS,
   BATCH_FIELD_MAPS,
 };
