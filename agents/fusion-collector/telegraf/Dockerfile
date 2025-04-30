@@ -1,8 +1,8 @@
 FROM ubuntu:24.04
 
 RUN apt-get update && \
-    apt-get install -y ca-certificates ipmitool vim \
-    update-ca-certificates supervisor && \
+    apt-get install -y ca-certificates ipmitool vim supervisor &&\
+    update-ca-certificates && \
     rm -rf /var/lib/apt/lists/*
     
 ADD ./mibs /usr/share/snmp/mibs
