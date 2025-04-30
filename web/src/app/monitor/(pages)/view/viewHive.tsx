@@ -282,24 +282,10 @@ const ViewHive: React.FC<ViewListProps> = ({ objects, objectId }) => {
     const objParams = {
       monitor_object_id: objectId,
     };
-    // const getInstList = post(
-    //   `/monitor/api/monitor_instance/${objectId}/search/`,
-    //   params
-    // );
     const getInstList = await getInstanceSearch(objectId, params)
-
-    // const getQueryParams = get(
-    //   `/monitor/api/monitor_instance/query_params_enum/${name}/`,
-    //   {
-    //     params: objParams,
-    //   }
-    // );
     const getQueryParams = await getInstanceQueryParams(name, objParams);
     setTableLoading(true);
     try {
-      // const metricsData = await get('/monitor/api/metrics/', {
-      //   params: objParams,
-      // });
       const metricsData = await getMonitorMetrics(objParams);
       setMertics(metricsData || []);
       const tagetMerticItem = metricsData.find(
@@ -415,10 +401,6 @@ const ViewHive: React.FC<ViewListProps> = ({ objects, objectId }) => {
     }
     try {
       setTableLoading(type !== 'timer');
-      // const data = await post(
-      //   `/monitor/api/monitor_instance/${objectId}/search/`,
-      //   params
-      // );
       const data = await getInstanceSearch(objectId, params);
       const chartConfig = {
         data: data.results || [],

@@ -50,15 +50,14 @@ import {
   useLevelList,
   useStateMap,
 } from '@/app/monitor/constants/monitor';
-import  useMonitorApi  from '@/app/monitor/api/index';
+import useMonitorApi from '@/app/monitor/api/index';
 
 const Alert: React.FC = () => {
-  const {isLoading } = useApiClient();
+  const { isLoading } = useApiClient();
   const { getMonitorAlert, getMonitorMetrics, getMonitorObject, patchMonitorAlert } = useMonitorApi();
   const { t } = useTranslation();
   const STATE_MAP = useStateMap();
   const LEVEL_LIST = useLevelList();
-  // const { confirm } = Modal;
   const { convertToLocalizedTime } = useLocalizedTime();
   const commonContext = useCommon();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -216,7 +215,6 @@ const Alert: React.FC = () => {
               <Button
                 type="link"
                 disabled={record.status !== 'new'}
-                // onClick={() => showAlertCloseConfirm(record)}
               >
                 {t('common.close')}
               </Button>
@@ -318,27 +316,6 @@ const Alert: React.FC = () => {
     setGroupObjects(Object.values(groupedData));
     setObjects(data);
   };
-
-  // const showAlertCloseConfirm = (row: TableDataItem) => {
-  //   confirm({
-  //     title: t('monitor.events.closeTitle'),
-  //     content: t('monitor.events.closeContent'),
-  //     centered: true,
-  //     onOk() {
-  //       return new Promise(async (resolve) => {
-  //         try {
-  //           await patch(`/monitor/api/monitor_alert/${row.id}/`, {
-  //             status: 'closed',
-  //           });
-  //           message.success(t('monitor.events.successfullyClosed'));
-  //           onRefresh();
-  //         } finally {
-  //           resolve(true);
-  //         }
-  //       });
-  //     },
-  //   });
-  // };
 
   const alertCloseConfirm = async (id: string | number) => {
     setConfirmLoading(true);

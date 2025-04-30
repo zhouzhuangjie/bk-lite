@@ -146,9 +146,7 @@ const Strategy: React.FC = () => {
               okButtonProps={{ loading: confirmLoading }}
               onConfirm={() => deleteConfirm(record.id)}
             >
-              <Button type="link"
-              // onClick={() => showDeleteConfirm(record)}
-              >
+              <Button type="link">
                 {t('common.delete')}
               </Button>
             </Popconfirm>
@@ -185,9 +183,6 @@ const Strategy: React.FC = () => {
   const handleEffectiveChange = async (val: boolean, id: number) => {
     try {
       setEnableLoading(true);
-      // await patch(`/monitor/api/monitor_policy/${id}/`, {
-      //   enable: val,
-      // });
       await patchMonitorPolicy(id, {
         enable: val,
       });
@@ -207,9 +202,6 @@ const Strategy: React.FC = () => {
       setTableLoading(true);
       const params = getParams(text);
       params.monitor_object_id = objectId;
-      // const data = await get(`/monitor/api/monitor_policy/`, {
-      //   params,
-      // });
       const data = await getMonitorPolicy('', params);
       setTableData(data.items || []);
       setPagination((pre) => ({
@@ -224,12 +216,7 @@ const Strategy: React.FC = () => {
   const getObjects = async () => {
     try {
       setTreeLoading(true);
-      // const data: ObectItem[] = await get('/monitor/api/monitor_object/', {
-      //   params: {
-      //     add_policy_count: true,
-      //   },
-      // });
-      const data = await getMonitorObject({
+      const data: ObectItem[] = await getMonitorObject({
         add_policy_count: true,
       })
       const _treeData = getTreeData(deepClone(data));
@@ -263,27 +250,7 @@ const Strategy: React.FC = () => {
     return Object.values(groupedData);
   };
 
-  // const showDeleteConfirm = (row: RuleInfo) => {
-  //   confirm({
-  //     title: t('common.deleteTitle'),
-  //     content: t('common.deleteContent'),
-  //     centered: true,
-  //     onOk() {
-  //       return new Promise(async (resolve) => {
-  //         try {
-  //           await del(`/monitor/api/monitor_policy/${row.id}/`);
-  //           message.success(t('common.successfullyDeleted'));
-  //           getAssetInsts(objectId);
-  //         } finally {
-  //           resolve(true);
-  //         }
-  //       });
-  //     },
-  //   });
-  // };
-
   const deleteConfirm = async (id: number | string) => {
-    // await del(`/monitor/api/monitor_policy/${id}/`);
     setConfirmLoading(true);
     try {
       await deleteMonitorPolicy(id);

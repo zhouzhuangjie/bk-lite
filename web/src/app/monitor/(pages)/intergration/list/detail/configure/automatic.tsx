@@ -412,11 +412,6 @@ const AutomaticConfiguration: React.FC = () => {
   const getNodeList = async () => {
     setNodesLoading(true);
     try {
-      // const data = await post('/monitor/api/node_mgmt/nodes/', {
-      //   cloud_region_id: 0,
-      //   page: 1,
-      //   page_size: -1,
-      // });
       const data = await getMonitorNodeList({
         cloud_region_id: 0,
         page: 1,
@@ -531,10 +526,6 @@ const AutomaticConfiguration: React.FC = () => {
   const addNodesConfig = async (params = {}) => {
     try {
       setConfirmLoading(true);
-      // await post(
-      //   '/monitor/api/node_mgmt/batch_setting_node_child_config/',
-      //   params
-      // );
       await updateNodeChildConfig(params);
       message.success(t('common.addSuccess'));
       const searchParams = new URLSearchParams({

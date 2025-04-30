@@ -79,11 +79,6 @@ const MetricViews: React.FC<ViewDetailProps> = ({
 
   const initPage = async () => {
     setLoading(true);
-    // const responseData = await get('/monitor/api/monitor_plugin/', {
-    //   params: {
-    //     monitor_object_id: monitorObjectId,
-    //   },
-    // });
     const responseData = await getMonitorPlugin({
       monitor_object_id: monitorObjectId,
     })
@@ -108,9 +103,7 @@ const MetricViews: React.FC<ViewDetailProps> = ({
       monitor_object_id: monitorObjectId,
       monitor_plugin_id: tab,
     };
-    // const getGroupList = get(`/monitor/api/metrics_group/`, { params });
     const getGroupList = getMetricsGroup(params);
-    // const getMetrics = get('/monitor/api/metrics/', { params });
     const getMetrics = getMonitorMetrics(params);
     setLoading(true);
     try {
@@ -178,12 +171,6 @@ const MetricViews: React.FC<ViewDetailProps> = ({
   const fetchViewData = async (data: IndexViewItem[], groupId: number) => {
     const metricList = data.find((item) => item.id === groupId)?.child || [];
     const requestQueue = metricList.map((item) =>
-      // get(`/monitor/api/metrics_instance/query_range/`, {
-      //   params: getParams(item),
-      // }).then((response) => ({
-      //   id: item.id,
-      //   data: response.data.result || [],
-      // }))
       getInstanceQuery(getParams(item))
         .then((response) => ({
           id: item.id,
@@ -383,10 +370,9 @@ const MetricViews: React.FC<ViewDetailProps> = ({
                             {item.display_name}
                           </span>
                           <span className="text-[var(--color-text-3)] text-[12px]">
-                            {`${
-                              findUnitNameById(item.unit)
-                                ? '（' + findUnitNameById(item.unit) + '）'
-                                : ''
+                            {`${findUnitNameById(item.unit)
+                              ? '（' + findUnitNameById(item.unit) + '）'
+                              : ''
                             }`}
                           </span>
                           <Tooltip

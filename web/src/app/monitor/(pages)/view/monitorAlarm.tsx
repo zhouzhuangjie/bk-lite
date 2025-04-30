@@ -181,9 +181,6 @@ const Alert: React.FC<ViewModalProps> = ({
       onOk() {
         return new Promise(async (resolve) => {
           try {
-            // await patch(`/monitor/api/monitor_alert/${row.id}/`, {
-            //   status: 'closed',
-            // });
             await patchMonitorAlert(row.id, {
               status: 'closed',
             });
@@ -227,7 +224,6 @@ const Alert: React.FC<ViewModalProps> = ({
     }
     try {
       setTableLoading(type !== 'timer');
-      // const data = await get('/monitor/api/monitor_alert/', { params });
       const data = await getMonitorAlert(params);
       setTableData(data.results);
       setPagination((pre) => ({

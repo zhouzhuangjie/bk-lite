@@ -46,7 +46,6 @@ const Template: React.FC = () => {
       const params = {
         monitor_object_name: monitorName,
       };
-      // const data = await post(`/monitor/api/monitor_policy/template/`, params);
       const data = await getPolicyTemplate(params)
       const list = data.map((item: TableDataItem, index: number) => ({
         ...item,
@@ -63,7 +62,6 @@ const Template: React.FC = () => {
   const getObjects = async () => {
     try {
       setTreeLoading(true);
-      // const data: ObectItem[] = await get('/monitor/api/monitor_object/');
       const data: ObectItem[] = await getMonitorObject();
       const _treeData = getTreeData(deepClone(data));
       setDefaultSelectObj(objId ? +objId : data[0]?.id);

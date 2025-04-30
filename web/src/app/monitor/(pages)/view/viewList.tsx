@@ -36,11 +36,11 @@ const { Option } = Select;
 
 const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
   const { isLoading } = useApiClient();
-  const { 
-    getMonitorMetrics, 
-    getInstanceList, 
-    getInstanceQueryParams, 
-    getMonitorPlugin 
+  const {
+    getMonitorMetrics,
+    getInstanceList,
+    getInstanceQueryParams,
+    getMonitorPlugin
   } = useMonitorApi();
   const { t } = useTranslation();
   const router = useRouter();
@@ -223,25 +223,9 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
       monitor_object_id: objectId,
     };
     const objName = objects.find((item) => item.id === objectId)?.name;
-
-    // const getInstList = get(`/monitor/api/monitor_instance/${objectId}/list/`, {
-    //   params,
-    // });
     const getInstList = getInstanceList(objectId, params);
-    // const getQueryParams = get(
-    //   `/monitor/api/monitor_instance/query_params_enum/${objName}/`,
-    //   {
-    //     params: objParams,
-    //   }
-    // );
     const getQueryParams = getInstanceQueryParams(objName as string, objParams);
-    // const getMetrics = get('/monitor/api/metrics/', {
-    //   params: objParams,
-    // });
     const getMetrics = getMonitorMetrics(objParams);
-    // const getPlugins = get('/monitor/api/monitor_plugin/', {
-    //   params: objParams,
-    // });
     const getPlugins = getMonitorPlugin(objParams);
     setTableLoading(true);
     try {
@@ -354,12 +338,6 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
     }
     try {
       setTableLoading(type !== 'timer');
-      // const data = await get(
-      //   `/monitor/api/monitor_instance/${objectId}/list/`,
-      //   {
-      //     params,
-      //   }
-      // );
       const data = await getInstanceList(objectId, params);
       setTableData(data.results || []);
       setPagination((prev: Pagination) => ({

@@ -85,11 +85,6 @@ const Overview: React.FC<ViewDetailProps> = ({
       INDEX_CONFIG.find((item) => item.name === monitorObjectName)
         ?.dashboardDisplay || [];
     try {
-      // get('/monitor/api/metrics/', {
-      //   params: {
-      //     monitor_object_id: monitorObjectId,
-      //   },
-      // })
       getMonitorMetrics({
         monitor_object_id: monitorObjectId,
       }).then((res) => {
@@ -154,9 +149,6 @@ const Overview: React.FC<ViewDetailProps> = ({
   const fetchViewData = async (data: MetricItem[], type?: string) => {
     setLoading(type !== 'timer');
     const requestQueue = data.map((item: MetricItem) =>
-      // get(`/monitor/api/metrics_instance/query_range/`, {
-      //   params: getParams(item),
-      // })
       getInstanceQuery(getParams(item))
         .then((response) => ({ id: item.id, data: response.data.result || [] }))
     );

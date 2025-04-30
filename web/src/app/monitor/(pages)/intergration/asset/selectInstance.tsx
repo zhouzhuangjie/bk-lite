@@ -98,16 +98,6 @@ const SelectInstance = forwardRef<ModalRef, ModalConfig>(
           page_size: pagination.pageSize,
           name: type === 'clear' ? '' : searchText,
         };
-        // const data = await get(
-        //   `/monitor/api/monitor_instance/${monitorObject}/list/`,
-        //   {
-        //     params: {
-        //       page: pagination.current,
-        //       page_size: pagination.pageSize,
-        //       name: type === 'clear' ? '' : searchText,
-        //     },
-        //   }
-        // );
         const data = await getInstanceList(monitorObject, params);
         setTableData(data?.results || []);
         setPagination((prev: Pagination) => ({

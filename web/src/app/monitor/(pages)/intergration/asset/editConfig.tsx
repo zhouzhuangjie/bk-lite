@@ -52,10 +52,6 @@ const EditConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
   const operateGroup = async (params: NodeConfigInfo) => {
     try {
       setConfirmLoading(true);
-      // await post(
-      //   '/monitor/api/node_mgmt/update_instance_child_config/',
-      //   params
-      // );
       await updateInstanceChildConfig(params);
       message.success(t('common.successfullyModified'));
       handleCancel();

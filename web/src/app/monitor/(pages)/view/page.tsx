@@ -45,11 +45,6 @@ const Intergration = () => {
   const getObjects = async () => {
     try {
       setTreeLoading(true);
-      // const data: ObectItem[] = await get('/monitor/api/monitor_object/', {
-      //   params: {
-      //     add_instance_count: true,
-      //   },
-      // });
       const data: ObectItem[] = await getMonitorObject({
         add_instance_count: true,
       });

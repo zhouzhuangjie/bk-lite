@@ -89,9 +89,7 @@ const MonitorView: React.FC<ViewModalProps> = ({
       monitor_object_id: monitorObject,
       monitor_plugin_id: tab,
     };
-    // const getGroupList = get(`/monitor/api/metrics_group/`, { params });
     const getGroupList = getMetricsGroup(params);
-    // const getMetrics = get('/monitor/api/metrics/', { params });
     const getMetrics = getMonitorMetrics(params);
     setLoading(true);
     try {
@@ -159,12 +157,6 @@ const MonitorView: React.FC<ViewModalProps> = ({
   const fetchViewData = async (data: IndexViewItem[], groupId: number) => {
     const metricList = data.find((item) => item.id === groupId)?.child || [];
     const requestQueue = metricList.map((item) =>
-      // get(`/monitor/api/metrics_instance/query_range/`, {
-      //   params: getParams(item, form?.instance_id_values || []),
-      // }).then((response) => ({
-      //   id: item.id,
-      //   data: response.data.result || [],
-      // }))
       getInstanceQuery(
         getParams(item, form?.instance_id_values || [])
       ).then((response) => ({
@@ -364,10 +356,9 @@ const MonitorView: React.FC<ViewModalProps> = ({
                             {item.display_name}
                           </span>
                           <span className="text-[var(--color-text-3)] text-[12px]">
-                            {`${
-                              findUnitNameById(item.unit)
-                                ? '（' + findUnitNameById(item.unit) + '）'
-                                : ''
+                            {`${findUnitNameById(item.unit)
+                              ? '（' + findUnitNameById(item.unit) + '）'
+                              : ''
                             }`}
                           </span>
                           <Tooltip

@@ -172,13 +172,6 @@ const AutomaticConfiguration: React.FC = () => {
   const getConfigText = async (params: TableDataItem) => {
     try {
       setConfirmLoading(true);
-      // await post(
-      //   `/monitor/api/monitor_instance/${objId}/check_monitor_instance/`,
-      //   {
-      //     instance_id: params.instance_id,
-      //     instance_name: params.instance_id,
-      //   }
-      // );
       await checkMonitorInstance(objId, {
         instance_id: params.instance_id,
         instance_name: params.instance_id,

@@ -156,7 +156,6 @@ const Configure = () => {
           Docker: 'Container Management',
           Cluster: 'K8S',
         };
-        // const data = await get(`/monitor/api/monitor_object/`);
         const data = await getMonitorObject();
         const _items = data
           .filter((item: ObectItem) => item.type === typeMaps[groupName])
@@ -185,7 +184,6 @@ const Configure = () => {
       onOk() {
         return new Promise(async (resolve) => {
           try {
-            // await del(`/monitor/api/metrics/${row.id}/`);
             await deleteMonitorMetrics(row.id);
             message.success(t('common.successfullyDeleted'));
             getInitData();
@@ -205,7 +203,6 @@ const Configure = () => {
       onOk() {
         return new Promise(async (resolve) => {
           try {
-            // await del(`/monitor/api/metrics_group/${row.id}/`);
             await deleteMetricsGroup(row.id);
             message.success(t('common.successfullyDeleted'));
             getInitData();
@@ -222,23 +219,11 @@ const Configure = () => {
       monitor_object_id: +objId,
       monitor_plugin_id: +pluginID,
     };
-    // const getGroupList = get(`/monitor/api/metrics_group/`, {
-    //   params: {
-    //     ...params,
-    //     name: searchText,
-    //   },
-    // });
     const getGroupList = getMetricsGroup({
       ...params,
       name: searchText
     });
 
-    // const getMetrics = get('/monitor/api/metrics/', {
-    //   params: {
-    //     ...params,
-    //     monitor_plugin_id: +pluginID,
-    //   },
-    // });
     const getMetrics = getMonitorMetrics({
       ...params,
       monitor_plugin_id: +pluginID,
@@ -372,7 +357,6 @@ const Configure = () => {
               sort_order: index,
             })
           );
-          // await post('/monitor/api/metrics_group/set_order/', updatedOrder);
           await updateMetricsGroup(updatedOrder);
           message.success(t('common.updateSuccess'));
           getInitData();
@@ -395,14 +379,6 @@ const Configure = () => {
       id: item.id,
       sort_order: index,
     }));
-    // post('/monitor/api/metrics/set_order/', updatedOrder)
-    //   .then(() => {
-    //     message.success(t('common.updateSuccess'));
-    //     getInitData();
-    //   })
-    //   .catch(() => {
-    //     setLoading(false);
-    //   });
 
     updateMonitorMetrics(updatedOrder)
       .then(() => {
@@ -468,11 +444,10 @@ const Configure = () => {
           {!!metricData.length ? (
             metricData.map((metricItem) => (
               <Collapse
-                className={`mb-[10px] ${
-                  dragOverTargetId === metricItem.id &&
-                    draggingItemId !== dragOverTargetId
-                    ? 'border-t-[1px] border-blue-200'
-                    : ''
+                className={`mb-[10px] ${dragOverTargetId === metricItem.id &&
+                  draggingItemId !== dragOverTargetId
+                  ? 'border-t-[1px] border-blue-200'
+                  : ''
                 }`}
                 key={metricItem.id}
                 sortable

@@ -57,7 +57,6 @@ const ImportModal = forwardRef<ModalRef, ModalConfig>(({ onSuccess }, ref) => {
   const operateAttr = async () => {
     try {
       setConfirmLoading(true);
-      // await post(`/monitor/api/monitor_plugin/import/`, parsedData);
       await importMonitorPlugin(parsedData);
       message.success(t('common.successfullyImported'));
       onSuccess();

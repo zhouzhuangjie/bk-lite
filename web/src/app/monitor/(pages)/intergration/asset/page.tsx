@@ -121,7 +121,6 @@ const Asset = () => {
             >
               <Button
                 type="link"
-                // onClick={() => showDeleteInstConfirm(record)}
                 className="ml-[10px]"
               >
                 {t('common.remove')}
@@ -320,16 +319,6 @@ const Asset = () => {
         page_size: pagination.pageSize,
         name: type === 'clear' ? '' : searchText,
       };
-      // const data = await get(
-      //   `/monitor/api/monitor_instance/${objectId}/list/`,
-      //   {
-      //     params: {
-      //       page: pagination.current,
-      //       page_size: pagination.pageSize,
-      //       name: type === 'clear' ? '' : searchText,
-      //     },
-      //   }
-      // );
       const data = await getInstanceList(objectId, params);
       setTableData(data?.results || []);
       setPagination((prev: Pagination) => ({
@@ -347,11 +336,6 @@ const Asset = () => {
       const params = {
         monitor_object_id: objectId,
       }
-      // const data = await get(`/monitor/api/monitor_instance_group_rule/`, {
-      //   params: {
-      //     monitor_object_id: objectId,
-      //   },
-      // });
       const data = await getInstanceGroupRule(params);
       setRuleList(data || []);
     } finally {
@@ -366,12 +350,6 @@ const Asset = () => {
         name: '',
         add_instance_count: true,
       }
-      // const data = await get(`/monitor/api/monitor_object/`, {
-      //   params: {
-      //     name: '',
-      //     add_instance_count: true,
-      //   },
-      // });
       const data = await getMonitorObject(params);
       setObjects(data);
       const _treeData = getTreeData(deepClone(data));
@@ -416,7 +394,6 @@ const Asset = () => {
       onOk() {
         return new Promise(async (resolve) => {
           try {
-            // await del(`/monitor/api/monitor_instance_group_rule/${row.id}/`);
             await deleteInstanceGroupRule(row.id as number);
             message.success(t('common.successfullyDeleted'));
             getRuleList(objectId);
@@ -428,41 +405,7 @@ const Asset = () => {
     });
   };
 
-  // const showDeleteInstConfirm = (row: any) => {
-  //   confirm({
-  //     title: t('common.deleteTitle'),
-  //     content: t('common.deleteContent'),
-  //     centered: true,
-  //     onOk() {
-  //       return new Promise(async (resolve) => {
-  //         try {
-  //           await post(
-  //             `/monitor/api/monitor_instance/remove_monitor_instance/`,
-  //             {
-  //               instance_ids: [row.instance_id],
-  //               clean_child_config: true,
-  //             }
-  //           );
-  //           message.success(t('common.successfullyDeleted'));
-  //           getObjects();
-  //           getAssetInsts(objectId);
-  //         } finally {
-  //           resolve(true);
-  //         }
-  //       });
-  //     },
-  //   });
-  // };
-
   const deleteInstConfirm = async (row: any) => {
-    
-    // await post(
-    //   `/monitor/api/monitor_instance/remove_monitor_instance/`,
-    //   {
-    //     instance_ids: [row.instance_id],
-    //     clean_child_config: true,
-    //   }
-    // );
     setConfirmLoading(true);
     try {
       const data = {
@@ -473,7 +416,7 @@ const Asset = () => {
       message.success(t('common.successfullyDeleted'));
       getObjects();
       getAssetInsts(objectId);
-    } finally{
+    } finally {
       setConfirmLoading(false)
     }
   }
@@ -499,16 +442,6 @@ const Asset = () => {
               objects.find((item) => item.id === objectId)?.name || ''
             ],
         };
-        // const res = await post(
-        //   `/monitor/api/node_mgmt/get_instance_child_config/`,
-        //   {
-        //     instance_id: row.instance_id,
-        //     instance_type:
-        //       OBJECT_INSTANCE_TYPE_MAP[
-        //         objects.find((item) => item.id === objectId)?.name || ''
-        //       ],
-        //   }
-        // );
         const res = await getInstanceChildConfig(data);
         _dataSource[targetIndex].dataSource = res.map(
           (item: TableDataItem, index: number) => ({

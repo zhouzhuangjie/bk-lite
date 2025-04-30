@@ -198,16 +198,6 @@ const SelectAssets = forwardRef<ModalRef, ModalConfig>(
     const fetchData = async (type?: string) => {
       try {
         setTableLoading(true);
-        // const data = await get(
-        //   `/monitor/api/monitor_instance/${monitorObject}/list/`,
-        //   {
-        //     params: {
-        //       page: pagination.current,
-        //       page_size: pagination.pageSize,
-        //       name: type === 'clear' ? '' : searchText,
-        //     },
-        //   }
-        // );
         const data = await getInstanceList(monitorObject, {
           page: pagination.current,
           page_size: pagination.pageSize,

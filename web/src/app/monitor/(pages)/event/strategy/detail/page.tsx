@@ -67,13 +67,13 @@ const { TextArea } = Input;
 
 const StrategyOperation = () => {
   const { t } = useTranslation();
-  const {  post, put, isLoading } = useApiClient();
-  const { 
-    getSystemChannelList, 
-    getMetricsGroup, 
-    getMonitorMetrics, 
-    getMonitorPlugin, 
-    getMonitorPolicy 
+  const { post, put, isLoading } = useApiClient();
+  const {
+    getSystemChannelList,
+    getMetricsGroup,
+    getMonitorMetrics,
+    getMonitorPlugin,
+    getMonitorPolicy
   } = useMonitorApi();
   const CONDITION_LIST = useConditionList();
   const METHOD_LIST = useMethodList();
@@ -359,9 +359,7 @@ const StrategyOperation = () => {
   const getMetrics = async (params = {}, type = '') => {
     try {
       setMetricsLoading(true);
-      // const getGroupList = get(`/monitor/api/metrics_group/`, { params });
       const getGroupList = getMetricsGroup(params);
-      // const getMetrics = get('/monitor/api/metrics/', { params });
       const getMetrics = getMonitorMetrics(params);
       Promise.all([getGroupList, getMetrics])
         .then((res) => {
@@ -396,7 +394,6 @@ const StrategyOperation = () => {
   };
 
   const getStragyDetail = async () => {
-    // const data = await get(`/monitor/api/monitor_policy/${detailId}/`);
     const data = await getMonitorPolicy(detailId);
     setFormData(data);
   };
@@ -1099,9 +1096,7 @@ const StrategyOperation = () => {
                             <div
                               className="flex items-center space-x-4 my-1 font-[800]"
                               style={{
-                                borderLeft: `4px solid ${
-                                  LEVEL_MAP[item.level]
-                                }`,
+                                borderLeft: `4px solid ${LEVEL_MAP[item.level]}`,
                                 paddingLeft: '10px',
                               }}
                             >

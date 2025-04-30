@@ -117,11 +117,6 @@ const SearchView: React.FC = () => {
   const getObjects = async () => {
     try {
       setObjLoading(true);
-      // const data: ObectItem[] = await get('/monitor/api/monitor_object/', {
-      //   params: {
-      //     add_instance_count: true,
-      //   },
-      // });
       const data: ObectItem[] = await getMonitorObject({
         add_instance_count: true,
       })
@@ -137,9 +132,7 @@ const SearchView: React.FC = () => {
   const getMetrics = async (params = {}) => {
     try {
       setMetricsLoading(true);
-      // const getGroupList = get(`/monitor/api/metrics_group/`, { params });
       const getGroupList = getMetricsGroup(params);
-      // const getMetrics = get('/monitor/api/metrics/', { params });
       const getMetrics = getMonitorMetrics(params);
       Promise.all([getGroupList, getMetrics])
         .then((res) => {
@@ -173,12 +166,7 @@ const SearchView: React.FC = () => {
   const getInstList = async (id: number) => {
     try {
       setInstanceLoading(true);
-      // const data = await get(`/monitor/api/monitor_instance/${id}/list/`, {
-      //   params: {
-      //     page_size: -1,
-      //   },
-      // });
-      const data = await getInstanceList(id,{
+      const data = await getInstanceList(id, {
         page_size: -1,
       });
       setInstances(data.results || []);
@@ -664,17 +652,16 @@ const SearchView: React.FC = () => {
                             ?.display_name || '--'}
                         </span>
                         <span className="text-[var(--color-text-3)] text-[12px]">
-                          {`${
+                          {`${findUnitNameById(
+                            metrics.find((item) => item.name === metric)?.unit
+                          )
+                            ? '（' +
                             findUnitNameById(
-                              metrics.find((item) => item.name === metric)?.unit
-                            )
-                              ? '（' +
-                                findUnitNameById(
-                                  metrics.find((item) => item.name === metric)
-                                    ?.unit
-                                ) +
-                                '）'
-                              : ''
+                              metrics.find((item) => item.name === metric)
+                                ?.unit
+                            ) +
+                            '）'
+                            : ''
                           }`}
                         </span>
                         <Tooltip
