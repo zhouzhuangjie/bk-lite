@@ -13,6 +13,6 @@ ADD ./telegraf ./bin/telegraf
 ADD ./service.conf /etc/supervisor/conf.d/service.conf
 ADD ./startup.sh ./startup.sh
 
-RUN chmod 777 /apps
+RUN chmod -Rf 777 /apps/*
 
 ENTRYPOINT [ "/apps/startup.sh" ]
