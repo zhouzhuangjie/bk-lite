@@ -95,6 +95,7 @@ const Alert: React.FC = () => {
   const [objects, setObjects] = useState<ObectItem[]>([]);
   const [groupObjects, setGroupObjects] = useState<ObectItem[]>([]);
   const [metrics, setMetrics] = useState<MetricItem[]>([]);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   const tabs: TabItem[] = useAlarmTabs();
   const columns: ColumnItem[] = [
@@ -209,6 +210,7 @@ const Alert: React.FC = () => {
               description={t('monitor.events.closeContent')}
               okText={t('common.confirm')}
               cancelText={t('common.cancel')}
+              okButtonProps={{ loading: confirmLoading }}
               onConfirm={() => alertCloseConfirm(record.id)}
             >
               <Button
@@ -339,13 +341,16 @@ const Alert: React.FC = () => {
   // };
 
   const alertCloseConfirm = async (id: string | number) => {
+    setConfirmLoading(true);
     try {
       await patchMonitorAlert(id, {
         status: 'closed',
       });
       message.success(t('monitor.events.successfullyClosed'));
       onRefresh();
-    } finally {}
+    } finally {
+      setConfirmLoading(false);
+    }
   }
 
   const clearTimer = () => {

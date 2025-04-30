@@ -458,7 +458,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
         <div className="flex items-center">
           {showTab && (
             <div>
-              <span className="text-[14px] mr-[5px]">
+              <span className="text-[14px] mr-[10px]">
                 {t('monitor.views.filterOptions')}
               </span>
               <Select
@@ -479,7 +479,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
                   <Select
                     value={namespace}
                     allowClear
-                    className="mx-[5px]"
+                    className="mx-[10px]"
                     style={{ width: 120 }}
                     placeholder={t('monitor.views.namespace')}
                     onChange={handleNameSpaceChange}
@@ -493,7 +493,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
                   <Select
                     value={workload}
                     allowClear
-                    className="mr-[5px]"
+                    className="mr-[10px]"
                     style={{ width: 120 }}
                     placeholder={t('monitor.views.workload')}
                     onChange={handleWorkloadChange}
@@ -523,7 +523,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
           )}
           <Input
             allowClear
-            className="w-[240px] ml-[5px]"
+            className="w-[240px] ml-[10px]"
             placeholder={t('common.searchPlaceHolder')}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}

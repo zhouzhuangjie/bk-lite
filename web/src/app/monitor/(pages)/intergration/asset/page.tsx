@@ -47,10 +47,10 @@ import Permission from '@/components/permission';
 
 const Asset = () => {
   const { isLoading } = useApiClient();
-  const { 
-    getInstanceList, 
-    getInstanceGroupRule, 
-    getMonitorObject, 
+  const {
+    getInstanceList,
+    getInstanceGroupRule,
+    getMonitorObject,
     getInstanceChildConfig,
     deleteInstanceGroupRule,
     deleteMonitorInstance,
@@ -80,6 +80,7 @@ const Asset = () => {
   const [defaultSelectObj, setDefaultSelectObj] = useState<React.Key>('');
   const [objectId, setObjectId] = useState<React.Key>('');
   const [frequence, setFrequence] = useState<number>(0);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   const columns: ColumnItem[] = [
     {
@@ -115,6 +116,7 @@ const Asset = () => {
               description={t('common.deleteContent')}
               okText={t('common.confirm')}
               cancelText={t('common.cancel')}
+              okButtonProps={{ loading: confirmLoading }}
               onConfirm={() => deleteInstConfirm(record)}
             >
               <Button
@@ -453,10 +455,7 @@ const Asset = () => {
   // };
 
   const deleteInstConfirm = async (row: any) => {
-    const data = {
-      instance_ids: [row.instance_id],
-      clean_child_config: true,
-    };
+    
     // await post(
     //   `/monitor/api/monitor_instance/remove_monitor_instance/`,
     //   {
@@ -464,10 +463,19 @@ const Asset = () => {
     //     clean_child_config: true,
     //   }
     // );
-    await deleteMonitorInstance(data);
-    message.success(t('common.successfullyDeleted'));
-    getObjects();
-    getAssetInsts(objectId);
+    setConfirmLoading(true);
+    try {
+      const data = {
+        instance_ids: [row.instance_id],
+        clean_child_config: true,
+      };
+      await deleteMonitorInstance(data);
+      message.success(t('common.successfullyDeleted'));
+      getObjects();
+      getAssetInsts(objectId);
+    } finally{
+      setConfirmLoading(false)
+    }
   }
 
   const clearText = () => {

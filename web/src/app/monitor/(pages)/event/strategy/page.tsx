@@ -52,6 +52,7 @@ const Strategy: React.FC = () => {
   const [enableLoading, setEnableLoading] = useState<boolean>(false);
   const [defaultSelectObj, setDefaultSelectObj] = useState<React.Key>('');
   const [objectId, setObjectId] = useState<React.Key>('');
+  const [confirmLoading, setConfirmLoading] = useState(false);
   const columns: ColumnItem[] = [
     {
       title: t('common.name'),
@@ -142,6 +143,7 @@ const Strategy: React.FC = () => {
               description={t('common.deleteContent')}
               okText={t('common.confirm')}
               cancelText={t('common.cancel')}
+              okButtonProps={{ loading: confirmLoading }}
               onConfirm={() => deleteConfirm(record.id)}
             >
               <Button type="link"
@@ -186,7 +188,7 @@ const Strategy: React.FC = () => {
       // await patch(`/monitor/api/monitor_policy/${id}/`, {
       //   enable: val,
       // });
-      await patchMonitorPolicy(id,{
+      await patchMonitorPolicy(id, {
         enable: val,
       });
       message.success(t(val ? 'common.started' : 'common.closed'));
@@ -208,7 +210,7 @@ const Strategy: React.FC = () => {
       // const data = await get(`/monitor/api/monitor_policy/`, {
       //   params,
       // });
-      const data = await getMonitorPolicy('',params);
+      const data = await getMonitorPolicy('', params);
       setTableData(data.items || []);
       setPagination((pre) => ({
         ...pre,
@@ -282,9 +284,14 @@ const Strategy: React.FC = () => {
 
   const deleteConfirm = async (id: number | string) => {
     // await del(`/monitor/api/monitor_policy/${id}/`);
-    await deleteMonitorPolicy(id);
-    message.success(t('common.successfullyDeleted'));
-    getAssetInsts(objectId);
+    setConfirmLoading(true);
+    try {
+      await deleteMonitorPolicy(id);
+      message.success(t('common.successfullyDeleted'));
+      getAssetInsts(objectId);
+    } finally {
+      setConfirmLoading(false)
+    }
   }
 
   const enterText = () => {
