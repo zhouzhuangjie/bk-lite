@@ -11,6 +11,7 @@ WORKDIR /apps
 ADD ./telegraf.conf ./telegraf.conf
 ADD ./telegraf ./bin/telegraf
 ADD ./service.conf /etc/supervisor/conf.d/service.conf
+ADD ./startup.sh ./startup.sh
 
 RUN chmod 777 /apps
 
