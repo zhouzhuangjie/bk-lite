@@ -1,24 +1,27 @@
 'use client';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Segmented } from 'antd';
-import { ApartmentOutlined, BarsOutlined } from '@ant-design/icons';
 import useApiClient from '@/utils/request';
+import useMonitorApi from '@/app/monitor/api';
 import { deepClone } from '@/app/monitor/utils/common';
 import { ObectItem } from '@/app/monitor/types/monitor';
 import { TreeItem } from '@/app/monitor/types';
+import { useTableOptions } from '@/app/monitor/hooks/view';
 import viewStyle from './index.module.scss';
 import TreeSelector from '@/app/monitor/components/treeSelector';
 import ViewList from './viewList';
 import ViewHive from './viewHive';
 
 const Intergration = () => {
-  const { get, isLoading } = useApiClient();
+  const { isLoading } = useApiClient();
+  const { getMonitorObject } = useMonitorApi();
   const [treeData, setTreeData] = useState<TreeItem[]>([]);
   const [objects, setObjects] = useState<ObectItem[]>([]);
   const [treeLoading, setTreeLoading] = useState<boolean>(false);
   const [objectId, setObjectId] = useState<React.Key>('');
   const [defaultSelectObj, setDefaultSelectObj] = useState<React.Key>('');
   const [displayType, setDisplayType] = useState<string>('list');
+  const tableOptions = useTableOptions();
 
   const showTab = useMemo(() => {
     const objectName = objects.find((item) => item.id === objectId)?.name || '';
@@ -42,10 +45,8 @@ const Intergration = () => {
   const getObjects = async () => {
     try {
       setTreeLoading(true);
-      const data: ObectItem[] = await get('/monitor/api/monitor_object/', {
-        params: {
-          add_instance_count: true,
-        },
+      const data: ObectItem[] = await getMonitorObject({
+        add_instance_count: true,
       });
       const _treeData = getTreeData(deepClone(data));
       setTreeData(_treeData);
@@ -93,10 +94,7 @@ const Intergration = () => {
         {showTab && (
           <Segmented
             className="mb-[16px]"
-            options={[
-              { value: 'list', icon: <BarsOutlined /> },
-              { value: 'view', icon: <ApartmentOutlined /> },
-            ]}
+            options={tableOptions}
             value={displayType}
             onChange={onDisplayTypeChange}
           />

@@ -13,7 +13,7 @@ interface ConfigHookParams {
 }
 // 子配置页面table的列定义
 interface SubConfigHookParams {
-  edit: (item: IConfiglistprops) => void;
+  edit: (item: ConfigListProps) => void;
   nodeData: ConfigDate;
 }
 interface VariableProps {
@@ -23,7 +23,7 @@ interface VariableProps {
 }
 
 //api返回的配置文件列表的类型
-interface IConfiglistprops {
+interface ConfigListProps {
   id: string;
   name: string;
   collector_name: string;
@@ -47,7 +47,7 @@ interface CollectorItem {
 }
 
 //node展开的数据类型
-interface NodeExpanddata {
+interface NodeExpandData {
   key: string;
   name: string;
   filename: string;
@@ -56,7 +56,7 @@ interface NodeExpanddata {
 }
 
 //更新配置文件的请求
-interface updateConfigReq {
+interface UpdateConfigReq {
   node_ids: string[];
   collector_configuration_id: string;
 }
@@ -99,7 +99,7 @@ interface SubRef {
 
 interface SubProps {
   cancel: () => void;
-  edit: (item: IConfiglistprops) => void;
+  edit: (item: ConfigListProps) => void;
   nodeData: ConfigDate;
   collectors: TableDataItem[];
 }
@@ -124,7 +124,7 @@ interface VarResItem {
   description: string;
 }
 
-interface CloudregioncardProps {
+interface CloudRegionCardProps {
   id: number;
   name: string;
   introduction: string;
@@ -173,10 +173,10 @@ interface ConfigListParams {
 export type {
   ConfigHookParams,
   VariableProps,
-  IConfiglistprops,
+  ConfigListProps,
   CollectorItem,
-  NodeExpanddata,
-  updateConfigReq,
+  NodeExpandData,
+  UpdateConfigReq,
   NodeItemRes,
   MappedNodeItem,
   ConfigDate,
@@ -185,7 +185,7 @@ export type {
   CloudRegionItem,
   VarSourceItem,
   VarResItem,
-  CloudregioncardProps,
+  CloudRegionCardProps,
   ControllerInstallFields,
   ControllerInstallProps,
   NodeItem,

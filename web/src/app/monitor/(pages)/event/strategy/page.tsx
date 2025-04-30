@@ -1,16 +1,25 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { Spin, Input, Button, Modal, message, Switch } from 'antd';
+import {
+  Spin,
+  Input,
+  Button,
+
+  message,
+  Switch,
+  Popconfirm
+} from 'antd';
 import useApiClient from '@/utils/request';
+import useMonitorApi from '@/app/monitor/api';
 import assetStyle from './index.module.scss';
 import { useTranslation } from '@/utils/i18n';
 import { ColumnItem, TreeItem, Pagination } from '@/app/monitor/types';
 import {
   ObectItem,
-  RuleInfo,
   TableDataItem,
 } from '@/app/monitor/types/monitor';
 import CustomTable from '@/components/custom-table';
+import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import {
   deepClone,
   getRandomColor,
@@ -19,13 +28,13 @@ import {
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import { PlusOutlined } from '@ant-design/icons';
 import { useRouter, useSearchParams } from 'next/navigation';
-const { confirm } = Modal;
 import TreeSelector from '@/app/monitor/components/treeSelector';
 import Permission from '@/components/permission';
 
 const Strategy: React.FC = () => {
   const { t } = useTranslation();
-  const { get, del, patch, isLoading } = useApiClient();
+  const { isLoading } = useApiClient();
+  const { getMonitorPolicy, getMonitorObject, patchMonitorPolicy, deleteMonitorPolicy } = useMonitorApi();
   const searchParams = useSearchParams();
   const { convertToLocalizedTime } = useLocalizedTime();
   const objId = searchParams.get('objId');
@@ -43,17 +52,20 @@ const Strategy: React.FC = () => {
   const [enableLoading, setEnableLoading] = useState<boolean>(false);
   const [defaultSelectObj, setDefaultSelectObj] = useState<React.Key>('');
   const [objectId, setObjectId] = useState<React.Key>('');
+  const [confirmLoading, setConfirmLoading] = useState(false);
   const columns: ColumnItem[] = [
     {
       title: t('common.name'),
       dataIndex: 'name',
       key: 'name',
+      width: 100,
       ellipsis: true,
     },
     {
       title: t('common.creator'),
       dataIndex: 'created_by',
       key: 'created_by',
+      width: 100,
       render: (_, { created_by }) => {
         return created_by ? (
           <div className="column-user" title={created_by}>
@@ -63,7 +75,12 @@ const Strategy: React.FC = () => {
             >
               {created_by.slice(0, 1).toLocaleUpperCase()}
             </span>
-            <span className="user-name">{created_by}</span>
+            <span className="user-name">
+              <EllipsisWithTooltip
+                className="w-[50px] overflow-hidden text-ellipsis whitespace-nowrap"
+                text={created_by}
+              />
+            </span>
           </div>
         ) : (
           <>--</>
@@ -74,6 +91,7 @@ const Strategy: React.FC = () => {
       title: t('common.createTime'),
       dataIndex: 'created_at',
       key: 'created_at',
+      width: 160,
       render: (_, { created_at }) => (
         <>{created_at ? convertToLocalizedTime(created_at) : '--'}</>
       ),
@@ -82,6 +100,7 @@ const Strategy: React.FC = () => {
       title: t('monitor.events.executionTime'),
       dataIndex: 'last_run_time',
       key: 'last_run_time',
+      width: 160,
       render: (_, { last_run_time }) => (
         <>{last_run_time ? convertToLocalizedTime(last_run_time) : '--'}</>
       ),
@@ -90,6 +109,7 @@ const Strategy: React.FC = () => {
       title: t('monitor.events.effective'),
       dataIndex: 'effective',
       key: 'effective',
+      width: 80,
       render: (_, record) => (
         <Permission requiredPermissions={['Edit']}>
           <Switch
@@ -105,6 +125,7 @@ const Strategy: React.FC = () => {
       title: t('common.action'),
       key: 'action',
       dataIndex: 'action',
+      width: 120,
       fixed: 'right',
       render: (_, record) => (
         <>
@@ -117,9 +138,18 @@ const Strategy: React.FC = () => {
             </Button>
           </Permission>
           <Permission requiredPermissions={['Delete']}>
-            <Button type="link" onClick={() => showDeleteConfirm(record)}>
-              {t('common.delete')}
-            </Button>
+            <Popconfirm
+              title={t('common.deleteTitle')}
+              description={t('common.deleteContent')}
+              okText={t('common.confirm')}
+              cancelText={t('common.cancel')}
+              okButtonProps={{ loading: confirmLoading }}
+              onConfirm={() => deleteConfirm(record.id)}
+            >
+              <Button type="link">
+                {t('common.delete')}
+              </Button>
+            </Popconfirm>
           </Permission>
         </>
       ),
@@ -153,7 +183,7 @@ const Strategy: React.FC = () => {
   const handleEffectiveChange = async (val: boolean, id: number) => {
     try {
       setEnableLoading(true);
-      await patch(`/monitor/api/monitor_policy/${id}/`, {
+      await patchMonitorPolicy(id, {
         enable: val,
       });
       message.success(t(val ? 'common.started' : 'common.closed'));
@@ -172,9 +202,7 @@ const Strategy: React.FC = () => {
       setTableLoading(true);
       const params = getParams(text);
       params.monitor_object_id = objectId;
-      const data = await get(`/monitor/api/monitor_policy/`, {
-        params,
-      });
+      const data = await getMonitorPolicy('', params);
       setTableData(data.items || []);
       setPagination((pre) => ({
         ...pre,
@@ -188,11 +216,9 @@ const Strategy: React.FC = () => {
   const getObjects = async () => {
     try {
       setTreeLoading(true);
-      const data: ObectItem[] = await get('/monitor/api/monitor_object/', {
-        params: {
-          add_policy_count: true,
-        },
-      });
+      const data: ObectItem[] = await getMonitorObject({
+        add_policy_count: true,
+      })
       const _treeData = getTreeData(deepClone(data));
       setDefaultSelectObj(objId ? +objId : data[0]?.id);
       setTreeData(_treeData);
@@ -224,24 +250,16 @@ const Strategy: React.FC = () => {
     return Object.values(groupedData);
   };
 
-  const showDeleteConfirm = (row: RuleInfo) => {
-    confirm({
-      title: t('common.deleteTitle'),
-      content: t('common.deleteContent'),
-      centered: true,
-      onOk() {
-        return new Promise(async (resolve) => {
-          try {
-            await del(`/monitor/api/monitor_policy/${row.id}/`);
-            message.success(t('common.successfullyDeleted'));
-            getAssetInsts(objectId);
-          } finally {
-            resolve(true);
-          }
-        });
-      },
-    });
-  };
+  const deleteConfirm = async (id: number | string) => {
+    setConfirmLoading(true);
+    try {
+      await deleteMonitorPolicy(id);
+      message.success(t('common.successfullyDeleted'));
+      getAssetInsts(objectId);
+    } finally {
+      setConfirmLoading(false)
+    }
+  }
 
   const enterText = () => {
     getAssetInsts(objectId);
