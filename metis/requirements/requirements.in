@@ -44,4 +44,5 @@ kubernetes==32.0.1
 pyarmor==9.1.5
 
 scikit-learn==1.6.1
-json-repair==0.44.1
+json-repair==0.39.1
+neo4j-graphrag==1.7.0
