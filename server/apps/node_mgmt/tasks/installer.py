@@ -4,8 +4,8 @@ from apps.node_mgmt.constants import CONTROLLER_INSTALL_DIR, COLLECTOR_INSTALL_D
     CONTROLLER_DIR_DELETE_COMMAND
 from apps.node_mgmt.models import ControllerTask, CollectorTask, PackageVersion, Node, NodeCollectorInstallStatus, \
     Collector
-from apps.node_mgmt.utils.installer import download_to_remote, exec_command_to_remote, download_to_local, \
-    exec_command_to_local, get_install_command, get_uninstall_command
+from apps.node_mgmt.utils.installer import exec_command_to_remote, download_to_local, \
+    exec_command_to_local, get_install_command, get_uninstall_command, unzip_file, transfer_file_to_remote
 from config.components.nats import NATS_NAMESPACE
 
 
@@ -26,27 +26,54 @@ def install_controller(task_id):
     nodes = task_obj.controllertasknode_set.all()
 
     # 获取控制器下发目录
-    controller_install_dir = CONTROLLER_INSTALL_DIR.get(package_obj.os)
+    dir_map = CONTROLLER_INSTALL_DIR.get(package_obj.os)
+    controller_install_dir, controller_storage_dir = dir_map["install_dir"], dir_map["storage_dir"]
 
     # 获取安装命令
     install_command = get_install_command(package_obj.os, package_obj.name, task_obj.cloud_region_id)
+    base_action, base_massage, unzip_name, base_run = "", "", "", True
+
+    try:
+        base_action = "download"
+        download_to_local(
+            task_obj.work_node,
+            NATS_NAMESPACE,
+            file_key,
+            package_obj.name,
+            controller_storage_dir,
+        )
+
+        base_action = "unzip"
+        resp = unzip_file(
+            task_obj.work_node,
+            f"{controller_storage_dir}/{package_obj.name}",
+            controller_storage_dir,
+        )
+        unzip_name = resp["result"]
+    except Exception as e:
+        base_run = False
+        base_massage = str(e)
 
     for node_obj in nodes:
+
+        if not base_run:
+            node_obj.status = "error"
+            node_obj.result = {"action": base_action, "message": base_massage}
+            node_obj.save()
+            continue
+
         action, message = "", ""
         try:
             action = "send"
-            # 控制器压缩包下发
-            download_to_remote(
+            transfer_file_to_remote(
                 task_obj.work_node,
-                NATS_NAMESPACE,
-                file_key,
-                package_obj.name,
+                f"{controller_storage_dir}/{unzip_name}",
                 controller_install_dir,
                 node_obj.ip,
                 node_obj.username,
                 node_obj.password,
             )
-            # 解压包，并执行运行脚步
+
             action = "run"
             exec_command_to_remote(task_obj.work_node, node_obj.ip, node_obj.username, node_obj.password, install_command)
             node_obj.status = "success"

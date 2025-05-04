@@ -1,7 +1,15 @@
 'use client';
 import React, { useEffect, useState, useRef } from 'react';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { Input, Button, Modal, message, Spin, Segmented, Empty } from 'antd';
+import {
+  Input,
+  Button,
+  Popconfirm,
+  message,
+  Spin,
+  Segmented,
+  Empty,
+} from 'antd';
 import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
 import metricStyle from './index.module.scss';
@@ -22,7 +30,6 @@ import MetricModal from './metricModal';
 import { useSearchParams } from 'next/navigation';
 import { deepClone } from '@/app/monitor/utils/common';
 import { useUserInfoContext } from '@/context/userInfo';
-const { confirm } = Modal;
 import Permission from '@/components/permission';
 
 const Configure = () => {
@@ -55,6 +62,8 @@ const Configure = () => {
   const [items, setItems] = useState<IntergrationItem[]>([]);
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
   const [dragOverTargetId, setDragOverTargetId] = useState<string | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [groupConfirmLoading, setGroupConfirmLoading] = useState(false);
 
   const columns: ColumnItem[] = [
     {
@@ -129,13 +138,18 @@ const Configure = () => {
             </Button>
           </Permission>
           <Permission requiredPermissions={['Delete Metric']}>
-            <Button
-              type="link"
-              disabled={record.is_pre && !isSuperUser}
-              onClick={() => showDeleteConfirm(record)}
+            <Popconfirm
+              title={t('common.deleteTitle')}
+              description={t('common.deleteContent')}
+              okText={t('common.confirm')}
+              cancelText={t('common.cancel')}
+              okButtonProps={{ loading: confirmLoading }}
+              onConfirm={() => handleDeleteConfirm(record)}
             >
-              {t('common.delete')}
-            </Button>
+              <Button type="link" disabled={record.is_pre && !isSuperUser}>
+                {t('common.delete')}
+              </Button>
+            </Popconfirm>
           </Permission>
         </>
       ),
@@ -176,42 +190,26 @@ const Configure = () => {
     }
   };
 
-  const showDeleteConfirm = (row: MetricItem) => {
-    confirm({
-      title: t('common.deleteTitle'),
-      content: t('common.deleteContent'),
-      centered: true,
-      onOk() {
-        return new Promise(async (resolve) => {
-          try {
-            await deleteMonitorMetrics(row.id);
-            message.success(t('common.successfullyDeleted'));
-            getInitData();
-          } finally {
-            resolve(true);
-          }
-        });
-      },
-    });
+  const handleDeleteConfirm = async (row: MetricItem) => {
+    setConfirmLoading(true);
+    try {
+      await deleteMonitorMetrics(row.id);
+      message.success(t('common.successfullyDeleted'));
+      getInitData();
+    } finally {
+      setConfirmLoading(false);
+    }
   };
 
-  const showGroupDeleteConfirm = (row: MetricListItem) => {
-    confirm({
-      title: t('common.deleteTitle'),
-      content: t('common.deleteContent'),
-      centered: true,
-      onOk() {
-        return new Promise(async (resolve) => {
-          try {
-            await deleteMetricsGroup(row.id);
-            message.success(t('common.successfullyDeleted'));
-            getInitData();
-          } finally {
-            resolve(true);
-          }
-        });
-      },
-    });
+  const handleGroupDeleteConfirm = async (row: MetricListItem) => {
+    setGroupConfirmLoading(true);
+    try {
+      await deleteMetricsGroup(row.id);
+      message.success(t('common.successfullyDeleted'));
+      getInitData();
+    } finally {
+      setGroupConfirmLoading(false);
+    }
   };
 
   const getInitData = async (objId = activeTab) => {
@@ -221,7 +219,7 @@ const Configure = () => {
     };
     const getGroupList = getMetricsGroup({
       ...params,
-      name: searchText
+      name: searchText,
     });
 
     const getMetrics = getMonitorMetrics({
@@ -444,10 +442,11 @@ const Configure = () => {
           {!!metricData.length ? (
             metricData.map((metricItem) => (
               <Collapse
-                className={`mb-[10px] ${dragOverTargetId === metricItem.id &&
+                className={`mb-[10px] ${
+                  dragOverTargetId === metricItem.id &&
                   draggingItemId !== dragOverTargetId
-                  ? 'border-t-[1px] border-blue-200'
-                  : ''
+                    ? 'border-t-[1px] border-blue-200'
+                    : ''
                 }`}
                 key={metricItem.id}
                 sortable
@@ -469,15 +468,23 @@ const Configure = () => {
                       ></Button>
                     </Permission>
                     <Permission requiredPermissions={['Edit Group']}>
-                      <Button
-                        type="link"
-                        size="small"
-                        disabled={
-                          !!metricItem.child?.length || metricItem.is_pre
-                        }
-                        icon={<DeleteOutlined />}
-                        onClick={() => showGroupDeleteConfirm(metricItem)}
-                      ></Button>
+                      <Popconfirm
+                        title={t('common.deleteTitle')}
+                        description={t('common.deleteContent')}
+                        okText={t('common.confirm')}
+                        cancelText={t('common.cancel')}
+                        okButtonProps={{ loading: groupConfirmLoading }}
+                        onConfirm={() => handleGroupDeleteConfirm(metricItem)}
+                      >
+                        <Button
+                          type="link"
+                          size="small"
+                          disabled={
+                            !!metricItem.child?.length || metricItem.is_pre
+                          }
+                          icon={<DeleteOutlined />}
+                        ></Button>
+                      </Popconfirm>
                     </Permission>
                   </div>
                 }
