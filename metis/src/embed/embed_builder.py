@@ -1,6 +1,7 @@
 from langchain_openai import OpenAIEmbeddings
 from loguru import logger
 
+
 class EmbedBuilder:
     _embed_instances = {}
 
@@ -20,7 +21,7 @@ class EmbedBuilder:
         return cls._embed_instances[protocol]
 
     @staticmethod
-    def get_embed(protocol: str,model_name: str, model_api_key: str, model_base_url: str):
+    def get_embed(protocol: str, model_name: str = '', model_api_key: str = '', model_base_url: str = ''):
         if protocol.startswith('local:'):
             logger.info(f"加载本地Embed模型: {protocol}")
             return EmbedBuilder.get_embed_instance(protocol)
