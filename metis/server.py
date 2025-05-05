@@ -83,6 +83,7 @@ def startup():
 def download_models():
     logger.info("download HuggingFace Embed Models")
     EmbedBuilder().get_embed('local:huggingface_embedding:BAAI/bge-small-zh-v1.5')
+    EmbedBuilder().get_embed('local:huggingface_embedding:maidalun1020/bce-embedding-base_v1')
 
     logger.info("download BCE ReRank Models")
     ReRankManager.get_rerank_instance('local:bce:maidalun1020/bce-reranker-base_v1')
