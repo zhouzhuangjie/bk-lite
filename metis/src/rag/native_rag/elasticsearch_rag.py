@@ -1,6 +1,6 @@
 import os
 from typing import List
-
+from loguru import logger
 import requests
 from langchain_core.documents import Document
 from langchain_elasticsearch import ElasticsearchRetriever
@@ -18,6 +18,8 @@ from src.entity.rag.elasticsearch_store_request import ElasticSearchStoreRequest
 from src.rag.native_rag.elasticsearch_query_builder import ElasticsearchQueryBuilder
 from langchain_elasticsearch import ElasticsearchStore
 import elasticsearch
+
+from src.rerank.rerank_manager import ReRankManager
 
 
 class ElasticSearchRag:
@@ -77,7 +79,6 @@ class ElasticSearchRag:
             body={**query, **update_script}
         )
         self.es.indices.refresh(index=req.index_name)
-
 
     def count_index_document(self, req: ElasticSearchDocumentCountRequest):
         if not req.metadata_filter:
@@ -192,14 +193,10 @@ class ElasticSearchRag:
         if req.index_mode == 'overwrite' and self.es.indices.exists(index=req.index_name):
             self.es.indices.delete(index=req.index_name)
 
-        if req.embed_model_base_url.startswith('local:'):
-            embedding = EmbedBuilder.get_embed(req.embed_model_base_url)
-        else:
-            embedding = OpenAIEmbeddings(
-                model=req.embed_model_name,
-                api_key=req.embed_model_api_key,
-                base_url=req.embed_model_base_url,
-            )
+        embedding = EmbedBuilder.get_embed(req.embed_model_base_url,
+                                           req.embed_model_name,
+                                           req.embed_model_api_key,
+                                           req.embed_model_base_url)
         db = ElasticsearchStore.from_documents(
             req.docs, embedding=embedding,
             es_connection=self.es, index_name=req.index_name,
@@ -233,38 +230,56 @@ class ElasticSearchRag:
 
         # 重排序处理
         if req.enable_rerank and search_result:
-            headers = {
-                "accept": "application/json", "Content-Type": "application/json",
-                "Authorization": f"Bearer {req.rerank_model_api_key}"
-            }
+            if req.rerank_model_base_url.startswith('local:'):
+                logger.info(f"使用本地ReRank模型进行重排序: {req.rerank_model_base_url}")
+                local_rerank_result = ReRankManager.rerank(req.rerank_model_base_url,
+                                                           req.search_query, search_result)
+                # 对local_rerank_result进行排序并获取topk
+                top_k_search_result = []
+                top_rerank_result = local_rerank_result['rerank_ids'][:req.rerank_top_k]
 
-            rerank_content = []
-            for i in search_result:
-                rerank_content.append(i.page_content)
+                for i in top_rerank_result:
+                    doc = search_result[i]
+                    doc.metadata['relevance_score'] = local_rerank_result['rerank_scores'][i]
+                    top_k_search_result.append(doc)
 
-            data = {
-                "model": req.rerank_model_name,
-                "query": req.search_query,
-                "documents": rerank_content,
-            }
-            response = requests.post(
-                req.rerank_model_base_url, headers=headers, json=data)
+                search_result = top_k_search_result
 
-            rerank_result = response.json()['results']
+            else:
+                logger.info(f"使用远程ReRank模型进行重排序: {req.rerank_model_base_url}")
+                headers = {
+                    "accept": "application/json", "Content-Type": "application/json",
+                    "Authorization": f"Bearer {req.rerank_model_api_key}"
+                }
 
-            # 对rerank_result进行排序并获取topk
-            sorted_rerank_result = sorted(
-                enumerate(rerank_result), key=lambda x: x[1]['relevance_score'], reverse=True)
-            top_k_indices = [i[0]
-                             for i in sorted_rerank_result[:req.rerank_top_k]]
+                rerank_content = []
+                for i in search_result:
+                    rerank_content.append(i.page_content)
 
-            top_k_search_result = []
-            for index in top_k_indices:
-                search_result[index].metadata['relevance_score'] = rerank_result[index]['relevance_score']
-                top_k_search_result.append(search_result[index])
+                data = {
+                    "model": req.rerank_model_name,
+                    "query": req.search_query,
+                    "documents": rerank_content,
+                }
+                response = requests.post(
+                    req.rerank_model_base_url, headers=headers, json=data)
 
-            search_result = top_k_search_result
+                rerank_result = response.json()['results']
 
+                # 对rerank_result进行排序并获取topk
+                sorted_rerank_result = sorted(
+                    enumerate(rerank_result), key=lambda x: x[1]['relevance_score'], reverse=True)
+                top_k_indices = [i[0]
+                                 for i in sorted_rerank_result[:req.rerank_top_k]]
+
+                top_k_search_result = []
+                for index in top_k_indices:
+                    search_result[index].metadata['relevance_score'] = rerank_result[index]['relevance_score']
+                    top_k_search_result.append(search_result[index])
+
+                search_result = top_k_search_result
+
+        logger.info(search_result)
         search_result = [doc for doc in search_result if doc.metadata.get(
-            '_score', 0) >= req.threshold]
+            '_score', 0) >= (req.threshold / 10)]
         return search_result
