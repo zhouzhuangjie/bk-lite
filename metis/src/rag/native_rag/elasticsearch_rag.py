@@ -15,7 +15,7 @@ from src.entity.rag.elasticsearch_document_metadata_update_request import \
 from src.entity.rag.elasticsearch_index_delete_request import ElasticSearchIndexDeleteRequest
 from src.entity.rag.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
 from src.entity.rag.elasticsearch_store_request import ElasticSearchStoreRequest
-from src.rag.native_rag.utils.elasticsearch_query_builder import ElasticsearchQueryBuilder
+from src.rag.native_rag.elasticsearch_query_builder import ElasticsearchQueryBuilder
 from langchain_elasticsearch import ElasticsearchStore
 import elasticsearch
 

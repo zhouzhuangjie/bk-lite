@@ -35,7 +35,7 @@ from src.entity.rag.elasticsearch_document_metadata_update_request import \
 from src.entity.rag.elasticsearch_index_delete_request import ElasticSearchIndexDeleteRequest
 from src.entity.rag.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
 from src.entity.rag.elasticsearch_store_request import ElasticSearchStoreRequest
-from src.rag.native_rag.rag.elasticsearch_rag import ElasticSearchRag
+from src.rag.native_rag.elasticsearch_rag import ElasticSearchRag
 
 rag_api_router = Blueprint("rag", url_prefix="/rag")
 
