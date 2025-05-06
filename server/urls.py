@@ -1,4 +1,4 @@
-import traceback
+import traceback  # noqa
 
 from django.apps import apps
 from django.conf import settings
@@ -50,4 +50,4 @@ for app_config in apps.get_app_configs():
             urlpatterns.append(path(f"{url_path}/", include(urls_module)))
 
     except ImportError as e:  # noqa
-        pass
+        print(e)

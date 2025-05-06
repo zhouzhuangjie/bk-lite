@@ -16,8 +16,8 @@ class QuotaUtils(object):
     def __init__(self, username, team, is_superuser=False):
         self.username = username
         self.team = team
-        self.quota_list = self.get_quota_list()
         self.is_superuser = is_superuser
+        self.quota_list = self.get_quota_list()
 
     def get_quota_list(self):
         if self.is_superuser:
