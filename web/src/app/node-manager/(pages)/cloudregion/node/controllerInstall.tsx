@@ -39,7 +39,7 @@ import {
 } from '@ant-design/icons';
 import { cloneDeep, isNumber, uniqueId } from 'lodash';
 const { Option } = Select;
-import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
+import useApiCloudRegion from '@/app/node-manager/api/cloudRegion';
 import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 import ControllerTable from './controllerTable';
 import ManualInstall from './manualInstall';

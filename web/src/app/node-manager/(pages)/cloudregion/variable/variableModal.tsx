@@ -13,7 +13,7 @@ import type { FormInstance } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { ModalSuccess, ModalRef } from '@/app/node-manager/types';
 import type { TableDataItem } from '@/app/node-manager/types';
-import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
+import useApiCloudRegion from '@/app/node-manager/api/cloudRegion';
 import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 
 const VariableModal = forwardRef<ModalRef, ModalSuccess>(

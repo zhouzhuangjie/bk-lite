@@ -5,7 +5,7 @@ import { useTranslation } from '@/utils/i18n';
 import { Input } from 'antd';
 import { useSubConfigColumns } from '@/app/node-manager/hooks/configuration';
 import CustomTable from '@/components/custom-table';
-import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
+import useApiCloudRegion from '@/app/node-manager/api/cloudRegion';
 import type { SubRef, SubProps } from '@/app/node-manager/types/cloudregion';
 import type { GetProps } from 'antd';
 type SearchProps = GetProps<typeof Input.Search>;
@@ -39,7 +39,10 @@ const SubConfiguration = forwardRef<SubRef, SubProps>(
 
     const getChildConfigList = (search?: string) => {
       setTableLoading(true);
-      getChildConfig(nodeData.key, search)
+      getChildConfig({
+        collector_config_id: nodeData.key,
+        search,
+      })
         .then((res) => {
           const data = res.map((item: any) => {
             return {
