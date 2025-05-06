@@ -36,7 +36,7 @@ class ModelProviderInitService:
                 is_build_in=True,
                 defaults={
                     "rerank_config": {
-                        "base_url": "https://inference.canway.net/v1/rerank",
+                        "base_url": "local:bce:maidalun1020/bce-reranker-base_v1",
                         "api_key": "",
                         "model": "bce-reranker-base_v1",
                     },
@@ -50,7 +50,7 @@ class ModelProviderInitService:
                 is_build_in=True,
                 defaults={
                     "embed_config": {
-                        "base_url": "https://inference.canway.net/v1",
+                        "base_url": "local:huggingface_embedding:maidalun1020/bce-embedding-base_v1",
                         "api_key": "",
                         "model": "bce-embedding-base_v1",
                     },
