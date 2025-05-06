@@ -10,7 +10,7 @@ from src.entity.rag.elasticsearch_document_metadata_update_request import \
 from src.entity.rag.elasticsearch_index_delete_request import ElasticSearchIndexDeleteRequest
 from src.entity.rag.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
 from src.entity.rag.elasticsearch_store_request import ElasticSearchStoreRequest
-from src.rag.native_rag.rag.elasticsearch_rag import ElasticSearchRag
+from src.rag.native_rag.elasticsearch_rag import ElasticSearchRag
 
 
 def get_sample_request():
@@ -35,7 +35,7 @@ def get_sample_request():
             Document(page_content='你能给我讲个故事吗', metadata={
                 'knowledge_title': '你能给我讲个故事吗', 'knowledge_id': "8"}),
         ],
-        embed_model_base_url=os.getenv('TEST_INFERENCE_BASE_URL'),
+        embed_model_base_url='local:huggingface_embedding:BAAI/bge-small-zh-v1.5',
         embed_model_api_key=os.getenv('TEST_INFERENCE_TOKEN'),
         embed_model_name=os.getenv('TEST_BCE_EMBED_MODEL')
     )
@@ -47,7 +47,7 @@ def test_native_rag_ingest():
 
     rag.ingest(get_sample_request())
 
-    metadata_update_request= ElasticsearchDocumentMetadataUpdateRequest(
+    metadata_update_request = ElasticsearchDocumentMetadataUpdateRequest(
         index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX'),
         metadata_filter={
             'knowledge_id': "8"
@@ -89,6 +89,33 @@ def test_native_rag():
         rerank_top_k=5,
         rerank_model_api_key=os.getenv('TEST_INFERENCE_TOKEN'),
         rerank_model_name=os.getenv('TEST_BCE_RERANK_MODEL'),
+    )
+
+    result = rag.search(request)
+    logger.info(result)
+
+    delete_index_req = ElasticSearchIndexDeleteRequest(
+        index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX')
+    )
+    rag.delete_index(delete_index_req)
+
+
+def test_native_rag_with_local_models():
+    rag = ElasticSearchRag()
+    rag.ingest(get_sample_request())
+
+    request = ElasticSearchRetrieverRequest(
+        index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX'),
+        search_query="吗",
+        size=20,
+        embed_model_base_url="local:huggingface_embedding:BAAI/bge-small-zh-v1.5",
+        embed_model_api_key="",
+        embed_model_name="bge-small-zh-v1.5",
+        enable_rerank=True,
+        rerank_model_base_url=f'local:bce:maidalun1020/bce-reranker-base_v1',
+        rerank_top_k=3,
+        rerank_model_api_key="",
+        rerank_model_name="bce-reranker-base_v1",
     )
 
     result = rag.search(request)

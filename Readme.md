@@ -43,7 +43,7 @@ Blueking Lite是一个AI First的轻量版运维产品，由以下模块共同�
 * [下载与编译](docs/overview/source_compile.md)
 * [安装部署](deploy/docker-compose/Readme.md)
 * [接口文档](docs/overview/api_doc.md)
-* [Function Call能力](docs/overview/function_call.md)
+
 ## Roadmap
 
 * [版本日志](docs/changelog/release.md)
