@@ -7,6 +7,7 @@ from src.entity.agent.chatbot_workflow_request import ChatBotWorkflowRequest
 from src.agent.chatbot_workflow.chatbot_workflow_graph import ChatBotWorkflowGraph
 from src.entity.agent.react_agent_request import ReActAgentRequest
 from src.agent.react_agent.react_agent_graph import ReActAgentGraph
+from src.services.agent_service import AgentService
 
 agent_api_router = Blueprint("agent", url_prefix="/agent")
 
@@ -16,8 +17,7 @@ agent_api_router = Blueprint("agent", url_prefix="/agent")
 @validate(json=ChatBotWorkflowRequest)
 def invoke_chatbot_workflow(request, body: ChatBotWorkflowRequest):
     workflow = ChatBotWorkflowGraph()
-    for i in body.naive_rag_request:
-        i.search_query = body.user_message
+    AgentService.set_naive_rag_search_query(body)
 
     logger.debug(f"执行ChatBotWorkflowGraph,用户的问题:[{body.user_message}]")
     result = workflow.execute(body)
@@ -31,8 +31,7 @@ def invoke_chatbot_workflow(request, body: ChatBotWorkflowRequest):
 @validate(json=ReActAgentRequest)
 async def invoke_react_agent(request, body: ReActAgentRequest):
     graph = ReActAgentGraph()
-    for i in body.naive_rag_request:
-        i.search_query = body.user_message
+    AgentService.set_naive_rag_search_query(body)
 
     logger.debug(f"执行ReActAgentGraph,用户的问题:[{body.user_message}]")
     result = await graph.execute(body)
