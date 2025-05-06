@@ -14,6 +14,7 @@ from sanic_fire.core import command_class, command_func
 
 from src.embed.embed_builder import EmbedBuilder
 from src.ocr.pp_ocr import PPOcr
+from src.rerank.rerank_manager import ReRankManager
 
 # 加载环境变量和配置
 load_dotenv()
@@ -82,6 +83,10 @@ def startup():
 def download_models():
     logger.info("download HuggingFace Embed Models")
     EmbedBuilder().get_embed('local:huggingface_embedding:BAAI/bge-small-zh-v1.5')
+    EmbedBuilder().get_embed('local:huggingface_embedding:maidalun1020/bce-embedding-base_v1')
+
+    logger.info("download BCE ReRank Models")
+    ReRankManager.get_rerank_instance('local:bce:maidalun1020/bce-reranker-base_v1')
 
     logger.info("download PaddleOCR")
     PPOcr()

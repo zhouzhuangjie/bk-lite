@@ -13,6 +13,7 @@ class OlmOcr:
 
     def predict(self, file_path: str) -> str:
         logger.info(f'使用olmOCR识别文件: {file_path}')
+
         # 读取图片并转换为base64编码
         with open(file_path, "rb") as image_file:
             base64_image = base64.b64encode(image_file.read()).decode('utf-8')

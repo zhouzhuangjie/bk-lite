@@ -2,7 +2,6 @@ import json
 import os
 
 import requests
-from dotenv import load_dotenv
 from loguru import logger
 
 

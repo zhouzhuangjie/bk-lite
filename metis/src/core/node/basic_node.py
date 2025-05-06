@@ -5,7 +5,7 @@ from langchain_core.runnables import RunnableConfig
 from langchain_openai import ChatOpenAI
 
 from src.core.entity.basic_llm_request import BasicLLMReuqest
-from src.rag.native_rag.rag.elasticsearch_rag import ElasticSearchRag
+from src.rag.native_rag.elasticsearch_rag import ElasticSearchRag
 
 
 class BasicNode:
@@ -48,11 +48,30 @@ class BasicNode:
         for rag_search_request in naive_rag_request:
             elasticsearch_rag = ElasticSearchRag()
             rag_result = elasticsearch_rag.search(rag_search_request)
-            rag_message = "以下是提供给你参考的背景信息：\n"
-            for r in rag_result:
+            rag_message = f'''
+                以下是参考资料,每份参考资料都由标题和内容组成,以XML格式提供:
+                
+                示例:
+                    <knowledge>
+                        <ref_id>1</ref_id>
+                        <title>知识标题</title>
+                        <content>知识内容</content>
+                    </knowledge>
+                
+                字段说明:
+                    ref_id: 是第几份参考资料，从1开始
+                    title: 参考资料的标题
+                    content: 参考资料的内容
+                    
+                参考资料:
+            '''
+            for index, r in enumerate(rag_result):
                 rag_message += f"""
-                    Title: {r.metadata['_source']['metadata']['knowledge_title']}
-                    Chunk: {r.page_content}
+                    <knowledge>
+                        <ref_id>{index + 1}</ref_id>
+                        <title>{r.metadata['_source']['metadata']['knowledge_title']}</title>
+                        <content>{r.page_content}</content>
+                    </knowledge>
                 """
             state["messages"].append(HumanMessage(content=rag_message))
         return state
@@ -60,5 +79,3 @@ class BasicNode:
     def user_message_node(self, state: TypedDict, config: RunnableConfig) -> TypedDict:
         state["messages"].append(HumanMessage(content=config["configurable"]["graph_request"].user_message))
         return state
-
-

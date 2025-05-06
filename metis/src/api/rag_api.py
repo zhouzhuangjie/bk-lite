@@ -1,32 +1,15 @@
 import json as js
 import tempfile
+import time
 import traceback
 import uuid
-import time
 
-from langchain_openai import OpenAIEmbeddings
+from loguru import logger
 from sanic import Blueprint, json
 from sanic_ext import validate
-from loguru import logger
-from src.chunk.fixed_size_chunk import FixedSizeChunk
-from src.chunk.full_chunk import FullChunk
-from src.chunk.recursive_chunk import RecursiveChunk
-from src.chunk.semantic_chunk import SemanticChunk
+
 from src.core.web.api_auth import auth
 from src.enhance.qa_enhance import QAEnhance
-from src.entity.rag.qa_enhance_request import QAEnhanceRequest
-from src.loader.doc_loader import DocLoader
-from src.loader.excel_loader import ExcelLoader
-from src.loader.image_loader import ImageLoader
-from src.loader.markdown_loader import MarkdownLoader
-from src.loader.pdf_loader import PDFLoader
-from src.loader.ppt_loader import PPTLoader
-from src.loader.raw_loader import RawLoader
-from src.loader.text_loader import TextLoader
-from src.loader.website_loader import WebSiteLoader
-from src.ocr.azure_ocr import AzureOCR
-from src.ocr.olm_ocr import OlmOcr
-from src.ocr.pp_ocr import PPOcr
 from src.entity.rag.elasticsearch_document_count_request import ElasticSearchDocumentCountRequest
 from src.entity.rag.elasticsearch_document_delete_request import ElasticSearchDocumentDeleteRequest
 from src.entity.rag.elasticsearch_document_list_request import ElasticSearchDocumentListRequest
@@ -35,131 +18,13 @@ from src.entity.rag.elasticsearch_document_metadata_update_request import \
 from src.entity.rag.elasticsearch_index_delete_request import ElasticSearchIndexDeleteRequest
 from src.entity.rag.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
 from src.entity.rag.elasticsearch_store_request import ElasticSearchStoreRequest
-from src.rag.native_rag.rag.elasticsearch_rag import ElasticSearchRag
+from src.entity.rag.qa_enhance_request import QAEnhanceRequest
+from src.loader.raw_loader import RawLoader
+from src.loader.website_loader import WebSiteLoader
+from src.rag.native_rag.elasticsearch_rag import ElasticSearchRag
+from src.services.rag_service import RagService
 
 rag_api_router = Blueprint("rag", url_prefix="/rag")
-
-
-def get_file_loader(file_path, file_extension, load_mode, request=None):
-    """
-    根据文件类型选择适当的加载器
-    在内部初始化OCR，支持paddle_ocr、olm_ocr、azure_ocr
-    """
-    logger.debug(f"为文件 {file_path} (类型: {file_extension}) 初始化加载器")
-    # 初始化OCR
-    ocr = None
-    ocr = load_ocr(ocr, request)
-    if ocr:
-        logger.debug(f"OCR类型: {type(ocr).__name__} 初始化成功")
-
-    if file_extension in ['docx', 'doc']:
-        return DocLoader(file_path, ocr, load_mode)
-    elif file_extension in ['pptx', 'ppt']:
-        return PPTLoader(file_path, load_mode)
-    elif file_extension == 'txt':
-        return TextLoader(file_path, load_mode)
-    elif file_extension in ['jpg', 'png', 'jpeg']:
-        return ImageLoader(file_path, ocr, load_mode)
-    elif file_extension == 'pdf':
-        return PDFLoader(file_path, ocr, load_mode)
-    elif file_extension in ['xlsx', 'xls', 'csv']:
-        return ExcelLoader(file_path, load_mode)
-    elif file_extension in ['md']:
-        return MarkdownLoader(file_path, load_mode)
-    else:
-        raise ValueError(f"不支持的文件类型: {file_extension}")
-
-
-def load_ocr(ocr, request):
-    ocr = None
-    ocr_type = request.form.get('ocr_type')
-    logger.debug(f"加载OCR服务，类型: {ocr_type}")
-
-    if ocr_type == 'pp_ocr':
-        logger.debug("初始化PP-OCR服务")
-        ocr = PPOcr()
-
-    if ocr_type == 'olm_ocr':
-        base_url = request.form.get('olm_base_url')
-        api_key = request.form.get('olm_api_key')
-        model = request.form.get(
-            'olm_model', "allenai/olmOCR-7B-0225-preview")
-        logger.debug(f"初始化OLM-OCR服务，模型: {model}")
-        ocr = OlmOcr(base_url=base_url, api_key=api_key, model=model)
-
-    if ocr_type == 'azure_ocr':
-        azure_endpoint = request.form.get('azure_endpoint')
-        logger.debug(f"初始化Azure-OCR服务，endpoint: {azure_endpoint}")
-        azure_api_key = request.form.get('azure_api_key')
-        ocr = AzureOCR(api_key=azure_api_key, endpoint=azure_endpoint)
-
-    return ocr
-
-
-def get_chunker(chunk_mode, request=None):
-    """
-    根据分块模式返回相应的分块器
-    """
-    logger.debug(f"初始化分块器，模式: {chunk_mode}")
-    if chunk_mode == 'fixed_size':
-        chunk_size = int(request.form.get('chunk_size', 256))
-        logger.debug(f"使用固定大小分块，大小: {chunk_size}")
-        return FixedSizeChunk(chunk_size=chunk_size)
-
-    elif chunk_mode == 'full':
-        logger.debug("使用全文分块")
-        return FullChunk()
-
-    elif chunk_mode == 'recursive':
-        chunk_size = int(request.form.get('chunk_size', 256))
-        chunk_overlap = int(request.form.get('chunk_overlap', 128))
-        logger.debug(f"使用递归分块，大小: {chunk_size}, 重叠: {chunk_overlap}")
-        return RecursiveChunk(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-
-    elif chunk_mode == 'semantic':
-        semantic_chunk_model = request.form.get('semantic_chunk_model')
-        semantic_chunk_model_base_url = request.form.get(
-            'semantic_chunk_model_base_url')
-        logger.debug(f"使用语义分块，模型: {semantic_chunk_model}, URL: {semantic_chunk_model_base_url}")
-        semantic_chunk_model_api_key = request.form.get(
-            'semantic_chunk_model_api_key')
-        embeddings = OpenAIEmbeddings(
-            model=semantic_chunk_model,
-            api_key=semantic_chunk_model_api_key,
-            base_url=semantic_chunk_model_base_url,
-        )
-        return SemanticChunk(embeddings)
-    else:
-        error_msg = f"不支持的分块模式: {chunk_mode}"
-        logger.error(error_msg)
-        raise ValueError(error_msg)
-
-
-def process_documents(docs, knowledge_title, knowledge_id=None):
-    """
-    处理文档，添加元数据
-    """
-    logger.debug(f"处理文档元数据，标题: {knowledge_title}, ID: {knowledge_id}, 文档数量: {len(docs)}")
-    for doc in docs:
-        doc.metadata['knowledge_title'] = knowledge_title
-        if knowledge_id:
-            doc.metadata['knowledge_id'] = knowledge_id
-        doc.metadata['chunk_id'] = str(uuid.uuid4())
-    return docs
-
-
-def serialize_documents(docs):
-    """
-    将文档序列化为JSON格式
-    """
-    logger.debug(f"序列化 {len(docs)} 个文档")
-    serialized_docs = []
-    for doc in docs:
-        serialized_docs.append({
-            "page_content": doc.page_content,
-            "metadata": doc.metadata
-        })
-    return serialized_docs
 
 
 @rag_api_router.post("/naive_rag_test")
@@ -253,9 +118,10 @@ async def custom_content_ingest(request):
                                           title="自定义内容",
                                           knowledge_id=request.form.get('knowledge_id'))
         # 执行文档分块
-        chunker = get_chunker(chunk_mode, request)
+        chunker = RagService.get_chunker(chunk_mode, request)
         chunking_start_time = time.time()
         chunked_docs = chunker.chunk(docs)
+
         logger.debug(
             f"[{request_id}] 分块完成, 耗时: {time.time() - chunking_start_time:.2f}秒, 分块数: {len(chunked_docs)}")
 
@@ -267,7 +133,7 @@ async def custom_content_ingest(request):
             return json({
                 "status": "success",
                 "message": "",
-                "documents": serialize_documents(chunked_docs)
+                "documents": RagService.serialize_documents(chunked_docs)
             })
 
         # 执行文档存储
@@ -338,7 +204,7 @@ async def website_ingest(request):
             return json({
                 "status": "success",
                 "message": "",
-                "documents": serialize_documents(chunked_docs)
+                "documents": RagService.serialize_documents(chunked_docs)
             })
 
         # 执行文档存储
@@ -405,7 +271,7 @@ async def file_ingest(request):
 
             # 加载文件内容
             loading_start_time = time.time()
-            loader = get_file_loader(temp_path, file_extension, load_mode, request)
+            loader = RagService.get_file_loader(temp_path, file_extension, load_mode, request)
             docs = loader.load()
             logger.debug(
                 f"[{request_id}] 文件内容加载完成, 耗时: {time.time() - loading_start_time:.2f}秒, 文档数: {len(docs)}")
@@ -431,7 +297,7 @@ async def file_ingest(request):
                 return json({
                     "status": "success",
                     "message": "",
-                    "documents": serialize_documents(chunked_docs)
+                    "documents": RagService.serialize_documents(chunked_docs)
                 })
 
             # 执行文档存储
@@ -474,9 +340,9 @@ def prepare_documents_metadata(docs, is_preview, title, knowledge_id=None):
     mode = "预览" if is_preview else "正式处理"
     logger.debug(f"准备文档元数据 [{mode}], 标题: {title}, 知识ID: {knowledge_id}, 文档数: {len(docs)}")
     if is_preview:
-        return process_documents(docs, title)
+        return RagService.process_documents(docs, title)
     else:
-        return process_documents(docs, title, knowledge_id)
+        return RagService.process_documents(docs, title, knowledge_id)
 
 
 def perform_chunking(docs, chunk_mode, request, is_preview, content_type):
@@ -496,7 +362,7 @@ def perform_chunking(docs, chunk_mode, request, is_preview, content_type):
     mode = "预览" if is_preview else "正式处理"
     logger.debug(f"{content_type}分块 [{mode}], 模式: {chunk_mode}, 文档数: {len(docs)}")
 
-    chunker = get_chunker(chunk_mode, request)
+    chunker = RagService.get_chunker(chunk_mode, request)
     chunked_docs = chunker.chunk(docs)
     logger.debug(f"{content_type}分块完成, 输入文档: {len(docs)}, 输出分块: {len(chunked_docs)}")
     return chunked_docs
