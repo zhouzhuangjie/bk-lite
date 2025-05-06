@@ -8,6 +8,7 @@ from src.chunk.fixed_size_chunk import FixedSizeChunk
 from src.chunk.full_chunk import FullChunk
 from src.chunk.recursive_chunk import RecursiveChunk
 from src.chunk.semantic_chunk import SemanticChunk
+from src.embed.embed_builder import EmbedBuilder
 from src.loader.doc_loader import DocLoader
 from src.loader.excel_loader import ExcelLoader
 from src.loader.image_loader import ImageLoader
@@ -77,11 +78,9 @@ class RagService:
             logger.debug(f"使用语义分块，模型: {semantic_chunk_model}, URL: {semantic_chunk_model_base_url}")
             semantic_chunk_model_api_key = request.form.get(
                 'semantic_chunk_model_api_key')
-            embeddings = OpenAIEmbeddings(
-                model=semantic_chunk_model,
-                api_key=semantic_chunk_model_api_key,
-                base_url=semantic_chunk_model_base_url,
-            )
+            embeddings = EmbedBuilder.get_embed(protocol=semantic_chunk_model_base_url, model_name=semantic_chunk_model,
+                                                model_api_key=semantic_chunk_model_api_key,
+                                                model_base_url=semantic_chunk_model_base_url)
             return SemanticChunk(embeddings)
         else:
             error_msg = f"不支持的分块模式: {chunk_mode}"
@@ -97,7 +96,12 @@ class RagService:
         logger.debug(f"为文件 {file_path} (类型: {file_extension}) 初始化加载器")
         # 初始化OCR
         ocr = None
-        ocr = cls.load_ocr(request)
+        ocr = cls.load_ocr(ocr_type=request.form.get('ocr_type'),
+                           olm_base_url=request.form.get('olm_base_url'),
+                           olm_api_key=request.form.get('olm_api_key'),
+                           olm_model=request.form.get('olm_model'),
+                           azure_base_url=request.form.get('azure_base_url'),
+                           azure_api_key=request.form.get('azure_api_key'))
         if ocr:
             logger.debug(f"OCR类型: {type(ocr).__name__} 初始化成功")
 

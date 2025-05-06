@@ -83,7 +83,6 @@ async def qa_pair_generate(request, body: QAEnhanceRequest):
     :param request:
     :return:
     """
-    logger.info(f"问答对生成请求开始, 参数: {body}")
     qa_enhance = QAEnhance(body)
     result = qa_enhance.generate_qa()
     return json({"status": "success", "message": result})
@@ -133,7 +132,8 @@ async def custom_content_ingest(request):
             return json({
                 "status": "success",
                 "message": "",
-                "documents": RagService.serialize_documents(chunked_docs)
+                "documents": RagService.serialize_documents(chunked_docs),
+                "chunks_size": len(chunked_docs)
             })
 
         # 执行文档存储
@@ -204,7 +204,8 @@ async def website_ingest(request):
             return json({
                 "status": "success",
                 "message": "",
-                "documents": RagService.serialize_documents(chunked_docs)
+                "documents": RagService.serialize_documents(chunked_docs),
+                "chunks_size": len(chunked_docs)
             })
 
         # 执行文档存储
@@ -297,7 +298,8 @@ async def file_ingest(request):
                 return json({
                     "status": "success",
                     "message": "",
-                    "documents": RagService.serialize_documents(chunked_docs)
+                    "documents": RagService.serialize_documents(chunked_docs),
+                    "chunks_size": len(chunked_docs)
                 })
 
             # 执行文档存储
@@ -434,7 +436,7 @@ async def delete_doc(request, body: ElasticSearchDocumentDeleteRequest):
     :return:
     """
     request_id = str(uuid.uuid4())[:8]
-    logger.info(f"[{request_id}] 删除文档请求, 索引名: {body.index_name}, 文档ID: {body.knowledge_id}")
+    logger.info(f"[{request_id}] 删除文档请求, 索引名: {body.index_name}, 过滤条件: {body.metadata_filter}")
     try:
         start_time = time.time()
         rag = ElasticSearchRag()
