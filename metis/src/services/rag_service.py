@@ -1,3 +1,4 @@
+import time
 import uuid
 from typing import Optional
 
@@ -9,6 +10,7 @@ from src.chunk.full_chunk import FullChunk
 from src.chunk.recursive_chunk import RecursiveChunk
 from src.chunk.semantic_chunk import SemanticChunk
 from src.embed.embed_builder import EmbedBuilder
+from src.entity.rag.elasticsearch_store_request import ElasticSearchStoreRequest
 from src.loader.doc_loader import DocLoader
 from src.loader.excel_loader import ExcelLoader
 from src.loader.image_loader import ImageLoader
@@ -19,9 +21,90 @@ from src.loader.text_loader import TextLoader
 from src.ocr.azure_ocr import AzureOCR
 from src.ocr.olm_ocr import OlmOcr
 from src.ocr.pp_ocr import PPOcr
+from src.rag.native_rag.elasticsearch_rag import ElasticSearchRag
 
 
 class RagService:
+    @classmethod
+    def store_documents_to_es(cls, chunked_docs, knowledge_base_id, embed_model_base_url,
+                              embed_model_api_key, embed_model_name, metadata={}):
+        """
+        将文档存储到ElasticSearch
+
+        Args:
+            chunked_docs: 分块后的文档
+            knowledge_base_id: 知识库ID
+            embed_model_base_url: 嵌入模型基础URL
+            embed_model_api_key: 嵌入模型API密钥
+            embed_model_name: 嵌入模型名称
+            metadata: 额外的元数据
+        """
+        logger.debug(
+            f"存储文档到ES, 知识库ID: {knowledge_base_id}, 模型名称: {embed_model_name}, 分块数: {len(chunked_docs)}")
+
+        if metadata:
+            logger.debug(f"应用额外元数据: {metadata}")
+            for doc in chunked_docs:
+                doc.metadata.update(metadata)
+
+        elasticsearch_store_request = ElasticSearchStoreRequest(
+            index_name=knowledge_base_id,
+            docs=chunked_docs,
+            embed_model_base_url=embed_model_base_url,
+            embed_model_api_key=embed_model_api_key,
+            embed_model_name=embed_model_name,
+        )
+
+        start_time = time.time()
+        rag = ElasticSearchRag()
+        rag.ingest(elasticsearch_store_request)
+        elapsed_time = time.time() - start_time
+        logger.debug(f"ES存储完成, 耗时: {elapsed_time:.2f}秒")
+
+    @classmethod
+    def perform_chunking(cls, docs, chunk_mode, request, is_preview, content_type):
+        """
+        执行文档分块并记录相关日志
+
+        Args:
+            docs: 文档列表
+            chunk_mode: 分块模式
+            request: HTTP请求对象
+            is_preview: 是否为预览模式
+            content_type: 内容类型
+
+        Returns:
+            分块后的文档列表
+        """
+        mode = "预览" if is_preview else "正式处理"
+        logger.debug(f"{content_type}分块 [{mode}], 模式: {chunk_mode}, 文档数: {len(docs)}")
+
+        chunker = RagService.get_chunker(chunk_mode, request)
+        chunked_docs = chunker.chunk(docs)
+        logger.debug(f"{content_type}分块完成, 输入文档: {len(docs)}, 输出分块: {len(chunked_docs)}")
+        return chunked_docs
+
+    @classmethod
+    def prepare_documents_metadata(cls, docs, is_preview, title, knowledge_id=None):
+        """
+        准备文档的元数据
+
+        Args:
+            docs: 文档列表
+            is_preview: 是否为预览模式
+            title: 文档标题
+            knowledge_id: 知识库ID，预览模式下不需要
+
+        Returns:
+            处理后的文档列表
+        """
+        mode = "预览" if is_preview else "正式处理"
+        logger.debug(f"准备文档元数据 [{mode}], 标题: {title}, 知识ID: {knowledge_id}, 文档数: {len(docs)}")
+        if is_preview:
+            return cls.process_documents(docs, title)
+        else:
+            return cls.process_documents(docs, title, knowledge_id)
+
     @classmethod
     def serialize_documents(cls, docs):
         """
@@ -47,7 +130,7 @@ class RagService:
             if knowledge_id:
                 doc.metadata['knowledge_id'] = knowledge_id
             doc.metadata['segment_id'] = str(uuid.uuid4())
-            doc.metadata['segment_number'] = index
+            doc.metadata['segment_number'] = str(index)
         return docs
 
     @classmethod

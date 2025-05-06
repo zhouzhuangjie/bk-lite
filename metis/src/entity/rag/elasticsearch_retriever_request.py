@@ -27,3 +27,5 @@ class ElasticSearchRetrieverRequest(BaseModel):
     rerank_model_api_key: str = ''
     rerank_model_name: str = ''
     rerank_top_k: int = 5
+
+    enable_rag_source: bool = False

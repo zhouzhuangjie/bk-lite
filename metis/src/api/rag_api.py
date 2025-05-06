@@ -112,7 +112,7 @@ async def custom_content_ingest(request):
         logger.debug(f"[{request_id}] 加载内容完成, 文档数: {len(docs)}")
 
         # 处理文档元数据
-        docs = prepare_documents_metadata(docs,
+        docs = RagService.prepare_documents_metadata(docs,
                                           is_preview=is_preview,
                                           title="自定义内容",
                                           knowledge_id=request.form.get('knowledge_id'))
@@ -138,7 +138,7 @@ async def custom_content_ingest(request):
 
         # 执行文档存储
         embedding_start_time = time.time()
-        store_documents_to_es(
+        RagService.store_documents_to_es(
             chunked_docs=chunked_docs,
             knowledge_base_id=request.form.get('knowledge_base_id'),
             embed_model_base_url=request.form.get('embed_model_base_url'),
@@ -185,14 +185,14 @@ async def website_ingest(request):
             f"[{request_id}] 网站内容加载完成, 耗时: {time.time() - loading_start_time:.2f}秒, 文档数: {len(docs)}")
 
         # 处理文档元数据
-        docs = prepare_documents_metadata(docs,
+        docs = RagService.prepare_documents_metadata(docs,
                                           is_preview=is_preview,
                                           title=url,
                                           knowledge_id=request.form.get('knowledge_id'))
 
         # 执行文档分块并记录日志
         chunking_start_time = time.time()
-        chunked_docs = perform_chunking(
+        chunked_docs = RagService.perform_chunking(
             docs, chunk_mode, request, is_preview, "网站内容")
         logger.debug(
             f"[{request_id}] 网站内容分块完成, 耗时: {time.time() - chunking_start_time:.2f}秒, 分块数: {len(chunked_docs)}")
@@ -210,7 +210,7 @@ async def website_ingest(request):
 
         # 执行文档存储
         embedding_start_time = time.time()
-        store_documents_to_es(
+        RagService.store_documents_to_es(
             chunked_docs=chunked_docs,
             knowledge_base_id=request.form.get('knowledge_base_id'),
             embed_model_base_url=request.form.get('embed_model_base_url'),
@@ -278,14 +278,14 @@ async def file_ingest(request):
                 f"[{request_id}] 文件内容加载完成, 耗时: {time.time() - loading_start_time:.2f}秒, 文档数: {len(docs)}")
 
             # 处理文档元数据
-            docs = prepare_documents_metadata(docs,
+            docs = RagService.prepare_documents_metadata(docs,
                                               is_preview=is_preview,
                                               title=file.name,
                                               knowledge_id=request.form.get('knowledge_id'))
 
             # 执行文档分块并记录日志
             chunking_start_time = time.time()
-            chunked_docs = perform_chunking(
+            chunked_docs = RagService.perform_chunking(
                 docs, chunk_mode, request, is_preview, "文件内容")
             logger.debug(
                 f"[{request_id}] 文件内容分块完成, 耗时: {time.time() - chunking_start_time:.2f}秒, 分块数: {len(chunked_docs)}")
@@ -304,7 +304,7 @@ async def file_ingest(request):
 
             # 执行文档存储
             embedding_start_time = time.time()
-            store_documents_to_es(
+            RagService.store_documents_to_es(
                 chunked_docs=chunked_docs,
                 knowledge_base_id=request.form.get('knowledge_base_id'),
                 embed_model_base_url=request.form.get('embed_model_base_url'),
@@ -324,86 +324,6 @@ async def file_ingest(request):
         return json({"status": "error", "message": str(e)})
 
 
-# 添加以下辅助函数，使代码更加模块化和易于维护
-
-def prepare_documents_metadata(docs, is_preview, title, knowledge_id=None):
-    """
-    准备文档的元数据
-
-    Args:
-        docs: 文档列表
-        is_preview: 是否为预览模式
-        title: 文档标题
-        knowledge_id: 知识库ID，预览模式下不需要
-
-    Returns:
-        处理后的文档列表
-    """
-    mode = "预览" if is_preview else "正式处理"
-    logger.debug(f"准备文档元数据 [{mode}], 标题: {title}, 知识ID: {knowledge_id}, 文档数: {len(docs)}")
-    if is_preview:
-        return RagService.process_documents(docs, title)
-    else:
-        return RagService.process_documents(docs, title, knowledge_id)
-
-
-def perform_chunking(docs, chunk_mode, request, is_preview, content_type):
-    """
-    执行文档分块并记录相关日志
-
-    Args:
-        docs: 文档列表
-        chunk_mode: 分块模式
-        request: HTTP请求对象
-        is_preview: 是否为预览模式
-        content_type: 内容类型
-
-    Returns:
-        分块后的文档列表
-    """
-    mode = "预览" if is_preview else "正式处理"
-    logger.debug(f"{content_type}分块 [{mode}], 模式: {chunk_mode}, 文档数: {len(docs)}")
-
-    chunker = RagService.get_chunker(chunk_mode, request)
-    chunked_docs = chunker.chunk(docs)
-    logger.debug(f"{content_type}分块完成, 输入文档: {len(docs)}, 输出分块: {len(chunked_docs)}")
-    return chunked_docs
-
-
-def store_documents_to_es(chunked_docs, knowledge_base_id, embed_model_base_url,
-                          embed_model_api_key, embed_model_name, metadata={}):
-    """
-    将文档存储到ElasticSearch
-
-    Args:
-        chunked_docs: 分块后的文档
-        knowledge_base_id: 知识库ID
-        embed_model_base_url: 嵌入模型基础URL
-        embed_model_api_key: 嵌入模型API密钥
-        embed_model_name: 嵌入模型名称
-        metadata: 额外的元数据
-    """
-    logger.debug(
-        f"存储文档到ES, 知识库ID: {knowledge_base_id}, 模型名称: {embed_model_name}, 分块数: {len(chunked_docs)}")
-
-    if metadata:
-        logger.debug(f"应用额外元数据: {metadata}")
-        for doc in chunked_docs:
-            doc.metadata.update(metadata)
-
-    elasticsearch_store_request = ElasticSearchStoreRequest(
-        index_name=knowledge_base_id,
-        docs=chunked_docs,
-        embed_model_base_url=embed_model_base_url,
-        embed_model_api_key=embed_model_api_key,
-        embed_model_name=embed_model_name,
-    )
-
-    start_time = time.time()
-    rag = ElasticSearchRag()
-    rag.ingest(elasticsearch_store_request)
-    elapsed_time = time.time() - start_time
-    logger.debug(f"ES存储完成, 耗时: {elapsed_time:.2f}秒")
 
 
 @rag_api_router.post("/delete_index")
@@ -480,7 +400,7 @@ async def list_rag_document(request, body: ElasticSearchDocumentListRequest):
 @validate(json=ElasticsearchDocumentMetadataUpdateRequest)
 async def update_rag_document_metadata(request, body: ElasticsearchDocumentMetadataUpdateRequest):
     request_id = str(uuid.uuid4())[:8]
-    logger.info(f"[{request_id}] 更新文档元数据请求, 索引名: {body.index_name}, 文档ID: {body.document_id}")
+    logger.info(f"[{request_id}] 更新文档元数据请求, 索引名: {body.index_name}, 过滤条件: {body.metadata_filter}")
     try:
         start_time = time.time()
         rag = ElasticSearchRag()

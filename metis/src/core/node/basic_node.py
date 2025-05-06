@@ -70,8 +70,41 @@ class BasicNode:
                     <knowledge>
                         <ref_id>{index + 1}</ref_id>
                         <title>{r.metadata['_source']['metadata']['knowledge_title']}</title>
+                        <knowledge_id>{r.metadata['_source']['metadata']['knowledge_id']}</knowledge_id>
+                        <chunk_number>{r.metadata['_source']['metadata']['chunk_number']}</chunk_number>
+                        <segment_number>{r.metadata['_source']['metadata']['segment_number']}</segment_number>
+                        <segment_id>{r.metadata['_source']['metadata']['segment_id']}</segment_id>
                         <content>{r.page_content}</content>
                     </knowledge>
+                """
+
+                if rag_search_request.enable_rag_source is True:
+                    rag_message += f"""
+                    在回复中,请使用XML格式返回参考资料,并且在每个参考资料的前面加上序号,例如:[1]、[2]、[3]等，指观点引用自哪份材料。
+                    在回复我的信息最后进行补充：
+                        
+                        这里是回复的内容
+                        ------------------
+                        参考资料:
+                            <result>
+                                <rag>
+                                    <ref_id>1</ref_id>
+                                    <knowledge_id>1</knowledge_id>
+                                    <segment_number>1</segment_number>
+                                    <chunk_number>1</chunk_number>
+                                    <segment_id>1</segment_id>
+                                    <title>知识标题</title>
+                                </rag>
+                                <rag>
+                                    <ref_id>12</ref_id>
+                                    <knowledge_id>0</knowledge_id>
+                                    <segment_number>13</segment_number>
+                                    <chunk_number>1</chunk_number>
+                                    <segment_id>5</segment_id>
+                                    <title>知识标题</title>
+                                </rag>                            
+                            </result>
+                    
                 """
             state["messages"].append(HumanMessage(content=rag_message))
         return state
