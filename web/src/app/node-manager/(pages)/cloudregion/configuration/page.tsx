@@ -14,7 +14,7 @@ import type {
   ConfigDate,
   SubRef,
 } from '@/app/node-manager/types/cloudregion';
-import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
+import useApiCloudRegion from '@/app/node-manager/api/cloudRegion';
 import useApiCollector from '@/app/node-manager/api/collector';
 import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 import MainLayout from '../mainlayout/layout';

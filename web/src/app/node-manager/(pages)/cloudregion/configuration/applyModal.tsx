@@ -11,7 +11,7 @@ import {
 import { useTranslation } from '@/utils/i18n';
 import type { GetProps } from 'antd';
 import { useApplyColumns } from '@/app/node-manager/hooks/configuration';
-import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
+import useApiCloudRegion from '@/app/node-manager/api/cloudRegion';
 import {
   NodeItemRes,
   MappedNodeItem,

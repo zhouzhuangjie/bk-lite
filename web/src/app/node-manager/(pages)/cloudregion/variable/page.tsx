@@ -9,7 +9,7 @@ import { useVarColumns } from '@/app/node-manager/hooks/variable';
 import type { GetProps } from 'antd';
 import MainLayout from '../mainlayout/layout';
 import { PlusOutlined } from '@ant-design/icons';
-import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
+import useApiCloudRegion from '@/app/node-manager/api/cloudRegion';
 import useApiClient from '@/utils/request';
 import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 import variableStyle from './index.module.scss';
@@ -72,7 +72,10 @@ const Variable = () => {
   const getTablelist = async (search = searchText) => {
     setLoading(true);
     try {
-      const res = await getVariableList(cloudId, search);
+      const res = await getVariableList({
+        cloud_region_id: cloudId,
+        search,
+      });
       const tempdata = res.map((item: any) => {
         return {
           ...item,
