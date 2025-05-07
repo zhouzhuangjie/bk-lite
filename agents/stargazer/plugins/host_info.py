@@ -18,7 +18,7 @@ class HostInfo:
         self.node_id = params["node_id"]
         self.username = params.get("username")
         self.password = params.get("password")
-        self.time_out = params.get("execute_timeout", 60)
+        self.time_out = int(params.get("execute_timeout", 60))
         self.command = params.get("command", self.script)
         self.nats_client = NATSClient()
 
