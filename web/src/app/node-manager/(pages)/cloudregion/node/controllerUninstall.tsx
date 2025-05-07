@@ -18,7 +18,7 @@ import {
   ModalRef,
   TableDataItem,
 } from '@/app/node-manager/types';
-import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
+import useApiCloudRegion from '@/app/node-manager/api/cloudRegion';
 import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 import { OPERATE_SYSTEMS } from '@/app/node-manager/constants/cloudregion';
 import { ControllerInstallFields } from '@/app/node-manager/types/cloudregion';

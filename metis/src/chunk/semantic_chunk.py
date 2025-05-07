@@ -25,6 +25,6 @@ class SemanticChunk:
         result_docs = []
         for segment_number, segment_docs in grouped_docs.items():
             for chunk_number, doc in enumerate(segment_docs):
-                doc.metadata['chunk_number'] = chunk_number
+                doc.metadata['chunk_number'] = str(chunk_number)
                 result_docs.append(doc)
         return split_docs

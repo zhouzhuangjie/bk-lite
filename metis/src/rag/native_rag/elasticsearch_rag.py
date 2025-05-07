@@ -74,7 +74,7 @@ class ElasticSearchRag:
         }
 
         # 执行更新
-        result = self.es.update_by_query(
+        self.es.update_by_query(
             index=req.index_name,
             body={**query, **update_script}
         )
