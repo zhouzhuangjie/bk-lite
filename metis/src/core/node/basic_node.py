@@ -68,6 +68,7 @@ class BasicNode:
                                    content: 参考资料的内容
                                    knowledge_id: 知识id
                                    chunk_number: 分块序号
+                                   chunk_id: 分块ID号
                                    segment_number: 分段序号
                                    segment_id: 分块ID
                                参考资料:
@@ -80,6 +81,7 @@ class BasicNode:
                         <title>{r.metadata['_source']['metadata']['knowledge_title']}</title>
                         <knowledge_id>{r.metadata['_source']['metadata']['knowledge_id']}</knowledge_id>
                         <chunk_number>{r.metadata['_source']['metadata']['chunk_number']}</chunk_number>
+                        <chunk_id>{r.metadata['_source']['metadata']['chunk_id']}</chunk_id>
                         <segment_number>{r.metadata['_source']['metadata']['segment_number']}</segment_number>
                         <segment_id>{r.metadata['_source']['metadata']['segment_id']}</segment_id>
                         <content>{r.page_content}</content>
@@ -102,6 +104,7 @@ class BasicNode:
                                 <knowledge_id>1</knowledge_id>
                                 <segment_number>1</segment_number>
                                 <chunk_number>1</chunk_number>
+                                <chunk_id>1</chunk_id>
                                 <segment_id>1</segment_id>
                                 <title>知识标题</title>
                             </rag>
@@ -110,6 +113,7 @@ class BasicNode:
                                 <knowledge_id>0</knowledge_id>
                                 <segment_number>13</segment_number>
                                 <chunk_number>1</chunk_number>
+                                <chunk_id>133</chunk_id>
                                 <segment_id>5</segment_id>
                                 <title>知识标题</title>
                             </rag>                            
