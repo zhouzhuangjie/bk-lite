@@ -12,5 +12,5 @@ ADD . .
 RUN pip install -r ./requirements/requirements-core.txt
 RUN pip install -r ./requirements/requirements-system_mgmt.txt
 
-RUN chmod +x ./support-files/docker/startup.sh
-ENTRYPOINT ["/bin/bash","/apps/support-files/docker/startup.sh"]
+RUN chmod +x ./support-files/docker/system.sh
+ENTRYPOINT ["/bin/bash","/apps/support-files/docker/system.sh"]

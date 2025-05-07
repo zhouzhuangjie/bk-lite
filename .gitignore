@@ -1,5 +1,4 @@
 .idea
-.vscode
 *.tar
 infra/support-files/images/keycloak/*.jar
 logs
@@ -7,6 +6,7 @@ logs
 __pycache__
 *.pyc
 *.pyo
+.DS_Store
 *.pyd
 *.egg-info
 *.egg
@@ -20,3 +20,4 @@ __pycache__
 *.coverage
 .pytest_cache
 *.hypothesis
+models/

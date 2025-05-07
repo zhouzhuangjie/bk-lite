@@ -24,7 +24,7 @@
     background: var(--color-bg-1);
 
     p {
-      color: var(--color-text-2);
+      color: var(--color-text-3);
     }
   }
 }
@@ -53,4 +53,16 @@
     padding: 2px 6px;
   }
 }
-  
+
+.chunkCard {
+  transition: all 0.3s ease;
+}
+
+.chunkCard:hover {
+  cursor: pointer;
+}
+
+.active {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-bg-active);
+}

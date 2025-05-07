@@ -43,7 +43,6 @@ const SelectorOperateModal: React.FC<OperateModalProps> = ({
     }
   }, [visible, selectedOptions]);
 
-  // 更新选项的逻辑
   const handleOptionSelect = (id: number) => {
     setTempSelectedOptions((prev) =>
       prev.includes(id)

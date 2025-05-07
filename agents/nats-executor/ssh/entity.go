@@ -9,7 +9,27 @@ type ExecuteRequest struct {
 }
 
 type ExecuteResponse struct {
-	Output     string `json:"output"`
+	Output     string `json:"result"`
 	InstanceId string `json:"instance_id"`
 	Success    bool   `json:"success"`
+}
+
+type DownloadFileRequest struct {
+	BucketName     string `json:"bucket_name"`
+	FileName       string `json:"file_name"`
+	FileKey        string `json:"file_key"`
+	TargetPath     string `json:"target_path"`
+	Host           string `json:"host"`
+	User           string `json:"user"`
+	Password       string `json:"password"`
+	ExecuteTimeout int    `json:"execute_timeout"`
+}
+
+type UploadFileRequest struct {
+	User           string `json:"user"`            // SSH 用户名
+	Host           string `json:"host"`            // 目标主机地址
+	Password       string `json:"password"`        // SSH 密码
+	SourcePath     string `json:"source_path"`     // 本地文件路径
+	TargetPath     string `json:"target_path"`     // 远程目标路径
+	ExecuteTimeout int    `json:"execute_timeout"` // 执行超时时间（秒）
 }

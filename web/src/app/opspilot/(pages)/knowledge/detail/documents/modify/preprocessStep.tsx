@@ -1,39 +1,73 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Switch, InputNumber, Select, Form, message, Radio, Button, Empty, Skeleton, List } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Card, InputNumber, Select, Form, Button, Empty, Skeleton, List, Image } from 'antd';
 import styles from './modify.module.scss';
+import type { StaticImageData } from 'next/image';
 import Icon from '@/components/icon';
 import { useTranslation } from '@/utils/i18n';
-import { PreviewData, ModelOption, PreprocessStepProps } from '@/app/opspilot/types/knowledge';
+import { useLocale } from '@/context/locale';
 import ContentDrawer from '@/components/content-drawer';
 import useContentDrawer from '@/app/opspilot/hooks/useContentDrawer';
+import { PreviewData } from '@/app/opspilot/types/knowledge';
+import fixedImg from '@/app/opspilot/img/fixed_chunk.png';
+import overlapImg from '@/app/opspilot/img/overlap_chunk.png';
+import semanticImgEn from '@/app/opspilot/img/semantic_chunk-en.png';
+import semanticImgZh from '@/app/opspilot/img/semantic_chunk-zh.png';
+import noneImg from '@/app/opspilot/img/none_chunk.png';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
 
 const { Option } = Select;
 
-const PreprocessStep: React.FC<PreprocessStepProps> = ({ onConfigChange, knowledgeSourceType, knowledgeDocumentIds, initialConfig }) => {
+const PreprocessStep: React.FC<{
+  knowledgeSourceType: string | null;
+  knowledgeDocumentIds: number[];
+  onConfigChange: (config: any) => void;
+  initialConfig: any;
+}> = ({ knowledgeSourceType, knowledgeDocumentIds, onConfigChange, initialConfig }) => {
   const { t } = useTranslation();
-  const { fetchSemanticModels, fetchOcrModels, fetchPreviewData } = useKnowledgeApi();
-  const [formData, setFormData] = useState({
-    chunkParsing: initialConfig?.chunkParsing ?? true,
-    chunkSize: initialConfig?.chunkSize ?? 256,
-    chunkOverlap: initialConfig?.chunkOverlap ?? 0,
-    semanticChunkParsing: initialConfig?.semanticChunkParsing ?? false,
-    semanticModel: initialConfig?.semanticModel ?? null,
-    ocrEnhancement: initialConfig?.ocrEnhancement ?? false,
-    ocrModel: initialConfig?.ocrModel ?? null,
-    excelParsing: initialConfig?.excelParsing ?? false,
-    excelParseOption: initialConfig?.excelParseOption ?? 'fullContent',
-  });
+  const { locale } = useLocale();
 
+  const chunkTypes: Array<{
+    key: keyof typeof chunkImages;
+    title: string;
+    desc: string;
+    icon: string;
+  }> = [
+    { 
+      key: 'fixed_size',
+      title: t('knowledge.documents.fixedChunk'), 
+      desc: t('knowledge.documents.fixedChunkDesc'), 
+      icon: 'fenge' 
+    },
+    { 
+      key: 'recursive',
+      title: t('knowledge.documents.overlapChunk'),
+      desc: t('knowledge.documents.overlapChunkDesc'), 
+      icon: 'paichuzhongdie' 
+    },
+    { 
+      key: 'semantic', 
+      title: t('knowledge.documents.semanticChunk'),
+      desc: t('knowledge.documents.semanticChunkDesc'), 
+      icon: 'yuyirenwu' 
+    },
+    { 
+      key: 'full', 
+      title: t('knowledge.documents.noChunk'), 
+      desc: t('knowledge.documents.noChunkDesc'), 
+      icon: 'fenge1' 
+    },
+  ];
+
+  const [chunkType, setChunkType] = useState<keyof typeof chunkImages>(
+    initialConfig.chunk_type || chunkTypes[0].key
+  );
+  const [formData, setFormData] = useState({
+    chunkSize: initialConfig?.general_parse_chunk_size || 256,
+    chunkOverlap: initialConfig?.general_parse_chunk_overlap || 0,
+    semanticModel: initialConfig?.semantic_chunk_parse_embedding_model || null,
+  });
   const [previewData, setPreviewData] = useState<PreviewData[]>([]);
-  const [semanticModels, setSemanticModels] = useState<ModelOption[]>([]);
-  const [ocrModels, setOcrModels] = useState<ModelOption[]>([]);
-  const [loadingSemanticModels, setLoadingSemanticModels] = useState<boolean>(true);
-  const [loadingOcrModels, setLoadingOcrModels] = useState<boolean>(true);
   const [loadingPreview, setLoadingPreview] = useState<boolean>(false);
-  const initialConfigRef = useRef(initialConfig);
-  const onConfigChangeRef = useRef(onConfigChange);
-  const [isInitialConfigApplied, setIsInitialConfigApplied] = useState(false);
 
   const {
     drawerVisible,
@@ -42,123 +76,92 @@ const PreprocessStep: React.FC<PreprocessStepProps> = ({ onConfigChange, knowled
     hideDrawer,
   } = useContentDrawer();
 
-  const generateConfig = (preview: boolean) => ({
-    preview,
-    knowledge_source_type: knowledgeSourceType,
-    knowledge_document_ids: preview ? [knowledgeDocumentIds[0]] : knowledgeDocumentIds,
-    enable_general_parse: formData.chunkParsing,
-    general_parse_chunk_size: formData.chunkSize,
-    general_parse_chunk_overlap: formData.chunkOverlap,
-    enable_semantic_chunk_parse: formData.semanticChunkParsing,
-    semantic_chunk_parse_embedding_model: formData.semanticModel,
-    enable_ocr_parse: formData.ocrEnhancement,
-    ocr_model: formData.ocrModel,
-    enable_excel_parse: formData.excelParsing,
-    excel_header_row_parse: formData.excelParseOption === 'headerRow',
-    excel_full_content_parse: formData.excelParseOption === 'fullContent',
-  });
+  const chunkImages = {
+    fixed_size: fixedImg,
+    recursive: overlapImg,
+    semantic: locale === 'en' ? semanticImgEn : semanticImgZh,
+    full: noneImg,
+  };
 
-  const generateConfigRef = useRef(generateConfig);
+  const chunkIntrdution = {
+    fixed_size: 'fixed',
+    recursive: 'overlap',
+    semantic: 'semantic',
+    full: 'none',
+  };
 
-  useEffect(() => {
-    generateConfigRef.current = generateConfig;
-  }, [formData, knowledgeSourceType, knowledgeDocumentIds]);
+  const { previewChunk, fetchEmbeddingModels } = useKnowledgeApi();
+  const [embeddingModels, setEmbeddingModels] = useState<{ id: string; name: string }[]>([]);
+  const [loadingModels, setLoadingModels] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchModels = async () => {
       try {
-        const [semanticData, ocrData] = await Promise.all([
-          fetchSemanticModels(),
-          fetchOcrModels()
-        ]);
-
-        setSemanticModels(semanticData);
-        setOcrModels(ocrData);
-        if (!isInitialConfigApplied && ocrData.length > 0) {
-          setFormData((prevState) => ({
-            ...prevState,
-            ocrModel: ocrData.find((model: any) => model.enabled)?.id ?? ocrData[0].id,
-          }));
-        }
+        const models = await fetchEmbeddingModels();
+        setEmbeddingModels(models);
       } catch {
-        message.error('Failed to fetch models');
+        setEmbeddingModels([]);
       } finally {
-        setLoadingSemanticModels(false);
-        setLoadingOcrModels(false);
+        setLoadingModels(false);
       }
     };
 
     fetchModels();
   }, []);
 
-  useEffect(() => {
-    if (
-      !loadingSemanticModels &&
-      !loadingOcrModels &&
-      initialConfigRef.current &&
-      Object.keys(initialConfigRef.current).length !== 0 &&
-      !isInitialConfigApplied
-    ) {
-      setFormData({
-        chunkParsing: initialConfigRef.current.chunkParsing,
-        chunkSize: initialConfigRef.current.chunkSize,
-        chunkOverlap: initialConfigRef.current.chunkOverlap,
-        semanticChunkParsing: initialConfigRef.current.semanticChunkParsing,
-        semanticModel: initialConfigRef.current.semanticModel,
-        ocrEnhancement: initialConfigRef.current.ocrEnhancement,
-        ocrModel: initialConfigRef.current.ocrModel,
-        excelParsing: initialConfigRef.current.excelParsing,
-        excelParseOption: initialConfigRef.current.excelParseOption,
-      });
-      setIsInitialConfigApplied(true);
-      initialConfigRef.current = null;
-    }
-  }, [loadingSemanticModels, loadingOcrModels, isInitialConfigApplied]);
+  const updateConfig = (updates: Partial<typeof formData> & { chunkType?: keyof typeof chunkImages }) => {
+    const newChunkType = updates.chunkType ?? chunkType;
+    const updatedFormData = {
+      chunkSize: updates.chunkType ? 256 : formData.chunkSize,
+      chunkOverlap: updates.chunkType ? 0 : formData.chunkOverlap,
+      semanticModel: updates.chunkType ? null : formData.semanticModel,
+      ...updates,
+    };
 
-  useEffect(() => {
-    const initConfigLen = initialConfigRef.current ? Object.keys(initialConfigRef.current).length : 0;
-    if (isInitialConfigApplied && initialConfig && initConfigLen) {
-      const config = generateConfigRef.current(false);
-      onConfigChangeRef.current(config);
-    }
-    if (initialConfig && initConfigLen === 0) {
-      const config = generateConfigRef.current(false);
-      onConfigChangeRef.current(config);
-    }
-  }, [formData, isInitialConfigApplied]);
+    setChunkType(newChunkType);
+    setFormData(updatedFormData);
 
+    onConfigChange({
+      knowledge_source_type: knowledgeSourceType,
+      knowledge_document_list: knowledgeDocumentIds,
+      general_parse_chunk_size: updatedFormData.chunkSize,
+      general_parse_chunk_overlap: updatedFormData.chunkOverlap,
+      semantic_chunk_parse_embedding_model: updatedFormData.semanticModel,
+      chunk_type: newChunkType,
+    });
+  };
+  
+  const handleChunkTypeChange = (type: keyof typeof chunkImages) => {
+    updateConfig({ chunkType: type });
+  };
+  
   const handleChange = (field: string, value: any) => {
-    setFormData((prevState) => ({
-      ...prevState,
-      [field]: value,
-    }));
+    updateConfig({ [field]: value });
   };
 
   const handlePreviewClick = async () => {
-    if (formData.semanticChunkParsing && !formData.semanticModel) {
-      message.error(t('knowledge.documents.selectSemanticError'));
-      return;
-    }
-    if (formData.ocrEnhancement && !formData.ocrModel) {
-      message.error(t('knowledge.documents.selectOcrError'));
-      return;
-    }
+    if (!knowledgeDocumentIds.length) return;
+
     setLoadingPreview(true);
     try {
-      const config = generateConfigRef.current(true);
-      const data = await fetchPreviewData(config);
+      const data = await previewChunk({
+        knowledge_source_type: knowledgeSourceType || 'file',
+        knowledge_document_id: knowledgeDocumentIds[0],
+        general_parse_chunk_size: formData.chunkSize,
+        general_parse_chunk_overlap: formData.chunkOverlap,
+        semantic_chunk_parse_embedding_model: formData.semanticModel,
+        chunk_type: chunkType,
+      });
 
-      if (Array.isArray(data)) {
-        setPreviewData(data.map((contxt, index) => ({
-          id: index,
-          content: contxt,
-          characters: contxt.length
-        })));
-      } else {
-        throw new Error(t('common.invalidData'));
-      }
+      const processedData = data.map((content: string, index: number) => ({
+        id: index,
+        content,
+        characters: content.length,
+      }));
+
+      setPreviewData(processedData);
     } catch {
-      message.error(t('common.fetchFailed'));
+      setPreviewData([]);
     } finally {
       setLoadingPreview(false);
     }
@@ -169,139 +172,146 @@ const PreprocessStep: React.FC<PreprocessStepProps> = ({ onConfigChange, knowled
   };
 
   return (
-    <div className="flex justify-between">
-      <div className={`flex-1 px-4 ${styles.config}`}>
-        <h2 className="text-base font-semibold mb-3">{t('knowledge.documents.general')}</h2>
-        <div className={`rounded-md p-4 mb-6 ${styles.configItem}`}>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-sm font-semibold">{t('knowledge.documents.chunkParsing')}</h3>
-            <Switch size="small" checked={formData.chunkParsing} onChange={(checked) => handleChange('chunkParsing', checked)} />
-          </div>
-          <p className="mb-4 text-sm">{t('knowledge.documents.chunkParsingDesc')}</p>
-          {formData.chunkParsing && (
-            <Form layout="vertical">
-              <Form.Item label={t('knowledge.documents.chunkSizeLabel')}>
-                <InputNumber
-                  style={{ width: '100%' }}
-                  min={0}
-                  value={formData.chunkSize}
-                  onChange={(value) => handleChange('chunkSize', value)}
-                  disabled={!formData.chunkParsing}
-                  changeOnWheel
-                />
-              </Form.Item>
-              <Form.Item label={t('knowledge.documents.chunkOverlap')}>
-                <InputNumber
-                  style={{ width: '100%' }}
-                  min={0}
-                  value={formData.chunkOverlap}
-                  onChange={(value) => handleChange('chunkOverlap', value)}
-                  disabled={!formData.chunkParsing}
-                  changeOnWheel
-                />
-              </Form.Item>
-            </Form>
-          )}
-        </div>
-        <div className={`rounded-md p-4 mb-6 ${styles.configItem}`}>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-sm font-semibold">{t('knowledge.documents.semChunkParsing')}</h3>
-            <Switch size="small" checked={formData.semanticChunkParsing} onChange={(checked) => handleChange('semanticChunkParsing', checked)} />
-          </div>
-          <p className="mb-4 text-sm">{t('knowledge.documents.semChunkParsingDesc')}</p>
-          {formData.semanticChunkParsing && (
-            <Form.Item label={t('common.model')}>
-              <Select
-                style={{ width: '100%' }}
-                disabled={!formData.semanticChunkParsing}
-                loading={loadingSemanticModels}
-                value={formData.semanticModel}
-                onChange={(value) => handleChange('semanticModel', value)}
-              >
-                {semanticModels.map((model) => (
-                  <Option key={model.id} value={model.id} disabled={!model.enabled}>{model.name}</Option>
-                ))}
-              </Select>
-            </Form.Item>
-          )}
-        </div>
-        <div className={`rounded-md p-4 mb-6 ${styles.configItem}`}>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-sm font-semibold">{t('knowledge.documents.ocrEnhancement')}</h3>
-            <Switch size="small" checked={formData.ocrEnhancement} onChange={(checked) => handleChange('ocrEnhancement', checked)} />
-          </div>
-          <p className="mb-4 text-sm">{t('knowledge.documents.ocrEnhancementDesc')}</p>
-          {formData.ocrEnhancement && (
-            <Form.Item label={`OCR ${t('common.model')}`}>
-              <Select
-                style={{ width: '100%' }}
-                disabled={!formData.ocrEnhancement}
-                loading={loadingOcrModels}
-                value={formData.ocrModel}
-                onChange={(value) => handleChange('ocrModel', value)}
-              >
-                {ocrModels.map((model) => (
-                  <Option key={model.id} value={model.id} disabled={!model.enabled}>{model.name}</Option>
-                ))}
-              </Select>
-            </Form.Item>
-          )}
-        </div>
-        <h2 className="text-base font-semibold mb-3">{t('knowledge.documents.advanceSettings')}</h2>
-        <div className={`rounded-md p-4 mb-6 ${styles.configItem}`}>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-sm font-semibold">{t('knowledge.documents.excelParsing')}</h3>
-            <Switch size="small" checked={formData.excelParsing} onChange={(checked) => handleChange('excelParsing', checked)} />
-          </div>
-          <p className="mb-4 text-sm">{t('knowledge.documents.excelParsingDesc')}</p>
-          {formData.excelParsing && (
-            <Radio.Group
-              onChange={(e) => handleChange('excelParseOption', e.target.value)}
-              value={formData.excelParseOption}
-              disabled={!formData.excelParsing}
-            >
-              <Radio value="headerRow">{t('knowledge.documents.headerRow')}</Radio>
-              <Radio value="fullContent">{t('knowledge.documents.fullContent')}</Radio>
-            </Radio.Group>
-          )}
-        </div>
-      </div>
-      <div className="flex-1 px-4">
-        <div className="flex justify-between">
-          <h2 className="text-base font-semibold mb-3">{t('knowledge.documents.preview')}</h2>
-          <Button type="primary" size="small" onClick={handlePreviewClick} loading={loadingPreview}>{t('knowledge.documents.viewChunk')}</Button>
-        </div>
-        {loadingPreview ? (
-          <List
-            itemLayout="vertical"
-            dataSource={[1, 2, 3]}
-            renderItem={() => (
-              <List.Item>
-                <Skeleton active />
-              </List.Item>
-            )}
-          />
-        ) : previewData.length > 0 ? (
-          previewData.map((item) => (
-            <div key={item.id} className={`rounded-md p-4 mb-3 ${styles.previewItem}`} onClick={() => handleContentClick(item.content)}>
-              <div className="flex justify-between items-center mb-2">
-                <span className={`text-xs flex items-center ${styles.number}`}>#{item.id.toString().padStart(3, '0')}</span>
-                <span className="flex items-center stext-sm"><Icon type="zifu" className="text-xl pr-1" />{item.characters} {t('knowledge.documents.characters')}</span>
-              </div>
-              <div>
-                <p>{item.content}</p>
-              </div>
+    <div>
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        {chunkTypes.map((type) => (
+          <Card
+            key={type.key}
+            className={`${styles.chunkCard} ${chunkType === type.key ? `${styles.active} border-2 border-blue-500 bg-blue-100` : ''}`}
+            onClick={() => handleChunkTypeChange(type.key)}
+          >
+            <div className="flex items-center mb-2">
+              <Icon type={type.icon} className="text-2xl mr-2" />
+              <h3 className="text-sm font-semibold">{type.title}</h3>
             </div>
-          ))
-        ) : (
-          <Empty description={t('common.noResult')} />
-        )}
+            <p className="text-xs text-[var(--color-text-3)]">{type.desc}</p>
+          </Card>
+        ))}
       </div>
-      <ContentDrawer
-        visible={drawerVisible}
-        onClose={hideDrawer}
-        content={drawerContent}
-      />
+      <div className="flex justify-between">
+        <div className={`flex-1 pr-4 ${styles.config}`}>
+          {chunkType !== 'full' && (
+            <>
+              <h2 className="text-sm font-semibold mb-3">{t('knowledge.documents.chunkParams')}</h2>
+              <div className={`rounded-md p-4 mb-6 ${styles.configItem}`}>
+                {chunkType === 'fixed_size' && (
+                  <Form layout="vertical">
+                    <Form.Item label={t('knowledge.documents.chunkSizeLabel')}>
+                      <InputNumber
+                        style={{ width: '100%' }}
+                        min={0}
+                        value={formData.chunkSize}
+                        onChange={(value) => handleChange('chunkSize', value)}
+                      />
+                    </Form.Item>
+                  </Form>
+                )}
+                {chunkType === 'recursive' && (
+                  <Form layout="vertical">
+                    <Form.Item label={t('knowledge.documents.chunkSizeLabel')}>
+                      <InputNumber
+                        style={{ width: '100%' }}
+                        min={0}
+                        value={formData.chunkSize}
+                        onChange={(value) => handleChange('chunkSize', value)}
+                      />
+                    </Form.Item>
+                    <Form.Item label={t('knowledge.documents.chunkOverlap')}>
+                      <InputNumber
+                        style={{ width: '100%' }}
+                        min={0}
+                        value={formData.chunkOverlap}
+                        onChange={(value) => handleChange('chunkOverlap', value)}
+                      />
+                    </Form.Item>
+                  </Form>
+                )}
+                {chunkType === 'semantic' && (
+                  <Form.Item label={t('common.model')}>
+                    <Select
+                      style={{ width: '100%' }}
+                      value={formData.semanticModel}
+                      onChange={(value) => handleChange('semanticModel', value)}
+                      loading={loadingModels}
+                    >
+                      {embeddingModels.map((model) => (
+                        <Option key={model.id} value={model.id}>
+                          {model.name}
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                )}
+              </div>
+            </>
+          )}
+          <h2 className="text-sm font-semibold mb-3">{t('knowledge.documents.chunkIllustration')}</h2>
+          <div className={`rounded-md p-4 mb-6 ${styles.configItem}`}>
+            <h2 className="mb-2">{t('knowledge.documents.descriptionTitle')}</h2>
+            <ul className="pl-[25px] list-disc text-xs text-[var(--color-text-3)] mb-4">
+              <li className="mb-2">
+                {t('knowledge.documents.formats')}: {t(`knowledge.documents.${chunkIntrdution[chunkType]}Formats`)}
+              </li>
+              <li className="mb-2">
+                {t('knowledge.documents.method')}: {t(`knowledge.documents.${chunkIntrdution[chunkType]}Method`)}
+              </li>
+              <li>
+                {t('knowledge.documents.introduction')}: {t(`knowledge.documents.${chunkIntrdution[chunkType]}Description`)}
+              </li>
+            </ul>
+            <h2 className="mb-2">{t('knowledge.documents.example')}</h2>
+            <div className="pl-[25px]">
+              <Image
+                src={
+                  typeof chunkImages[chunkType] === 'string'
+                    ? chunkImages[chunkType]
+                    : (chunkImages[chunkType] as StaticImageData)?.src || noneImg.src
+                }
+                alt="example"
+                className="rounded-md"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1">
+          <div className="flex justify-between">
+            <h2 className="text-sm font-semibold mb-3">{t('knowledge.documents.preview')}</h2>
+            <Button type="primary" size="small" onClick={handlePreviewClick} loading={loadingPreview}>
+              {t('knowledge.documents.viewChunk')}
+            </Button>
+          </div>
+          {loadingPreview ? (
+            <List
+              itemLayout="vertical"
+              dataSource={[1, 2, 3]}
+              renderItem={() => (
+                <List.Item>
+                  <Skeleton active />
+                </List.Item>
+              )}
+            />
+          ) : previewData.length > 0 ? (
+            previewData.map((item) => (
+              <div key={item.id} className={`rounded-md p-4 mb-3 ${styles.previewItem}`} onClick={() => handleContentClick(item.content)}>
+                <div className="flex justify-between items-center mb-2">
+                  <span className={`text-xs flex items-center ${styles.number}`}>#{item.id?.toString().padStart(3, '0')}</span>
+                  <span className="flex items-center text-sm">
+                    <Icon type="zifu" className="text-xl pr-1" />
+                    {item.characters} {t('knowledge.documents.characters')}
+                  </span>
+                </div>
+                <div>
+                  <p>{item.content}</p>
+                </div>
+              </div>
+            ))
+          ) : (
+            <Empty description={t('common.noResult')} />
+          )}
+        </div>
+        <ContentDrawer visible={drawerVisible} onClose={hideDrawer} content={drawerContent} />
+      </div>
     </div>
   );
 };
