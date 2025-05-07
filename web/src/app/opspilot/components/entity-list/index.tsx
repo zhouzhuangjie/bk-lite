@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Input, message, Spin, Modal } from 'antd';
+import { Input, message, Spin, Modal, Select, Space } from 'antd';
 import useApiClient from '@/utils/request';
 import { useTranslation } from '@/utils/i18n';
+import Icon from '@/components/icon';
 import styles from '@/app/opspilot/styles/common.module.scss';
 import PermissionWrapper from '@/components/permission';
 
@@ -11,13 +12,15 @@ const { Search } = Input;
 
 interface EntityListProps<T> {
   endpoint: string;
+  queryParams?: Record<string, any>;
   CardComponent: React.FC<any>;
   ModifyModalComponent: React.FC<any>;
   itemTypeSingle: string;
   beforeDelete?: (item: T, deleteCallback: () => void) => void;
+  onCreateFromTemplate?: (itemType: string) => void;
 }
 
-const EntityList = <T,>({ endpoint, CardComponent, ModifyModalComponent, itemTypeSingle, beforeDelete }: EntityListProps<T>) => {
+const EntityList = <T,>({ endpoint, queryParams = {}, CardComponent, ModifyModalComponent, itemTypeSingle, beforeDelete, onCreateFromTemplate }: EntityListProps<T>) => {
   const { t } = useTranslation();
   const { get, post, patch, del } = useApiClient();
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,6 +28,16 @@ const EntityList = <T,>({ endpoint, CardComponent, ModifyModalComponent, itemTyp
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<null | T>(null);
   const [loading, setLoading] = useState(false);
+  const [selectedType, setSelectedType] = useState<string | undefined>(undefined);
+
+  const typeOptions = [
+    { key: 2, title: t('skill.form.qaType') },
+    { key: 1, title: t('skill.form.toolsType') },
+  ];
+
+  const handleTypeChange = (value: string | undefined) => {
+    setSelectedType(value);
+  };
 
   useEffect(() => {
     fetchItems();
@@ -33,7 +46,8 @@ const EntityList = <T,>({ endpoint, CardComponent, ModifyModalComponent, itemTyp
   const fetchItems = async () => {
     setLoading(true);
     try {
-      const data = await get(`${endpoint}`);
+      const queryString = new URLSearchParams(queryParams).toString();
+      const data = await get(`${endpoint}?${queryString}`);
       setItems(Array.isArray(data) ? data : []);
     } catch {
       message.error(t('common.fetchFailed'));
@@ -101,37 +115,91 @@ const EntityList = <T,>({ endpoint, CardComponent, ModifyModalComponent, itemTyp
     }
   };
 
+  const handleCreateFromTemplate = () => {
+    if (onCreateFromTemplate) {
+      onCreateFromTemplate(itemTypeSingle);
+    }
+  };
+
   const filteredItems = items.filter(item =>
-    (item as any).name?.toLowerCase().includes(searchTerm.toLowerCase())
+    (item as any).name?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+    (!selectedType || (item as any).skill_type === selectedType)
   );
 
   return (
     <div className="w-full h-full">
       <div className="flex justify-end mb-4">
-        <Search
-          allowClear
-          enterButton
-          placeholder={`${t('common.search')}...`}
-          className="w-60"
-          onSearch={handleSearch}
-        />
+        {itemTypeSingle === 'skill' ? (
+          <Space.Compact>
+            <Select
+              allowClear
+              placeholder={t('common.select')}
+              className="w-40"
+              onChange={handleTypeChange}
+              options={typeOptions.map(option => ({ value: option.key, label: option.title }))}
+            />
+            <Search
+              allowClear
+              enterButton
+              placeholder={`${t('common.search')}...`}
+              className="w-60"
+              onSearch={handleSearch}
+            />
+          </Space.Compact>
+        ) : (
+          <Search
+            allowClear
+            enterButton
+            placeholder={`${t('common.search')}...`}
+            className="w-60"
+            onSearch={handleSearch}
+          />
+        )}
       </div>
       <Spin spinning={loading}>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
-          <PermissionWrapper
-            requiredPermissions={['Add']}
-            className={`shadow-md p-4 rounded-xl flex items-center justify-center cursor-pointer ${styles.addNew}`}
-          >
-            <div
-              className="w-full h-full flex items-center justify-center"
-              onClick={() => { setIsModalVisible(true); setEditingItem(null); }}
+          {itemTypeSingle === 'skill' ? (
+            <PermissionWrapper
+              requiredPermissions={['Add']}
+              className={`shadow-md p-4 rounded-xl flex items-center justify-center cursor-pointer ${styles.addNew}`}
             >
-              <div className="text-center">
-                <div className="text-2xl">+</div>
-                <div className="mt-2">{t('common.addNew')}</div>
+              <div className="w-full h-full flex flex-col items-center justify-center min-h-[150px] pl-10">
+                <div
+                  className="w-full flex items-center justify-start cursor-pointer hover:text-[var(--color-primary)]"
+                  onClick={() => { setIsModalVisible(true); setEditingItem(null); }}
+                >
+                  <div className="flex items-start mb-4">
+                    <Icon type="xinzeng1" className="text-xl mr-2" />
+                    <div className="text-left">{t('skill.createBlankAgent')}</div>
+                  </div>
+                </div>
+                <div
+                  className="w-full flex items-center justify-start cursor-pointer hover:text-[var(--color-primary)]"
+                  onClick={handleCreateFromTemplate}
+                >
+                  <div className="flex items-start">
+                    <Icon type="chuangjianpushu-xianxing" className="text-xl mr-2" />
+                    <div className="text-left">{t('skill.createFromTemplate')}</div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </PermissionWrapper>
+            </PermissionWrapper>
+          ) : (
+            <PermissionWrapper
+              requiredPermissions={['Add']}
+              className={`shadow-md p-4 rounded-xl flex items-center justify-center cursor-pointer ${styles.addNew}`}
+            >
+              <div
+                className="w-full h-full flex items-center justify-center min-h-[150px]"
+                onClick={() => { setIsModalVisible(true); setEditingItem(null); }}
+              >
+                <div className="text-center">
+                  <div className='2xl'>+</div>
+                  <div className="mt-2">{t('common.addNew')}</div>
+                </div>
+              </div>
+            </PermissionWrapper>
+          )}
           {filteredItems.map((item, index) => (
             <CardComponent
               key={(item as any).id}

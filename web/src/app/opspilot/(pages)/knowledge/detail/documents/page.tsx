@@ -109,6 +109,36 @@ const DocumentsPage: React.FC = () => {
       },
     },
     {
+      title: t('knowledge.documents.extractionMethod'),
+      key: 'mode',
+      dataIndex: 'mode',
+      render: (_, { mode }) => {
+        const modeMap: { [key: string]: string } = {
+          'full': t('knowledge.documents.fullTextExtraction'),
+          'paragraph': t('knowledge.documents.chapterExtraction'),
+          'excel_full_content_parse': t('knowledge.documents.worksheetExtraction'),
+          'excel_header_row_parse': t('knowledge.documents.rowExtraction'),
+        };
+        const text = modeMap[mode] || t('knowledge.documents.fullTextExtraction');
+        return <span>{text}</span>;
+      },
+    },
+    {
+      title: t('knowledge.documents.chunkingMethod'),
+      key: 'chunk_type',
+      dataIndex: 'chunk_type',
+      render: (_, { chunk_type }) => {
+        const chunkMap: { [key: string]: string } = {
+          'fixed_size': t('knowledge.documents.fixedChunk'),
+          'recursive': t('knowledge.documents.overlapChunk'),
+          'semantic': t('knowledge.documents.semanticChunk'),
+          'full': t('knowledge.documents.noChunk'),
+        };
+        const text = chunkMap[chunk_type] || t('knowledge.documents.fixedChunk');
+        return <span>{text}</span>;
+      },
+    },
+    {
       title: t('knowledge.documents.actions'),
       key: 'action',
       render: (_, record) => (
@@ -155,26 +185,7 @@ const DocumentsPage: React.FC = () => {
   }
 
   const handleSetClick = (record: any) => {
-    const config = {
-      chunkParsing: record.enable_general_parse,
-      chunkSize: record.general_parse_chunk_size,
-      chunkOverlap: record.general_parse_chunk_overlap,
-      semanticChunkParsing: record.enable_semantic_chunk_parse,
-      semanticModel: record.semantic_chunk_parse_embedding_model,
-      ocrEnhancement: record.enable_ocr_parse,
-      ocrModel: record.ocr_model,
-      excelParsing: record.enable_excel_parse,
-      excelParseOption: record.excel_header_row_parse ? 'headerRow' : 'fullContent',
-    };
-    const queryParams = new URLSearchParams({
-      id: id || '',
-      documentId: record.id?.toString() || '',
-      name: name || '',
-      desc: desc || '',
-      type: activeTabKey,
-      config: JSON.stringify(config),
-    });
-    router.push(`/opspilot/knowledge/detail/documents/modify?${queryParams.toString()}`);
+    router.push(`/opspilot/knowledge/detail/documents/modify?type=${activeTabKey}&id=${id}&name=${name}&desc=${desc}&documentIds=${record.id}`);
   };
 
   const handleDelete = (keys: React.Key[]) => {
@@ -185,8 +196,7 @@ const DocumentsPage: React.FC = () => {
       onOk: async () => {
         try {
           await batchDeleteDocuments(keys, id);
-          const newData = tableData.filter(item => !keys.includes(item.id));
-          setTableData(newData);
+          fetchData();
           setSelectedRowKeys([]);
           message.success(t('common.delSuccess'));
         } catch {
@@ -215,6 +225,10 @@ const DocumentsPage: React.FC = () => {
         setIsTrainLoading(false);
       }
     }
+  };
+
+  const handleBatchSet = async (keys: React.Key[]) => {
+    router.push(`/opspilot/knowledge/detail/documents/modify?type=${activeTabKey}&id=${id}&name=${name}&desc=${desc}&documentIds=${keys.join(',')}`);
   };
 
   const handleSearch = (value: string) => {
@@ -295,7 +309,7 @@ const DocumentsPage: React.FC = () => {
   };
 
   const batchOperationMenu = (
-    <Menu className={styles.menuContainer}>
+    <Menu className={styles.batchOperationMenu}>
       <Menu.Item key="batchTrain">
         <PermissionWrapper requiredPermissions={['Train']}>
           <Button
@@ -320,6 +334,19 @@ const DocumentsPage: React.FC = () => {
             disabled={!selectedRowKeys.length}
           >
             {t('common.batchDelete')}
+          </Button>
+        </PermissionWrapper>
+      </Menu.Item>
+      <Menu.Item key="batchSet">
+        <PermissionWrapper requiredPermissions={['Set']}>
+          <Button
+            type="text"
+            className="w-full"
+            icon={<TrademarkOutlined />}
+            onClick={() => handleBatchSet(selectedRowKeys)}
+            disabled={!selectedRowKeys.length}
+          >
+            {t('knowledge.documents.batchSet')}
           </Button>
         </PermissionWrapper>
       </Menu.Item>

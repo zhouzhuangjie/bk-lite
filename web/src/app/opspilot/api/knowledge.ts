@@ -186,9 +186,62 @@ export const useKnowledgeApi = () => {
     return post('/opspilot/bot_mgmt/history/remove_tag/', { tag_id: tagId });
   };
 
+  /**
+   * Parses content for knowledge documents.
+   */
+  const parseContent = async (params: any): Promise<void> => {
+    return post('/opspilot/knowledge_mgmt/knowledge_document/update_parse_settings/', params);
+  };
+
+  /**
+   * Chunks content for knowledge documents.
+   */
+  const updateChunkSettings = async (params: {
+    knowledge_source_type: string;
+    knowledge_document_list: number[];
+    chunk_size: number;
+    chunk_overlap: number;
+    semantic_embedding_model: number | null;
+    chunk_type: string;
+  }): Promise<any> => {
+    return post('/opspilot/knowledge_mgmt/knowledge_document/update_chunk_settings/', params);
+  };
+
+  /**
+   * Previews chunked data for a document.
+   */
+  const previewChunk = async (params: {
+    knowledge_source_type: string;
+    knowledge_document_id: number;
+    general_parse_chunk_size: number;
+    general_parse_chunk_overlap: number;
+    semantic_chunk_parse_embedding_model: number | null;
+    chunk_type: string;
+  }): Promise<any[]> => {
+    return post('/opspilot/knowledge_mgmt/knowledge_document/preview_chunk/', params);
+  };
+
+  const getDocListConfig = async (params: any) => {
+    return post('/opspilot/knowledge_mgmt/knowledge_document/get_doc_list_config/', params);
+  };
+
+  /**
+   * Fetches configuration for a single document by ID.
+   */
+  const getDocumentConfig = async (id: number): Promise<any> => {
+    return get(`/opspilot/knowledge_mgmt/knowledge_document/${id}/`);
+  };
+
+  /**
+   * Fetches tasks assigned to the current user.
+   */
+  const fetchMyTasks = async (params: any): Promise<any[]> => {
+    return get('/opspilot/knowledge_mgmt/knowledge_document/get_my_tasks/',  { params });
+  };
+
   return {
     fetchEmbeddingModels,
-    fetchKnowledgeBase, // Reuse this function
+    fetchKnowledgeBase,
     addKnowledge,
     updateKnowledge,
     deleteKnowledge,
@@ -209,5 +262,11 @@ export const useKnowledgeApi = () => {
     fetchKnowledgeBaseDetails,
     saveAnnotation,
     removeAnnotation,
+    parseContent,
+    updateChunkSettings,
+    previewChunk,
+    getDocListConfig,
+    getDocumentConfig,
+    fetchMyTasks,
   };
 };

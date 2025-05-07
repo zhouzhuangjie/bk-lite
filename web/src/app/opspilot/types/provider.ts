@@ -1,5 +1,6 @@
 export interface ModelConfig {
     openai_api_key?: string;
+    api_key?: string;
     openai_base_url?: string;
     base_url?: string;
     model?: string;

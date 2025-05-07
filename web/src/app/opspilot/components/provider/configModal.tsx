@@ -3,8 +3,9 @@ import { Form, Input as AntdInput, Switch, message, Select } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { useUserInfoContext } from '@/context/userInfo';
 import { Model, ModelConfig } from '@/app/opspilot/types/provider';
-import { MODEL_TYPE_OPTIONS } from '@/app/opspilot/constants/provider';
+import { MODEL_TYPE_OPTIONS, CONFIG_MAP } from '@/app/opspilot/constants/provider';
 import OperateModal from '@/components/operate-modal';
+import EditablePasswordField from '@/components/dynamic-form/editPasswordField';
 
 interface ProviderModalProps {
   visible: boolean;
@@ -32,14 +33,14 @@ const ProviderModal: React.FC<ProviderModalProps> = ({
   React.useEffect(() => {
     if (!visible) return;
     if (mode === 'edit' && model) {
-      const configField = getConfigField(filterType);
-      const config = model[configField] as ModelConfig | undefined;
+      const configField = CONFIG_MAP[filterType];
+      const config = model[configField as keyof Model] as ModelConfig | undefined;
       form.setFieldsValue({
         name: model.name || '',
-        modelName: model.llm_config?.model || '',
+        modelName: (model[configField as keyof Model] as ModelConfig)?.model || '',
         type: model.llm_model_type || '',
         team: model.team,
-        apiKey: model.llm_config?.openai_api_key || '',
+        apiKey: filterType === 'llm_model' ? model.llm_config?.openai_api_key || '' : config?.api_key || '',
         url: filterType === 'llm_model' ? model.llm_config?.openai_base_url || '' : config?.base_url || '',
         enabled: model.enabled || false,
         consumer_team: model.consumer_team ?? '',
@@ -52,16 +53,6 @@ const ProviderModal: React.FC<ProviderModalProps> = ({
       });
     }
   }, [visible]);
-
-  const getConfigField = (type: string) => {
-    const configMap: Record<string, keyof Model> = {
-      llm_model: 'llm_config',
-      embed_provider: 'embed_config',
-      rerank_provider: 'rerank_config',
-      ocr_provider: 'ocr_config',
-    };
-    return configMap[type];
-  };
 
   const handleOk = () => {
     form.validateFields()
@@ -91,7 +82,7 @@ const ProviderModal: React.FC<ProviderModalProps> = ({
         >
           <AntdInput placeholder={`${t('common.input')}${t('provider.form.name')}`} />
         </Form.Item>
-        {filterType === 'llm_model' && (<Form.Item
+        {filterType !== 'ocr_provider' && (<Form.Item
           name="modelName"
           label={t('provider.form.modelName')}
           rules={[{ required: true, message: `${t('common.input')}${t('provider.form.modelName')}` }]}
@@ -119,15 +110,16 @@ const ProviderModal: React.FC<ProviderModalProps> = ({
         >
           <AntdInput placeholder={`${t('common.inputMsg')} ${t('provider.form.url')}`} />
         </Form.Item>
-        {filterType === 'llm_model' && (
-          <Form.Item
-            name="apiKey"
-            label={t('provider.form.key')}
-            rules={[{ required: true, message: `${t('common.inputMsg')}${t('provider.form.key')}` }]}
-          >
-            <AntdInput.Password visibilityToggle={false} />
-          </Form.Item>
-        )}
+        <Form.Item
+          name="apiKey"
+          label={t('provider.form.key')}
+          rules={[{ required: true, message: `${t('common.inputMsg')}${t('provider.form.key')}` }]}
+        >
+          <EditablePasswordField
+            value={form.getFieldValue('apiKey')}
+            onChange={(value) => form.setFieldsValue({ apiKey: value })}
+          />
+        </Form.Item>
         <Form.Item
           name="enabled"
           label={t('provider.form.enabled')}

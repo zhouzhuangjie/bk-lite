@@ -7,7 +7,7 @@ import ProviderGrid from '@/app/opspilot/components/provider/grid';
 import ConfigModal from '@/app/opspilot/components/provider/configModal';
 import { Model, TabConfig } from '@/app/opspilot/types/provider';
 import styles from '@/app/opspilot/styles/common.module.scss';
-import { MODEL_TYPE_OPTIONS } from '@/app/opspilot/constants/provider';
+import { MODEL_TYPE_OPTIONS, CONFIG_MAP } from '@/app/opspilot/constants/provider';
 import { useTranslation } from '@/utils/i18n';
 
 const { Search } = Input;
@@ -71,27 +71,59 @@ const ProviderPage: React.FC = () => {
       );
     }
   };
-
+  
   const handleAddProvider = async (values: any) => {
-    const payload = {
+    const type = tabConfig.find((tab) => tab.key === activeTab)?.type || '';
+    const configField = CONFIG_MAP[type];
+
+    const payload: any = {
       name: values.name,
       llm_model_type: values.type,
       enabled: values.enabled,
       team: values.team,
       consumer_team: values.consumer_team,
-      llm_config: {
-        model: values.modelName,
-        openai_api_key: values.apiKey,
-        openai_base_url: values.url,
-      },
     };
+
+    switch (type) {
+      case 'llm_model':
+        payload.llm_config = {
+          model: values.modelName,
+          openai_api_key: values.apiKey,
+          openai_base_url: values.url,
+        };
+        break;
+      case 'embed_provider':
+        payload.embed_model_type = "lang-serve";
+      case 'rerank_provider':
+        if (type === 'rerank_provider') {
+          payload.rerank_model_type = "langserve";
+        }
+        payload[configField] = {
+          model: values.modelName,
+          base_url: values.url,
+          api_key: values.apiKey,
+        };
+        break;
+      default:
+        if (configField) {
+          payload[configField] = {
+            base_url: values.url,
+            api_key: values.apiKey,
+          };
+        }
+        break;
+    }
 
     setModalLoading(true);
     try {
-      await addProvider(payload);
-      message.success(t('common.saveSuccess'));
-      fetchModelsData('llm_model');
-      setIsAddModalVisible(false);
+      const result = await addProvider(type, payload);
+      if (result && result.id) {
+        message.success(t('common.saveSuccess'));
+        fetchModelsData(type);
+        setIsAddModalVisible(false);
+      } else {
+        message.error(t('common.saveFailed'));
+      }
     } catch {
       message.error(t('common.saveFailed'));
     } finally {
@@ -127,9 +159,11 @@ const ProviderPage: React.FC = () => {
           className="w-60"
           onSearch={handleSearch}
         />
-        {activeTab === '1' && (<Button type="primary" className="ml-2" onClick={() => setIsAddModalVisible(true)}>
-          {t('common.add')}
-        </Button>)}
+        {activeTab !== '4' && (
+          <Button type="primary" className="ml-2" onClick={() => setIsAddModalVisible(true)}>
+            {t('common.add')}
+          </Button>
+        )}
       </div>
       <Spin spinning={loading}>
         {activeTab === '1' ? (

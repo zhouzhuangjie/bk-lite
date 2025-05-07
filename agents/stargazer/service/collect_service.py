@@ -20,13 +20,28 @@ class CollectService(object):
             "vmware_info": "VmwareManage",
             "snmp_facts": "SnmpFacts",
             "snmp_topo": "SnmpTopoClient",
+            "mysql_info": "MysqlInfo",
+            "aliyun_info": "CwAliyun",
         }
+
+    def import_plugin(self, plugin_name):
+        """
+        动态加载插件
+        :param plugin_name: 插件名称
+        :return: 插件类
+        """
+        try:
+            module = importlib.import_module(f'plugins.{plugin_name}')
+            plugin_class = getattr(module, self.plugin_name_map[plugin_name])
+            return plugin_class
+        except ImportError as e:
+            logger.error(f"Error importing plugin {plugin_name}: {e}")
+            raise
 
     def collect(self):
         try:
             # 动态加载插件
-            module = importlib.import_module(f'plugins.{self.plugin_name}')
-            plugin_class = getattr(module, self.plugin_name_map[self.plugin_name])
+            plugin_class = self.import_plugin(self.plugin_name)
             plugin_instance = plugin_class(self.params)
             result = plugin_instance.list_all_resources()
             return result
@@ -45,3 +60,14 @@ class CollectService(object):
 
             # 确保最后以换行符结尾
             return "\n".join(prometheus_lines) + "\n"
+
+    def list_regions(self):
+        try:
+            plugin_class = self.import_plugin(self.plugin_name)
+            plugin_instance = plugin_class(self.params)
+            result = plugin_instance.list_regions()
+            return {"result": result, "success": True}
+        except Exception as e:
+            logger.info(f"Error list_regions plugin {self.plugin_name}: {traceback.format_exc()}")
+            # 生成错误指标数据，直接转换为Prometheus文本格式
+            return {"result": [], "success": False}

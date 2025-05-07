@@ -13,10 +13,11 @@ export const useProviderApi = () => {
 
   /**
    * Adds a new provider.
+   * @param type - The type of the provider.
    * @param payload - Data for the new provider.
    */
-  const addProvider = async (payload: any): Promise<void> => {
-    await post(`/opspilot/model_provider_mgmt/llm_model/`, payload);
+  const addProvider = async (type: string, payload: any): Promise<any> => {
+    return post(`/opspilot/model_provider_mgmt/${type}/`, payload);
   };
 
   /**

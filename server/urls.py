@@ -1,5 +1,4 @@
 import traceback  # noqa
-
 from django.apps import apps
 from django.conf import settings
 from django.contrib import admin

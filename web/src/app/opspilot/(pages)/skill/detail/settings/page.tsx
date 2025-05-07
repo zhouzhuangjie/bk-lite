@@ -12,6 +12,7 @@ import CustomChat from '@/app/opspilot/components/custom-chat';
 import PermissionWrapper from '@/components/permission';
 import KnowledgeBaseSelector from '@/app/opspilot/components/skill/knowledgeBaseSelector';
 import { KnowledgeBase, RagScoreThresholdItem, KnowledgeBaseRagSource } from '@/app/opspilot/types/skill';
+import { SelectTool } from '@/app/opspilot/types/tool';
 import ToolSelector from '@/app/opspilot/components/skill/toolSelector';
 import { useSkillApi } from '@/app/opspilot/api/skill';
 
@@ -44,13 +45,14 @@ const SkillSettingsPage: React.FC = () => {
   });
   const [saveLoading, setSaveLoading] = useState(false);
   const [quantity, setQuantity] = useState<number>(10);
-  const [selectedTools, setSelectedTools] = useState<number[]>([]);
+  const [selectedTools, setSelectedTools] = useState<SelectTool[]>([]);
+  const [skillType, setSkillType] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
         const [llmModelsData, knowledgeBasesData] = await Promise.all([
-          fetchLlmModels(), // Replace with appropriate API call if needed
+          fetchLlmModels(),
           fetchKnowledgeBases()
         ]);
         setLlmModels(llmModelsData);
@@ -98,6 +100,8 @@ const SkillSettingsPage: React.FC = () => {
           setSelectedKnowledgeBases(initialSelectedKnowledgeBases);
           setSelectedTools(data.tools);
           setToolEnabled(!!data.tools.length);
+
+          setSkillType(data.skill_type);
         } catch (error) {
           console.error(t('common.fetchFailed'), error);
         } finally {
@@ -131,7 +135,12 @@ const SkillSettingsPage: React.FC = () => {
         conversation_window_size: chatHistoryEnabled ? quantity : undefined,
         temperature: temperature,
         show_think: values.show_think,
-        tools: selectedTools
+        tools: selectedTools.map((tool: any) => ({
+          id: tool.id,
+          name: tool.name,
+          icon: tool.icon,
+          kwargs: tool.kwargs.filter((kwarg: any) => kwarg.key),
+        })),
       };
       setSaveLoading(true);
       await saveSkillDetail(id, payload);
@@ -163,11 +172,12 @@ const SkillSettingsPage: React.FC = () => {
           enable_rag: ragEnabled,
           enable_rag_knowledge_source: showRagSource,
           rag_score_threshold: ragScoreThreshold,
-          chat_history: quantity ? newMessage.slice(0, quantity).map(msg => ({ text: msg.content, event: msg.role })) : [],
+          chat_history: quantity ? newMessage.slice(0, quantity).map(msg => ({ message: msg.content, event: msg.role })) : [],
           conversation_window_size: chatHistoryEnabled ? quantity : undefined,
           temperature: temperature,
           show_think: values.show_think,
-          tools: selectedTools
+          tools: selectedTools,
+          skill_type: skillType,
         };
         const reply = await executeLlm(payload);
         const botMessage: CustomChatMessage = {
@@ -209,7 +219,7 @@ const SkillSettingsPage: React.FC = () => {
           <div className='w-1/2 space-y-4 flex flex-col h-full'>
             <section className={`flex-1 ${styles.llmSection}`}>
               <div className={`border rounded-md mb-5 ${styles.llmContainer}`}>
-                <h2 className="font-semibold mb-3 text-base">{t('skill.information')}</h2>
+                <h2 className="font-semibold mb-3 text-base rounded-tl-md rounded-tr-md">{t('skill.information')}</h2>
                 <div className="px-4">
                   <Form
                     form={form}
@@ -289,7 +299,7 @@ const SkillSettingsPage: React.FC = () => {
                 </div>
               </div>
               <div className={`border rounded-md ${styles.llmContainer}`}>
-                <h2 className="font-semibold mb-3 text-base">{t('skill.chatEnhancement')}</h2>
+                <h2 className="font-semibold mb-3 text-base rounded-tl-md rounded-tr-md">{t('skill.chatEnhancement')}</h2>
                 <div className={`p-4 rounded-md pb-0 ${styles.contentWrapper}`}>
                   <Form labelCol={{flex: '0 0 80px'}} wrapperCol={{flex: '1'}}>
                     <div className="flex justify-between">
@@ -339,16 +349,23 @@ const SkillSettingsPage: React.FC = () => {
                     )}
                   </Form>
                 </div>
-                <div className={`p-4 rounded-md pb-0 ${styles.contentWrapper}`}>
-                  <Form labelCol={{flex: '0 0 135px'}} wrapperCol={{flex: '1'}}>
-                    <div className="flex justify-between">
-                      <h3 className="font-medium text-sm mb-4">{t('skill.tool')}</h3>
-                      <Switch size="small" className="ml-2" checked={showToolEnabled} onChange={changeToolEnable} />
-                    </div>
-                    <p className="pb-4 text-xs text-[var(--color-text-4)]">{t('skill.toolTip')}</p>
-                    {showToolEnabled && (<ToolSelector selectedToolIds={selectedTools} onChange={setSelectedTools} />)}
-                  </Form>
-                </div>
+                {skillType === 1 && (
+                  <div className={`p-4 rounded-md pb-0 ${styles.contentWrapper}`}>
+                    <Form labelCol={{flex: '0 0 135px'}} wrapperCol={{flex: '1'}}>
+                      <div className="flex justify-between">
+                        <h3 className="font-medium text-sm mb-4">{t('skill.tool')}</h3>
+                        <Switch size="small" className="ml-2" checked={showToolEnabled} onChange={changeToolEnable} />
+                      </div>
+                      <p className="pb-4 text-xs text-[var(--color-text-4)]">{t('skill.toolTip')}</p>
+                      {showToolEnabled && (
+                        <ToolSelector
+                          defaultTools={selectedTools}
+                          onChange={(selected: SelectTool[]) => setSelectedTools(selected)}
+                        />
+                      )}
+                    </Form>
+                  </div>
+                )}
               </div>
             </section>
             <div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Upload, message } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
@@ -16,10 +16,21 @@ interface LocalFileUploadProps {
 const LocalFileUpload: React.FC<LocalFileUploadProps> = ({ onFileChange, initialFileList }) => {
   const { t } = useTranslation();
   const [fileList, setFileList] = useState<any[]>(initialFileList || []);
+  const prevFileListRef = useRef<File[]>([]);
 
   useEffect(() => {
     const files = fileList.map(file => file.originFileObj).filter(Boolean) as File[];
-    onFileChange(files);
+    const prevFiles = prevFileListRef.current;
+
+    // Compare current files with previous files
+    const hasChanged =
+      files.length !== prevFiles.length ||
+      files.some((file, index) => file !== prevFiles[index]);
+
+    if (hasChanged) {
+      onFileChange(files);
+      prevFileListRef.current = files; // Update the reference to the current file list
+    }
   }, [fileList, onFileChange]);
 
   const handleBeforeUpload = (file: File) => {
@@ -57,7 +68,7 @@ const LocalFileUpload: React.FC<LocalFileUploadProps> = ({ onFileChange, initial
   };
 
   return (
-    <div className="px-16">
+    <div>
       <Dragger
         name="file"
         multiple
