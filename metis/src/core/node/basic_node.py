@@ -41,13 +41,6 @@ class BasicNode:
         if config["configurable"]['graph_request'].enable_naive_rag is False:
             return state
 
-        if len(config["configurable"]["graph_request"].rag_stage.split(':')) == 1:
-            rag_stage = config["configurable"]["graph_request"].rag_stage
-            extra_rag_stage_config = ''
-        else:
-            rag_stage = config["configurable"]["graph_request"].rag_stage.split(':')[0]
-            extra_rag_stage_config = config["configurable"]["graph_request"].rag_stage.split(':')[1]
-
         naive_rag_request = config["configurable"]["graph_request"].naive_rag_request
         if len(naive_rag_request) == 0:
             return state
@@ -56,22 +49,30 @@ class BasicNode:
             elasticsearch_rag = ElasticSearchRag()
             rag_result = elasticsearch_rag.search(rag_search_request)
             rag_message = f'''
-                以下是参考资料,每份参考资料都由标题和内容组成,以XML格式提供:
-                
-                示例:
-                    <knowledge>
-                        <ref_id>1</ref_id>
-                        <title>知识标题</title>
-                        <content>知识内容</content>
-                    </knowledge>
-                
-                字段说明:
-                    ref_id: 是第几份参考资料，从1开始
-                    title: 参考资料的标题
-                    content: 参考资料的内容
-                    
-                参考资料:
-            '''
+                               以下是参考资料,每份参考资料都由标题和内容组成,以XML格式提供:
+        
+                               示例:
+                                   <knowledge>
+                                       <ref_id>1</ref_id>
+                                       <title>知识标题</title>
+                                       <knowledge_id>1</knowledge_id>
+                                       <chunk_number>1</chunk_number>
+                                       <segment_number>2</segment_number>
+                                       <segment_id>4</segment_id>
+                                       <content>知识内容</content>
+                                   </knowledge>
+        
+                               字段说明:
+                                   ref_id: 是第几份参考资料，从1开始
+                                   title: 参考资料的标题
+                                   content: 参考资料的内容
+                                   knowledge_id: 知识id
+                                   chunk_number: 分块序号
+                                   segment_number: 分段序号
+                                   segment_id: 分块ID
+                               参考资料:
+                           '''
+
             for index, r in enumerate(rag_result):
                 rag_message += f"""
                     <knowledge>
@@ -84,19 +85,14 @@ class BasicNode:
                         <content>{r.page_content}</content>
                     </knowledge>
                 """
-            if rag_stage=='strict-naive-rag':
-                rag_message+=f"""
-                        严格按照参考资料的内容进行回答,不允许添加任何额外的内容，不允许捏造任何事实。
-                        只允许使用参考资料中的内容进行回答，当参考资料中没有相关内容时，请直接返回“没有相关内容”。
-                """
 
-            if extra_rag_stage_config == 'with-source':
+            if 'enable_rag_source' in config["configurable"] and config["configurable"]["enable_rag_source"]:
                 rag_message += f"""
                 在回复中,请使用XML格式返回参考资料,并且在每个参考资料的前面加上序号,例如:[1]、[2]、[3]等，指观点引用自哪份材料。
                 在回复我的信息最后进行补充：
                 
                 Example:
-                    bklite 是一个AI FIrst的知识管理平台[1]，致力于帮助用户更高效地获取和管理知识。
+                    bklite 是一个AI First的知识管理平台[1]，致力于帮助用户更高效地获取和管理知识。
                     它的协议是MIT[12]协议
                     ------------------
                     参考资料:
@@ -120,6 +116,13 @@ class BasicNode:
                         </result>
                 
             """
+
+            if 'enable_rag_strict_mode' in config["configurable"] and config["configurable"]["enable_rag_strict_mode"]:
+                rag_message += f"""
+                        严格按照参考资料的内容进行回答,不允许添加任何额外的内容，不允许捏造任何事实。
+                        只允许使用参考资料中的内容进行回答，当参考资料中没有相关内容时，请返回“没有相关内容”。
+                """
+
             state["messages"].append(HumanMessage(content=rag_message))
         return state
 
