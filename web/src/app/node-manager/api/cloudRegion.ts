@@ -30,9 +30,7 @@ const useApiCloudRegion = () => {
     name?: string;
     operating_system?: string;
   }) => {
-    return await get('/node_mgmt/api/node/', {
-      params,
-    });
+    return await get('/node_mgmt/api/node/', { params });
   };
 
   // 获取包列表
@@ -41,9 +39,7 @@ const useApiCloudRegion = () => {
     object?: string;
     operating_system?: string;
   }) => {
-    return await get('/node_mgmt/api/package/', {
-      params,
-    });
+    return await get('/node_mgmt/api/package/', { params });
   };
 
   // 获取手动安装控制器指令
@@ -91,21 +87,6 @@ const useApiCloudRegion = () => {
     );
   };
 
-  //获取sidecar的安装步骤
-  const getSidecarStep = async (
-    ip: string,
-    operating_system: string,
-    group: string
-  ) => {
-    return await get('/node_mgmt/api/sidecar/install_guide/', {
-      params: {
-        ip,
-        operating_system,
-        group,
-      },
-    });
-  };
-
   //批量绑定或更新节点的采集器配置
   const batchBindCollector = async (data: UpdateConfigReq) => {
     return await post('/node_mgmt/api/node/batch_binding_configuration/', data);
@@ -138,16 +119,11 @@ const useApiCloudRegion = () => {
   };
 
   // 获取子配置文件列表
-  const getChildConfig = async (
-    collector_config_id: string,
-    search?: string
-  ) => {
-    return await get('/node_mgmt/api/child_config', {
-      params: {
-        collector_config_id,
-        search,
-      },
-    });
+  const getChildConfig = async (params: {
+    collector_config_id: string;
+    search?: string;
+  }) => {
+    return await get('/node_mgmt/api/child_config', { params });
   };
 
   //创建一个配置文件
@@ -220,10 +196,11 @@ const useApiCloudRegion = () => {
 
   //变量的模块
   //获取变量列表
-  const getVariableList = async (cloud_region_id: number, search?: string) => {
-    return await get('/node_mgmt/api/sidecar_env/', {
-      params: { cloud_region_id, search },
-    });
+  const getVariableList = async (params: {
+    cloud_region_id: number;
+    search?: string;
+  }) => {
+    return await get('/node_mgmt/api/sidecar_env/', { params });
   };
 
   //创建环境变量
@@ -256,7 +233,6 @@ const useApiCloudRegion = () => {
     getCloudList,
     updateCloudIntro,
     getNodeList,
-    getSidecarStep,
     getConfiglist,
     createConfig,
     updateCollector,

@@ -16,7 +16,7 @@ import {
   ModalRef,
 } from '@/app/node-manager/types';
 import { useTranslation } from '@/utils/i18n';
-import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
+import useApiCloudRegion from '@/app/node-manager/api/cloudRegion';
 import {
   VarSourceItem,
   VarResItem,
@@ -73,7 +73,9 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
     const initializeVarForm = async () => {
       try {
         setTableLoading(true);
-        const res = await getVariableList(cloudId);
+        const res = await getVariableList({
+          cloud_region_id: cloudId,
+        });
         const tempdata = res.map((item: VarResItem) => ({
           key: item.id,
           name: item.key,
