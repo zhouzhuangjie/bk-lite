@@ -10,7 +10,7 @@ import React, {
 import { Button, Form, message } from 'antd';
 import OperateModal from '@/components/operate-modal';
 import type { FormInstance } from 'antd';
-import useApiClient from '@/utils/request';
+import useMonitorApi from '@/app/monitor/api';
 import { ModalRef } from '@/app/monitor/types';
 import { NodeConfigInfo } from '@/app/monitor/types/monitor';
 import { useTranslation } from '@/utils/i18n';
@@ -22,7 +22,7 @@ interface ModalProps {
 }
 
 const EditConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
-  const { post } = useApiClient();
+  const { updateInstanceChildConfig } = useMonitorApi();
   const { t } = useTranslation();
   const formRef = useRef<FormInstance>(null);
   const [visible, setVisible] = useState<boolean>(false);
@@ -52,10 +52,7 @@ const EditConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
   const operateGroup = async (params: NodeConfigInfo) => {
     try {
       setConfirmLoading(true);
-      await post(
-        '/monitor/api/node_mgmt/update_instance_child_config/',
-        params
-      );
+      await updateInstanceChildConfig(params);
       message.success(t('common.successfullyModified'));
       handleCancel();
       onSuccess();

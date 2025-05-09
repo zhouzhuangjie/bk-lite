@@ -1,5 +1,5 @@
 'use client';
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Descriptions } from 'antd';
 import { TableDataItem, Organization, UserItem } from '@/app/monitor/types';
 import { useTranslation } from '@/utils/i18n';
@@ -9,8 +9,8 @@ import LineChart from '@/app/monitor/components/charts/lineChart';
 import { ObectItem } from '@/app/monitor/types/monitor';
 import { findUnitNameById, showGroupName } from '@/app/monitor/utils/common';
 import { useCommon } from '@/app/monitor/context/common';
-import { Modal, message, Button } from 'antd';
-import useApiClient from '@/utils/request';
+import { Popconfirm, message, Button } from 'antd';
+import useMonitorApi from '@/app/monitor/api';
 import { LEVEL_MAP, useLevelList } from '@/app/monitor/constants/monitor';
 import Permission from '@/components/permission';
 
@@ -25,11 +25,11 @@ const Information: React.FC<TableDataItem> = ({
   const { t } = useTranslation();
   const { convertToLocalizedTime } = useLocalizedTime();
   const LEVEL_LIST = useLevelList();
-  const { confirm } = Modal;
-  const { patch } = useApiClient();
+  const { patchMonitorAlert } = useMonitorApi();
   const commonContext = useCommon();
   const authList = useRef(commonContext?.authOrganizations || []);
   const organizationList: Organization[] = authList.current;
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   const checkDetail = (row: TableDataItem) => {
     const monitorItem = objects.find(
@@ -48,25 +48,17 @@ const Information: React.FC<TableDataItem> = ({
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  const showAlertCloseConfirm = (row: TableDataItem) => {
-    confirm({
-      title: t('monitor.events.closeTitle'),
-      content: t('monitor.events.closeContent'),
-      centered: true,
-      onOk() {
-        return new Promise(async (resolve) => {
-          try {
-            await patch(`/monitor/api/monitor_alert/${row.id}/`, {
-              status: 'closed',
-            });
-            message.success(t('monitor.events.successfullyClosed'));
-            onClose();
-          } finally {
-            resolve(true);
-          }
-        });
-      },
-    });
+  const handleCloseConfirm = async (row: TableDataItem) => {
+    setConfirmLoading(true);
+    try {
+      await patchMonitorAlert(row.id, {
+        status: 'closed',
+      });
+      message.success(t('monitor.events.successfullyClosed'));
+      onClose();
+    } finally {
+      setConfirmLoading(false);
+    }
   };
 
   const getUsers = (id: string) => {
@@ -163,13 +155,18 @@ const Information: React.FC<TableDataItem> = ({
       </Descriptions>
       <div className="mt-4">
         <Permission requiredPermissions={['Operate', 'Detail']}>
-          <Button
-            type="link"
-            disabled={formData.status !== 'new'}
-            onClick={() => showAlertCloseConfirm(formData)}
+          <Popconfirm
+            title={t('monitor.events.closeTitle')}
+            description={t('monitor.events.closeContent')}
+            okText={t('common.confirm')}
+            cancelText={t('common.cancel')}
+            okButtonProps={{ loading: confirmLoading }}
+            onConfirm={() => handleCloseConfirm(formData)}
           >
-            {t('monitor.events.closeAlert')}
-          </Button>
+            <Button type="link" disabled={formData.status !== 'new'}>
+              {t('monitor.events.closeAlert')}
+            </Button>
+          </Popconfirm>
         </Permission>
       </div>
       <div className="mt-4">

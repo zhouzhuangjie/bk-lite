@@ -1,7 +1,8 @@
 'use client';
 import React, { useEffect, useState, useRef } from 'react';
-import { Input, Button, Tag, Modal, message, Segmented } from 'antd';
+import { Input, Button, Tag, message, Segmented, Popconfirm } from 'antd';
 import useApiClient from '@/utils/request';
+import useMonitorApi from '@/app/monitor/api';
 import { useTranslation } from '@/utils/i18n';
 import {
   ColumnItem,
@@ -32,11 +33,11 @@ const Alert: React.FC<ViewModalProps> = ({
   objects,
   form = INIT_VIEW_MODAL_FORM,
 }) => {
-  const { get, patch, isLoading } = useApiClient();
+  const { isLoading } = useApiClient();
+  const { getMonitorAlert, patchMonitorAlert } = useMonitorApi();
   const { t } = useTranslation();
   const STATE_MAP = useStateMap();
   const LEVEL_LIST = useLevelList();
-  const { confirm } = Modal;
   const { convertToLocalizedTime } = useLocalizedTime();
   const commonContext = useCommon();
   const detailRef = useRef<ModalRef>(null);
@@ -61,6 +62,7 @@ const Alert: React.FC<ViewModalProps> = ({
     })?.current || {};
   const [activeTab, setActiveTab] = useState<string>('activeAlarms');
   const [frequence, setFrequence] = useState<number>(0);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   const columns: ColumnItem[] = [
     {
@@ -117,13 +119,18 @@ const Alert: React.FC<ViewModalProps> = ({
             {t('common.detail')}
           </Button>
           <Permission requiredPermissions={['Detail']}>
-            <Button
-              type="link"
-              disabled={record.status !== 'new'}
-              onClick={() => showAlertCloseConfirm(record)}
+            <Popconfirm
+              title={t('monitor.events.closeTitle')}
+              description={t('monitor.events.closeContent')}
+              okText={t('common.confirm')}
+              cancelText={t('common.cancel')}
+              okButtonProps={{ loading: confirmLoading }}
+              onConfirm={() => handleCloseConfirm(record)}
             >
-              {t('common.close')}
-            </Button>
+              <Button type="link" disabled={record.status !== 'new'}>
+                {t('common.close')}
+              </Button>
+            </Popconfirm>
           </Permission>
         </>
       ),
@@ -171,25 +178,17 @@ const Alert: React.FC<ViewModalProps> = ({
     setActiveTab(val);
   };
 
-  const showAlertCloseConfirm = (row: TableDataItem) => {
-    confirm({
-      title: t('monitor.events.closeTitle'),
-      content: t('monitor.events.closeContent'),
-      centered: true,
-      onOk() {
-        return new Promise(async (resolve) => {
-          try {
-            await patch(`/monitor/api/monitor_alert/${row.id}/`, {
-              status: 'closed',
-            });
-            message.success(t('monitor.events.successfullyClosed'));
-            onRefresh();
-          } finally {
-            resolve(true);
-          }
-        });
-      },
-    });
+  const handleCloseConfirm = async (row: TableDataItem) => {
+    setConfirmLoading(true);
+    try {
+      await patchMonitorAlert(row.id, {
+        status: 'closed',
+      });
+      message.success(t('monitor.events.successfullyClosed'));
+      onRefresh();
+    } finally {
+      setConfirmLoading(false);
+    }
   };
 
   const getParams = () => {
@@ -222,7 +221,7 @@ const Alert: React.FC<ViewModalProps> = ({
     }
     try {
       setTableLoading(type !== 'timer');
-      const data = await get('/monitor/api/monitor_alert/', { params });
+      const data = await getMonitorAlert(params);
       setTableData(data.results);
       setPagination((pre) => ({
         ...pre,

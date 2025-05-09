@@ -2,6 +2,7 @@ from typing import Dict, List, Any
 
 from langchain_openai import OpenAIEmbeddings
 
+from src.embed.embed_builder import EmbedBuilder
 from src.entity.rag.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
 
 
@@ -58,11 +59,10 @@ class ElasticsearchQueryBuilder:
         if not req.enable_vector_search:
             return {}
 
-        embedding = OpenAIEmbeddings(
-            model=req.embed_model_name,
-            api_key=req.embed_model_api_key,
-            base_url=req.embed_model_base_url,
-        )
+        embedding = EmbedBuilder.get_embed(req.embed_model_base_url,
+                                           req.embed_model_name,
+                                           req.embed_model_api_key,
+                                           req.embed_model_base_url)
         vector = ElasticsearchQueryBuilder._get_vector(req, embedding)
 
         return {

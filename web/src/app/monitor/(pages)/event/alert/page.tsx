@@ -6,11 +6,12 @@ import {
   Checkbox,
   Space,
   Tag,
-  Modal,
+  // Modal,
   message,
   Tabs,
   Spin,
   Tooltip,
+  Popconfirm,
 } from 'antd';
 import useApiClient from '@/utils/request';
 import { useTranslation } from '@/utils/i18n';
@@ -33,12 +34,14 @@ import { MetricItem, ObectItem } from '@/app/monitor/types/monitor';
 import { AlertOutlined } from '@ant-design/icons';
 import { FiltersConfig } from '@/app/monitor/types/monitor';
 import CustomTable from '@/components/custom-table';
+import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import TimeSelector from '@/components/time-selector';
 import Permission from '@/components/permission';
 import StackedBarChart from '@/app/monitor/components/charts/stackedBarChart';
 import AlertDetail from './alertDetail';
 import Collapse from '@/components/collapse';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
+import { useAlarmTabs } from '@/app/monitor/hooks/event';
 import dayjs, { Dayjs } from 'dayjs';
 import { useCommon } from '@/app/monitor/context/common';
 import alertStyle from './index.module.scss';
@@ -47,13 +50,14 @@ import {
   useLevelList,
   useStateMap,
 } from '@/app/monitor/constants/monitor';
+import useMonitorApi from '@/app/monitor/api/index';
 
 const Alert: React.FC = () => {
-  const { get, patch, isLoading } = useApiClient();
+  const { isLoading } = useApiClient();
+  const { getMonitorAlert, getMonitorMetrics, getMonitorObject, patchMonitorAlert } = useMonitorApi();
   const { t } = useTranslation();
   const STATE_MAP = useStateMap();
   const LEVEL_LIST = useLevelList();
-  const { confirm } = Modal;
   const { convertToLocalizedTime } = useLocalizedTime();
   const commonContext = useCommon();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -90,17 +94,9 @@ const Alert: React.FC = () => {
   const [objects, setObjects] = useState<ObectItem[]>([]);
   const [groupObjects, setGroupObjects] = useState<ObectItem[]>([]);
   const [metrics, setMetrics] = useState<MetricItem[]>([]);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
-  const tabs: TabItem[] = [
-    {
-      label: t('monitor.events.activeAlarms'),
-      key: 'activeAlarms',
-    },
-    {
-      label: t('monitor.events.historicalAlarms'),
-      key: 'historicalAlarms',
-    },
-  ];
+  const tabs: TabItem[] = useAlarmTabs();
   const columns: ColumnItem[] = [
     {
       title: t('monitor.events.level'),
@@ -161,8 +157,7 @@ const Alert: React.FC = () => {
       render: (_, record) => (
         <>
           {t(
-            `monitor.events.${
-              record.policy?.notice ? 'notified' : 'unnotified'
+            `monitor.events.${record.policy?.notice ? 'notified' : 'unnotified'
             }`
           )}
         </>
@@ -182,7 +177,11 @@ const Alert: React.FC = () => {
             >
               {operator.slice(0, 1).toLocaleUpperCase()}
             </span>
-            <span className="user-name">{operator}</span>
+            <span className="user-name">
+              <EllipsisWithTooltip
+                className="w-[50px] overflow-hidden text-ellipsis whitespace-nowrap"
+                text={operator} />
+            </span>
           </div>
         ) : (
           <>--</>
@@ -205,13 +204,21 @@ const Alert: React.FC = () => {
             {t('common.detail')}
           </Button>
           <Permission requiredPermissions={['Operate']}>
-            <Button
-              type="link"
-              disabled={record.status !== 'new'}
-              onClick={() => showAlertCloseConfirm(record)}
+            <Popconfirm
+              title={t('monitor.events.closeTitle')}
+              description={t('monitor.events.closeContent')}
+              okText={t('common.confirm')}
+              cancelText={t('common.cancel')}
+              okButtonProps={{ loading: confirmLoading }}
+              onConfirm={() => alertCloseConfirm(record.id)}
             >
-              {t('common.close')}
-            </Button>
+              <Button
+                type="link"
+                disabled={record.status !== 'new'}
+              >
+                {t('common.close')}
+              </Button>
+            </Popconfirm>
           </Permission>
         </>
       ),
@@ -284,15 +291,13 @@ const Alert: React.FC = () => {
   };
 
   const getMetrics = async () => {
-    const data = await get(`/monitor/api/metrics/`);
+    const data = await getMonitorMetrics();
     setMetrics(data);
   };
 
   const getObjects = async () => {
-    const data: ObectItem[] = await get('/monitor/api/monitor_object/', {
-      params: {
-        add_policy_count: true,
-      },
+    const data: ObectItem[] = await getMonitorObject({
+      add_policy_count: true,
     });
     const groupedData = data.reduce((acc, item) => {
       if (!acc[item.type]) {
@@ -312,26 +317,18 @@ const Alert: React.FC = () => {
     setObjects(data);
   };
 
-  const showAlertCloseConfirm = (row: TableDataItem) => {
-    confirm({
-      title: t('monitor.events.closeTitle'),
-      content: t('monitor.events.closeContent'),
-      centered: true,
-      onOk() {
-        return new Promise(async (resolve) => {
-          try {
-            await patch(`/monitor/api/monitor_alert/${row.id}/`, {
-              status: 'closed',
-            });
-            message.success(t('monitor.events.successfullyClosed'));
-            onRefresh();
-          } finally {
-            resolve(true);
-          }
-        });
-      },
-    });
-  };
+  const alertCloseConfirm = async (id: string | number) => {
+    setConfirmLoading(true);
+    try {
+      await patchMonitorAlert(id, {
+        status: 'closed',
+      });
+      message.success(t('monitor.events.successfullyClosed'));
+      onRefresh();
+    } finally {
+      setConfirmLoading(false);
+    }
+  }
 
   const clearTimer = () => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -395,7 +392,7 @@ const Alert: React.FC = () => {
     }
     try {
       setTableLoading(type !== 'timer');
-      const data = await get('/monitor/api/monitor_alert/', { params });
+      const data = await getMonitorAlert(params);
       setTableData(data.results);
       setPagination((pre) => ({
         ...pre,
@@ -438,9 +435,7 @@ const Alert: React.FC = () => {
     }
     try {
       setChartLoading(type !== 'timer');
-      const data = await get('/monitor/api/monitor_alert/', {
-        params: chartParams,
-      });
+      const data = await getMonitorAlert(chartParams);
       setChartData(
         processDataForStackedBarChart(
           (data.results || []).filter((item: TableDataItem) => !!item.level)
@@ -513,7 +508,7 @@ const Alert: React.FC = () => {
         const roundedTime = convertToLocalizedTime(
           minTime.add(
             Math.floor(timestamp.diff(minTime, 'minute') / intervalMinutes) *
-              intervalMinutes,
+            intervalMinutes,
             'minute'
           )
         );

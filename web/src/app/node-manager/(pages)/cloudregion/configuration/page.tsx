@@ -10,15 +10,15 @@ import { ModalRef, TableDataItem } from '@/app/node-manager/types';
 import { useTranslation } from '@/utils/i18n';
 import useApiClient from '@/utils/request';
 import type {
-  IConfiglistprops,
+  ConfigListProps,
   ConfigDate,
   SubRef,
 } from '@/app/node-manager/types/cloudregion';
 import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
 import useApiCollector from '@/app/node-manager/api/collector';
 import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
-import Mainlayout from '../mainlayout/layout';
-import configstyle from './index.module.scss';
+import MainLayout from '../mainlayout/layout';
+import configStyle from './index.module.scss';
 import SubConfiguration from './subconfiguration';
 import { useConfigColumns } from '@/app/node-manager/hooks/configuration';
 import { useConfigBtachItems } from '@/app/node-manager/constants/configuration';
@@ -43,7 +43,7 @@ const Configration = () => {
   ).id;
   const cloudregionId = searchParams.get('cloud_region_id') || '';
   const name = searchParams.get('name') || '';
-  const { getconfiglist, getnodelist, batchdeletecollector } =
+  const { getConfiglist, getNodeList, batchDeleteCollector } =
     useApiCloudRegion();
   const { getCollectorlist } = useApiCollector();
   const configBtachItems = useConfigBtachItems();
@@ -55,16 +55,16 @@ const Configration = () => {
     key: '',
     name: '',
     collector_id: '',
-    operatingsystem: '',
-    nodecount: 0,
-    configinfo: '',
+    operatingSystem: '',
+    nodeCount: 0,
+    configInfo: '',
     nodes: [],
   });
   const [collectorIds, setCollectorIds] = useState<string[]>([]);
   const [originNodes, setOriginNodes] = useState<TableDataItem[]>([]);
-  const [originConfigs, setOriginConfigs] = useState<IConfiglistprops[]>([]);
+  const [originConfigs, setOriginConfigs] = useState<ConfigListProps[]>([]);
   const [originCollectors, setOriginCollectors] = useState<TableDataItem[]>([]);
-  const [selectedconfigurationRowKeys, setSelectedconfigurationRowKeys] =
+  const [selectedConfigurationRowKeys, setSelectedConfigurationRowKeys] =
     useState<React.Key[]>([]);
 
   useEffect(() => {
@@ -95,7 +95,7 @@ const Configration = () => {
       content: t('node-manager.cloudregion.variable.deleteinfo'),
       centered: true,
       onOk() {
-        modifydeleteconfirm();
+        modifyDeleteconfirm();
       },
     });
   };
@@ -136,20 +136,20 @@ const Configration = () => {
   };
 
   //批量删除的确定的弹窗
-  const modifydeleteconfirm = async (id?: string) => {
+  const modifyDeleteconfirm = async (id?: string) => {
     setLoading(true);
-    const ids = id ? [id] : selectedconfigurationRowKeys;
-    await batchdeletecollector({
+    const ids = id ? [id] : selectedConfigurationRowKeys;
+    await batchDeleteCollector({
       ids: ids as string[],
     });
     if (!id) {
-      setSelectedconfigurationRowKeys([]);
+      setSelectedConfigurationRowKeys([]);
     }
     message.success(t('common.deleteSuccess'));
     getConfigData();
   };
 
-  const applyconfigurationClick = (row: TableDataItem) => {
+  const applyConfigurationClick = (row: TableDataItem) => {
     showApplyModal(row);
   };
 
@@ -158,8 +158,8 @@ const Configration = () => {
     filter: filters,
     openSub,
     nodeClick,
-    modifydeleteconfirm,
-    applyconfigurationClick,
+    modifyDeleteconfirm,
+    applyConfigurationClick,
   });
 
   const tableData = useMemo(() => {
@@ -177,11 +177,11 @@ const Configration = () => {
     setLoading(true);
     try {
       const res = await Promise.all([
-        getconfiglist({
+        getConfiglist({
           cloud_region_id: cloudId,
           node_id: nodeId || '',
         }),
-        getnodelist({ cloud_region_id: cloudId }),
+        getNodeList({ cloud_region_id: cloudId }),
         getCollectorlist({}),
       ]);
       const configlist = res[0] || [];
@@ -211,12 +211,12 @@ const Configration = () => {
       label: item?.ip,
       value: item?.id,
     }));
-    const data: any = config.configlist.map((item: IConfiglistprops) => {
+    const data: any = config.configlist.map((item: ConfigListProps) => {
       return {
         ...item,
         key: item.id,
-        operatingsystem: item.operating_system,
-        configinfo: item.config_template,
+        operatingSystem: item.operating_system,
+        configInfo: item.config_template,
         nodesList: nodes || [],
         collector_name: config.collectorList.find(
           (tex) => tex.id === item.collector_id
@@ -229,7 +229,7 @@ const Configration = () => {
   const getConfigData = async (search = '') => {
     setLoading(true);
     try {
-      const data = await getconfiglist({
+      const data = await getConfiglist({
         cloud_region_id: cloudId,
         node_id: nodeId || '',
         name: search,
@@ -280,7 +280,7 @@ const Configration = () => {
   //处理多选触发的事件逻辑
   const rowSelection: TableProps<TableProps>['rowSelection'] = {
     onChange: (selectedRowKeys: React.Key[]) => {
-      setSelectedconfigurationRowKeys(selectedRowKeys);
+      setSelectedConfigurationRowKeys(selectedRowKeys);
     },
     //禁止选中
     getCheckboxProps: (record: any) => {
@@ -291,8 +291,8 @@ const Configration = () => {
   };
 
   return (
-    <Mainlayout>
-      <div className={`${configstyle.config} w-full h-full`}>
+    <MainLayout>
+      <div className={`${configStyle.config} w-full h-full`}>
         {!showSub ? (
           <>
             <div className="flex justify-end mb-4">
@@ -309,7 +309,7 @@ const Configration = () => {
                 className="mr-[8px]"
                 overlayClassName="customMenu"
                 menu={ConfigBtachProps}
-                disabled={!selectedconfigurationRowKeys.length}
+                disabled={!selectedConfigurationRowKeys.length}
               >
                 <Button>
                   <Space>
@@ -356,7 +356,7 @@ const Configration = () => {
           onSuccess={() => getConfigData()}
         />
       </div>
-    </Mainlayout>
+    </MainLayout>
   );
 };
 

@@ -9,6 +9,7 @@ import { DownloadOutlined } from '@ant-design/icons';
 import { useAuth } from '@/context/auth';
 import controllerInstallSyle from './index.module.scss';
 import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
+import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 import axios from 'axios';
 const { Option } = Select;
 
@@ -18,6 +19,7 @@ const ManualInstall: React.FC<{ config: any }> = ({ config }) => {
   const authContext = useAuth();
   const token = authContext?.token || null;
   const tokenRef = useRef(token);
+  const cloudId = useCloudId();
   const [sidecarPackageLoading, setSidecarPackageLoading] =
     useState<boolean>(false);
   const [loadingCommand, setLoadingCommand] = useState<boolean>(false);
@@ -80,6 +82,7 @@ const ManualInstall: React.FC<{ config: any }> = ({ config }) => {
           package_name: config.sidecarVersionList.find(
             (item: TableDataItem) => item.id === value
           )?.name,
+          cloud_region_id: cloudId,
         };
         const data = await getInstallCommand(params);
         setScript(data);

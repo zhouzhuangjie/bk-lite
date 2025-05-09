@@ -1,6 +1,6 @@
 import useApiClient from '@/utils/request';
 import type {
-  updateConfigReq,
+  UpdateConfigReq,
   ControllerInstallFields,
   NodeItem,
   ConfigParams,
@@ -11,12 +11,12 @@ const useApiCloudRegion = () => {
   const { get, post, del, patch } = useApiClient();
 
   //获取云区域列表
-  const getcloudlist = async () => {
+  const getCloudList = async () => {
     return await get('/node_mgmt/api/cloud_region/');
   };
 
   //更新云区域的介绍
-  const updatecloudintro = async (
+  const updateCloudIntro = async (
     id: string,
     data: { introduction: string }
   ) => {
@@ -25,7 +25,7 @@ const useApiCloudRegion = () => {
 
   //节点的模块
   //获取节点列表
-  const getnodelist = async (params: {
+  const getNodeList = async (params: {
     cloud_region_id?: number;
     name?: string;
     operating_system?: string;
@@ -50,6 +50,7 @@ const useApiCloudRegion = () => {
   const getInstallCommand = async (params: {
     os?: string;
     package_name?: string;
+    cloud_region_id?: number;
   }) => {
     return await post('/node_mgmt/api/installer/get_install_command/', params);
   };
@@ -91,7 +92,7 @@ const useApiCloudRegion = () => {
   };
 
   //获取sidecar的安装步骤
-  const getsidecarstep = async (
+  const getSidecarStep = async (
     ip: string,
     operating_system: string,
     group: string
@@ -106,12 +107,12 @@ const useApiCloudRegion = () => {
   };
 
   //批量绑定或更新节点的采集器配置
-  const batchbindcollector = async (data: updateConfigReq) => {
+  const batchBindCollector = async (data: UpdateConfigReq) => {
     return await post('/node_mgmt/api/node/batch_binding_configuration/', data);
   };
 
   //批量操作节点的采集器（启动、停止、重启）
-  const batchoperationcollector = async (data: {
+  const batchOperationCollector = async (data: {
     node_ids?: string[];
     collector_id?: string;
     operation?: string;
@@ -120,13 +121,13 @@ const useApiCloudRegion = () => {
   };
 
   //获取节点管理的状态枚举值
-  const getnodstateenum = async () => {
+  const getNodeStateEnum = async () => {
     return await get('/node_mgmt/api/node/enum/');
   };
 
   //配置文件的模块
   //获取配置文件列表
-  const getconfiglist = async (params: ConfigListParams) => {
+  const getConfiglist = async (params: ConfigListParams) => {
     return await post('/node_mgmt/api/configuration/config_node_asso/', params);
   };
 
@@ -137,7 +138,7 @@ const useApiCloudRegion = () => {
   };
 
   // 获取子配置文件列表
-  const getchildconfig = async (
+  const getChildConfig = async (
     collector_config_id: string,
     search?: string
   ) => {
@@ -150,12 +151,12 @@ const useApiCloudRegion = () => {
   };
 
   //创建一个配置文件
-  const createconfig = async (data: ConfigParams) => {
+  const createConfig = async (data: ConfigParams) => {
     return await post('/node_mgmt/api/configuration/', data);
   };
 
   // 创建一个子配置文件
-  const createchildconfig = async (data: {
+  const createChildConfig = async (data: {
     collect_type: string;
     config_type: string;
     content: string;
@@ -165,7 +166,7 @@ const useApiCloudRegion = () => {
   };
 
   // 更新子配置内容
-  const updatechildconfig = async (
+  const updateChildConfig = async (
     id: string,
     data: {
       collect_type: string;
@@ -178,17 +179,17 @@ const useApiCloudRegion = () => {
   };
 
   //部分更新采集器
-  const updatecollector = async (id: string, data: ConfigParams) => {
+  const updateCollector = async (id: string, data: ConfigParams) => {
     return await patch(`/node_mgmt/api/configuration/${id}/`, data);
   };
 
   //删除采集器配置
-  const deletecollector = async (id: string) => {
+  const deleteCollector = async (id: string) => {
     return await del(`/node_mgmt/api/configuration/${id}/`);
   };
 
   //应用指定采集器配置文件到指定节点
-  const applyconfig = async (
+  const applyConfig = async (
     data: {
       node_id?: string;
       collector_configuration_id?: string;
@@ -213,20 +214,20 @@ const useApiCloudRegion = () => {
   };
 
   //批量删除采集器配置
-  const batchdeletecollector = async (data: { ids: string[] }) => {
+  const batchDeleteCollector = async (data: { ids: string[] }) => {
     return await post('/node_mgmt/api/configuration/bulk_delete/', data);
   };
 
   //变量的模块
   //获取变量列表
-  const getvariablelist = async (cloud_region_id: number, search?: string) => {
+  const getVariableList = async (cloud_region_id: number, search?: string) => {
     return await get('/node_mgmt/api/sidecar_env/', {
       params: { cloud_region_id, search },
     });
   };
 
   //创建环境变量
-  const createvariable = async (data: {
+  const createVariable = async (data: {
     key: string;
     value: string;
     description?: string;
@@ -236,7 +237,7 @@ const useApiCloudRegion = () => {
   };
 
   //部分更新环境变量
-  const updatevariable = async (
+  const updateVariable = async (
     id: number,
     data: {
       key: string;
@@ -248,34 +249,34 @@ const useApiCloudRegion = () => {
   };
 
   //删除环境变量
-  const deletevariable = async (id: string) => {
+  const deleteVariable = async (id: string) => {
     return await del(`/node_mgmt/api/sidecar_env/${id}/`);
   };
   return {
-    getcloudlist,
-    updatecloudintro,
-    getnodelist,
-    getsidecarstep,
-    getconfiglist,
-    createconfig,
-    updatecollector,
-    deletecollector,
-    applyconfig,
-    batchdeletecollector,
-    getvariablelist,
-    createvariable,
-    updatevariable,
-    deletevariable,
-    batchbindcollector,
-    batchoperationcollector,
-    getnodstateenum,
+    getCloudList,
+    updateCloudIntro,
+    getNodeList,
+    getSidecarStep,
+    getConfiglist,
+    createConfig,
+    updateCollector,
+    deleteCollector,
+    applyConfig,
+    batchDeleteCollector,
+    getVariableList,
+    createVariable,
+    updateVariable,
+    deleteVariable,
+    batchBindCollector,
+    batchOperationCollector,
+    getNodeStateEnum,
     getPackages,
     installController,
     getControllerNodes,
     uninstallController,
-    getchildconfig,
-    createchildconfig,
-    updatechildconfig,
+    getChildConfig,
+    createChildConfig,
+    updateChildConfig,
     installCollector,
     getCollectorNodes,
     getInstallCommand,

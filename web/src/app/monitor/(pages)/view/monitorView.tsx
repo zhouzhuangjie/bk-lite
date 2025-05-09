@@ -7,6 +7,7 @@ import TimeSelector from '@/components/time-selector';
 import LineChart from '@/app/monitor/components/charts/lineChart';
 import Collapse from '@/components/collapse';
 import useApiClient from '@/utils/request';
+import useMonitorApi from '@/app/monitor/api';
 import { TableDataItem, TimeSelectorDefaultValue } from '@/app/monitor/types';
 import {
   MetricItem,
@@ -32,7 +33,8 @@ const MonitorView: React.FC<ViewModalProps> = ({
   plugins,
   form = INIT_VIEW_MODAL_FORM,
 }) => {
-  const { get, isLoading } = useApiClient();
+  const { isLoading } = useApiClient();
+  const { getMetricsGroup, getMonitorMetrics, getInstanceQuery } = useMonitorApi();
   const { t } = useTranslation();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -87,8 +89,8 @@ const MonitorView: React.FC<ViewModalProps> = ({
       monitor_object_id: monitorObject,
       monitor_plugin_id: tab,
     };
-    const getGroupList = get(`/monitor/api/metrics_group/`, { params });
-    const getMetrics = get('/monitor/api/metrics/', { params });
+    const getGroupList = getMetricsGroup(params);
+    const getMetrics = getMonitorMetrics(params);
     setLoading(true);
     try {
       Promise.all([getGroupList, getMetrics])
@@ -155,9 +157,9 @@ const MonitorView: React.FC<ViewModalProps> = ({
   const fetchViewData = async (data: IndexViewItem[], groupId: number) => {
     const metricList = data.find((item) => item.id === groupId)?.child || [];
     const requestQueue = metricList.map((item) =>
-      get(`/monitor/api/metrics_instance/query_range/`, {
-        params: getParams(item, form?.instance_id_values || []),
-      }).then((response) => ({
+      getInstanceQuery(
+        getParams(item, form?.instance_id_values || [])
+      ).then((response) => ({
         id: item.id,
         data: response.data.result || [],
       }))
@@ -354,10 +356,9 @@ const MonitorView: React.FC<ViewModalProps> = ({
                             {item.display_name}
                           </span>
                           <span className="text-[var(--color-text-3)] text-[12px]">
-                            {`${
-                              findUnitNameById(item.unit)
-                                ? '（' + findUnitNameById(item.unit) + '）'
-                                : ''
+                            {`${findUnitNameById(item.unit)
+                              ? '（' + findUnitNameById(item.unit) + '）'
+                              : ''
                             }`}
                           </span>
                           <Tooltip

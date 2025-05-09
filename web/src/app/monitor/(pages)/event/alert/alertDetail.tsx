@@ -22,7 +22,8 @@ import {
 import { SearchParams } from '@/app/monitor/types/monitor';
 import { AlertOutlined } from '@ant-design/icons';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
-import useApiClient from '@/utils/request';
+import { useAlertDetailTabs } from '@/app/monitor/hooks/event';
+import  useMonitorApi from '@/app/monitor/api/index'
 import Information from './information';
 import {
   getEnumValueUnit,
@@ -38,7 +39,7 @@ import {
 const AlertDetail = forwardRef<ModalRef, ModalConfig>(
   ({ objects, metrics, userList, onSuccess }, ref) => {
     const { t } = useTranslation();
-    const { get } = useApiClient();
+    const { getMonitorEventDetail, getInstanceQuery, getEventRaw } = useMonitorApi()
     const { convertToLocalizedTime } = useLocalizedTime();
     const STATE_MAP = useStateMap();
     const LEVEL_LIST = useLevelList();
@@ -56,16 +57,7 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
     });
     const [tableLoading, setTableLoading] = useState<boolean>(false);
     const isInformation = activeTab === 'information';
-    const tabs: TabItem[] = [
-      {
-        label: t('common.detail'),
-        key: 'information',
-      },
-      {
-        label: t('monitor.events.event'),
-        key: 'event',
-      },
-    ];
+    const tabs: TabItem[] = useAlertDetailTabs();
     const [timeLineData, setTimeLineData] = useState<TimeLineItem[]>([]);
     const timelineRef = useRef<HTMLDivElement>(null); // 用于引用 Timeline 容器
     const isFetchingRef = useRef<boolean>(false); // 用于标记是否正在加载数据
@@ -142,12 +134,7 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
         page_size: pagination.pageSize,
       };
       try {
-        const data = await get(
-          `/monitor/api/monitor_event/query/${formData.id}/`,
-          {
-            params,
-          }
-        );
+        const data = await getMonitorEventDetail(formData.id, params);
         const _timelineData = data.results.map((item: TableDataItem) => ({
           color: LEVEL_MAP[item.level] || 'gray',
           children: (
@@ -177,12 +164,7 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
     const getChartData = async () => {
       setLoading(true);
       try {
-        const responseData = await get(
-          `/monitor/api/metrics_instance/query_range/`,
-          {
-            params: getParams(),
-          }
-        );
+        const responseData = await getInstanceQuery(getParams());
         const data = responseData.data?.result || [];
         const config = [
           {
@@ -204,9 +186,7 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
     const getRawData = async () => {
       setLoading(true);
       try {
-        const responseData = await get(
-          `/monitor/api/monitor_event/raw_data/${formData.id}/`
-        );
+        const responseData = await getEventRaw(formData.id);
         setTrapData(responseData);
       } finally {
         setLoading(false);
