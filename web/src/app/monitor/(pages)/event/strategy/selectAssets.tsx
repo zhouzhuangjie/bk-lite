@@ -9,7 +9,7 @@ import React, {
 import { Button, Input, Tabs, Tree } from 'antd';
 import OperateModal from '@/app/monitor/components/operate-drawer';
 import { useTranslation } from '@/utils/i18n';
-import useApiClient from '@/utils/request';
+import useMonitorApi from '@/app/monitor/api';
 import CustomTable from '@/components/custom-table';
 import {
   ColumnItem,
@@ -95,7 +95,7 @@ const SelectAssets = forwardRef<ModalRef, ModalConfig>(
     ref
   ) => {
     const { t } = useTranslation();
-    const { get } = useApiClient();
+    const { getInstanceList } = useMonitorApi();
     const { convertToLocalizedTime } = useLocalizedTime();
     const [groupVisible, setGroupVisible] = useState<boolean>(false);
     const [pagination, setPagination] = useState<Pagination>({
@@ -198,16 +198,11 @@ const SelectAssets = forwardRef<ModalRef, ModalConfig>(
     const fetchData = async (type?: string) => {
       try {
         setTableLoading(true);
-        const data = await get(
-          `/monitor/api/monitor_instance/${monitorObject}/list/`,
-          {
-            params: {
-              page: pagination.current,
-              page_size: pagination.pageSize,
-              name: type === 'clear' ? '' : searchText,
-            },
-          }
-        );
+        const data = await getInstanceList(monitorObject, {
+          page: pagination.current,
+          page_size: pagination.pageSize,
+          name: type === 'clear' ? '' : searchText,
+        });
         setTableData(data?.results || []);
         setPagination((prev: Pagination) => ({
           ...prev,

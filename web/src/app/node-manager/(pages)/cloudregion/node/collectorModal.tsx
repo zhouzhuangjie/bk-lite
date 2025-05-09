@@ -24,13 +24,13 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
     const { getCollectorlist, getPackageList } = useApiCollector();
     const {
       installCollector,
-      batchoperationcollector,
-      getconfiglist,
-      applyconfig,
+      batchOperationCollector,
+      getConfiglist,
+      applyConfig,
     } = useApiCloudRegion();
     const cloudId = useCloudId();
-    const collectorformRef = useRef<FormInstance>(null);
-    const Popconfirmarr = ['restartCollector', 'uninstallCollector'];
+    const collectorFormRef = useRef<FormInstance>(null);
+    const popcConfirmArr = ['restartCollector', 'uninstallCollector'];
     const [type, setType] = useState<string>('installCollector');
     const [nodeIds, setNodeIds] = useState<string[]>(['']);
     const [collectorVisible, setCollectorVisible] = useState<boolean>(false);
@@ -56,8 +56,8 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
     }));
 
     useEffect(() => {
-      collectorformRef.current?.resetFields();
-    }, [collectorformRef]);
+      collectorFormRef.current?.resetFields();
+    }, [collectorFormRef]);
 
     const configs = useMemo(() => {
       return configList.filter((item) => item.collector_id === collector);
@@ -78,7 +78,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
     const getConfigData = async () => {
       setConfigListLoading(true);
       try {
-        const data = await getconfiglist({ cloud_region_id: cloudId });
+        const data = await getConfiglist({ cloud_region_id: cloudId });
         setConfigList(data);
       } finally {
         setConfigListLoading(false);
@@ -96,7 +96,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
     //点击确定按钮的相关逻辑处理
     const handleConfirm = () => {
       //表单验证
-      collectorformRef.current?.validateFields().then((values) => {
+      collectorFormRef.current?.validateFields().then((values) => {
         let request: any = installCollector;
         let params: any = {
           nodes: nodeIds,
@@ -110,7 +110,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
               configuration: values.configuration,
               operation: 'start',
             };
-            request = batchoperationcollector;
+            request = batchOperationCollector;
             startCollector(request, params);
             return;
           case 'restartCollector':
@@ -119,7 +119,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
               collector_id: collector,
               operation: 'restart',
             };
-            request = batchoperationcollector;
+            request = batchOperationCollector;
             break;
           case 'stopCollector':
             params = {
@@ -127,7 +127,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
               collector_id: collector,
               operation: 'stop',
             };
-            request = batchoperationcollector;
+            request = batchOperationCollector;
             break;
           default:
             break;
@@ -158,7 +158,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
         node_id: item,
         collector_configuration_id: id,
       }));
-      await applyconfig(params);
+      await applyConfig(params);
     };
 
     const operate = async (
@@ -186,7 +186,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
     const handleCollectorChange = async (value: string) => {
       setCollector(value);
       setPackageList([]);
-      collectorformRef.current?.setFieldsValue({
+      collectorFormRef.current?.setFieldsValue({
         version: null,
         configuration: null,
       });
@@ -217,7 +217,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
             <Button key="back" onClick={handleCancel}>
               {t('common.cancel')}
             </Button>
-            {Popconfirmarr.includes(type) ? (
+            {popcConfirmArr.includes(type) ? (
               <Popconfirm
                 title={t(`node-manager.cloudregion.node.${type}`)}
                 description={t(`node-manager.cloudregion.node.${type}Info`)}
@@ -239,7 +239,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
           </>
         }
       >
-        <Form ref={collectorformRef} layout="vertical" colon={false}>
+        <Form ref={collectorFormRef} layout="vertical" colon={false}>
           <Form.Item noStyle>
             <Form.Item
               name="Collector"

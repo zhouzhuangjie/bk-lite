@@ -7,6 +7,7 @@ import TimeSelector from '@/components/time-selector';
 import LineChart from '@/app/monitor/components/charts/lineChart';
 import Collapse from '@/components/collapse';
 import useApiClient from '@/utils/request';
+import useMonitorApi from '@/app/monitor/api';
 import { TableDataItem, TimeSelectorDefaultValue } from '@/app/monitor/types';
 import {
   MetricItem,
@@ -34,7 +35,8 @@ const MetricViews: React.FC<ViewDetailProps> = ({
   instanceName,
   idValues,
 }) => {
-  const { get, isLoading } = useApiClient();
+  const { isLoading } = useApiClient();
+  const { getMonitorPlugin, getMonitorMetrics, getMetricsGroup, getInstanceQuery } = useMonitorApi();
   const { t } = useTranslation();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -77,11 +79,9 @@ const MetricViews: React.FC<ViewDetailProps> = ({
 
   const initPage = async () => {
     setLoading(true);
-    const responseData = await get('/monitor/api/monitor_plugin/', {
-      params: {
-        monitor_object_id: monitorObjectId,
-      },
-    });
+    const responseData = await getMonitorPlugin({
+      monitor_object_id: monitorObjectId,
+    })
     const _plugins = responseData.map((item: IntergrationItem) => ({
       label: COLLECT_TYPE_MAP[item.name || ''],
       value: item.id,
@@ -103,8 +103,8 @@ const MetricViews: React.FC<ViewDetailProps> = ({
       monitor_object_id: monitorObjectId,
       monitor_plugin_id: tab,
     };
-    const getGroupList = get(`/monitor/api/metrics_group/`, { params });
-    const getMetrics = get('/monitor/api/metrics/', { params });
+    const getGroupList = getMetricsGroup(params);
+    const getMetrics = getMonitorMetrics(params);
     setLoading(true);
     try {
       Promise.all([getGroupList, getMetrics])
@@ -171,12 +171,11 @@ const MetricViews: React.FC<ViewDetailProps> = ({
   const fetchViewData = async (data: IndexViewItem[], groupId: number) => {
     const metricList = data.find((item) => item.id === groupId)?.child || [];
     const requestQueue = metricList.map((item) =>
-      get(`/monitor/api/metrics_instance/query_range/`, {
-        params: getParams(item),
-      }).then((response) => ({
-        id: item.id,
-        data: response.data.result || [],
-      }))
+      getInstanceQuery(getParams(item))
+        .then((response) => ({
+          id: item.id,
+          data: response.data.result || []
+        }))
     );
     try {
       const results = await Promise.all(requestQueue);
@@ -371,10 +370,9 @@ const MetricViews: React.FC<ViewDetailProps> = ({
                             {item.display_name}
                           </span>
                           <span className="text-[var(--color-text-3)] text-[12px]">
-                            {`${
-                              findUnitNameById(item.unit)
-                                ? '（' + findUnitNameById(item.unit) + '）'
-                                : ''
+                            {`${findUnitNameById(item.unit)
+                              ? '（' + findUnitNameById(item.unit) + '）'
+                              : ''
                             }`}
                           </span>
                           <Tooltip

@@ -35,7 +35,7 @@ from src.entity.rag.elasticsearch_document_metadata_update_request import \
 from src.entity.rag.elasticsearch_index_delete_request import ElasticSearchIndexDeleteRequest
 from src.entity.rag.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
 from src.entity.rag.elasticsearch_store_request import ElasticSearchStoreRequest
-from src.rag.native_rag.rag.elasticsearch_rag import ElasticSearchRag
+from src.rag.native_rag.elasticsearch_rag import ElasticSearchRag
 
 rag_api_router = Blueprint("rag", url_prefix="/rag")
 
@@ -140,11 +140,12 @@ def process_documents(docs, knowledge_title, knowledge_id=None):
     处理文档，添加元数据
     """
     logger.debug(f"处理文档元数据，标题: {knowledge_title}, ID: {knowledge_id}, 文档数量: {len(docs)}")
-    for doc in docs:
+    for index, doc in enumerate(docs):
         doc.metadata['knowledge_title'] = knowledge_title
         if knowledge_id:
             doc.metadata['knowledge_id'] = knowledge_id
-        doc.metadata['chunk_id'] = str(uuid.uuid4())
+        doc.metadata['segment_id'] = str(uuid.uuid4())
+        doc.metadata['segment_number'] = index
     return docs
 
 
@@ -256,6 +257,7 @@ async def custom_content_ingest(request):
         chunker = get_chunker(chunk_mode, request)
         chunking_start_time = time.time()
         chunked_docs = chunker.chunk(docs)
+
         logger.debug(
             f"[{request_id}] 分块完成, 耗时: {time.time() - chunking_start_time:.2f}秒, 分块数: {len(chunked_docs)}")
 

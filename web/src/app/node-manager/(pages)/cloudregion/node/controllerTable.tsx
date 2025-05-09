@@ -69,15 +69,13 @@ const ControllerTable: React.FC<ControllerInstallProps> = ({
             config.type.includes('Collector') ? 'collector' : 'sidecar'
           }`
         ),
-        dataIndex: 'result',
+        dataIndex: 'status',
         width: 100,
-        key: 'result',
+        key: 'status',
         ellipsis: true,
-        render: (value: Record<string, string>) => {
+        render: (value: string) => {
           const installStatus =
-            config.type === 'uninstallController'
-              ? `${value?.status}Uninstall`
-              : value?.status;
+            config.type === 'uninstallController' ? `${value}Uninstall` : value;
           return (
             <span
               style={{
@@ -100,7 +98,7 @@ const ControllerTable: React.FC<ControllerInstallProps> = ({
           return (
             <Button
               type="link"
-              disabled={row.result?.status !== 'failed'}
+              disabled={row.status !== 'error'}
               onClick={() => checkDetail('remoteInstall', row)}
             >
               {t('node-manager.cloudregion.node.viewLog')}
@@ -131,14 +129,15 @@ const ControllerTable: React.FC<ControllerInstallProps> = ({
   };
 
   const checkDetail = (type: string, row: TableDataItem) => {
-    let message = '';
-    if (row.result?.status === 'failed') {
-      message += row.result?.message;
+    let str = '';
+    if (row.status === 'error') {
+      const { action, message } = row.result || {};
+      str = `${action ? action + ': ' : ''}${message}`;
     }
     guidance.current?.showModal({
       title: t('node-manager.cloudregion.node.log'),
       type,
-      form: { message: message || '--' },
+      form: { message: str || '--' },
     });
   };
 

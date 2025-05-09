@@ -14,7 +14,7 @@ const { Search } = Input;
 const SubConfiguration = forwardRef<SubRef, SubProps>(
   ({ cancel, edit, nodeData }, ref) => {
     const { t } = useTranslation();
-    const { getchildconfig } = useApiCloudRegion();
+    const { getChildConfig } = useApiCloudRegion();
     const { isLoading } = useApiClient();
     const [tableLoading, setTableLoading] = useState<boolean>(false);
     const [tableData, setTableData] = useState<any[]>([]);
@@ -39,7 +39,7 @@ const SubConfiguration = forwardRef<SubRef, SubProps>(
 
     const getChildConfigList = (search?: string) => {
       setTableLoading(true);
-      getchildconfig(nodeData.key, search)
+      getChildConfig(nodeData.key, search)
         .then((res) => {
           const data = res.map((item: any) => {
             return {

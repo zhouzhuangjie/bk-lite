@@ -5,6 +5,7 @@ import React, {
   forwardRef,
   useImperativeHandle,
   useEffect,
+  useMemo,
 } from 'react';
 import { Input, Form, message } from 'antd';
 import OperateModal from '@/components/operate-modal';
@@ -17,14 +18,18 @@ import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 
 const VariableModal = forwardRef<ModalRef, ModalSuccess>(
   ({ onSuccess }, ref) => {
-    const { createvariable, updatevariable } = useApiCloudRegion();
+    const { createVariable, updateVariable } = useApiCloudRegion();
     const cloudId = useCloudId();
     const { t } = useTranslation();
     const formRef = useRef<FormInstance>(null);
-    //设置弹窗状态
     const [variableVisible, setVariableVisible] = useState<boolean>(false);
     const [variableFormData, setVariableFormData] = useState<TableDataItem>();
-    const [type, setType] = useState<string>('');
+    const [type, setType] = useState<string>('add');
+    const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
+
+    const isAdd = useMemo(() => {
+      return type === 'add';
+    }, [type]);
 
     useImperativeHandle(ref, () => ({
       showModal: ({ type, form }) => {
@@ -51,6 +56,13 @@ const VariableModal = forwardRef<ModalRef, ModalSuccess>(
     //添加变量
     const handleConfirm = async () => {
       formRef.current?.validateFields().then((values) => {
+        operateVariable(values);
+      });
+    };
+
+    const operateVariable = async (values: TableDataItem) => {
+      setConfirmLoading(true);
+      try {
         const { name, value, description } = values;
         const tempdata = {
           key: name,
@@ -58,28 +70,26 @@ const VariableModal = forwardRef<ModalRef, ModalSuccess>(
           description,
           cloud_region_id: cloudId,
         };
-        //发起请求的类型（添加和编辑）
-        if (type === 'add') {
-          createvariable(tempdata).then(() => {
-            message.success(t('common.addSuccess'));
-            onSuccess();
-          });
-        } else {
-          updatevariable(variableFormData?.key, tempdata).then(() => {
-            message.success(t('common.updateSuccess'));
-            onSuccess();
-          });
-        }
+        const request = isAdd
+          ? createVariable(tempdata)
+          : updateVariable(variableFormData?.key, tempdata);
+        const msg = t(`common.${isAdd ? 'addSuccess' : 'updateSuccess'}`);
+        await request;
+        message.success(msg);
+        onSuccess();
         setVariableVisible(false);
-      });
+      } finally {
+        setConfirmLoading(false);
+      }
     };
 
     return (
       <OperateModal
-        title={type === 'add' ? t('common.add') : t('common.edit')}
+        title={t(`common.${type}`)}
         open={variableVisible}
         okText={t('common.confirm')}
         cancelText={t('common.cancel')}
+        confirmLoading={confirmLoading}
         onCancel={handleCancel}
         onOk={handleConfirm}
       >
@@ -90,7 +100,9 @@ const VariableModal = forwardRef<ModalRef, ModalSuccess>(
             rules={[
               {
                 pattern: /^[A-Za-z0-9_]+$/,
-                message: '仅允许字符 A-Z, a-z, 0-9, 和 _',
+                message: t(
+                  'node-manager.cloudregion.variable.variableNameTips'
+                ),
               },
               {
                 required: true,
