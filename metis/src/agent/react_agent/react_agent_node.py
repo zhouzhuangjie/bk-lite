@@ -11,7 +11,7 @@ class ReActAgentNode(ToolsNodes):
         messages = state["messages"]
         llm = self.get_llm_client(config["configurable"]["graph_request"])
         agent_executor = create_react_agent(llm, self.tools,
-                                            debug=True,
+                                            debug=False,
                                             prompt=config["configurable"]["graph_request"].system_message_prompt)
 
         agent_response = await agent_executor.ainvoke(

@@ -10,7 +10,7 @@ from loguru import logger
 from langgraph.checkpoint.postgres import PostgresSaver
 
 from sanic_fire import cmd
-from sanic_fire.core import command_class, command_func
+from sanic_fire.core import command_func
 
 from src.embed.embed_builder import EmbedBuilder
 from src.ocr.pp_ocr import PPOcr

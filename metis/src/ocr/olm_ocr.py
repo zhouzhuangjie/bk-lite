@@ -2,8 +2,6 @@ import base64
 import requests
 import json
 
-from loguru import logger
-
 
 class OlmOcr:
     def __init__(self, base_url: str, api_key: str, model="olmOCR-7B-0225-preview"):
@@ -12,8 +10,6 @@ class OlmOcr:
         self.model = model
 
     def predict(self, file_path: str) -> str:
-        logger.info(f'使用olmOCR识别文件: {file_path}')
-
         # 读取图片并转换为base64编码
         with open(file_path, "rb") as image_file:
             base64_image = base64.b64encode(image_file.read()).decode('utf-8')
