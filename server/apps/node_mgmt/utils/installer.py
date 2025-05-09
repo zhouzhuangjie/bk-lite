@@ -1,4 +1,4 @@
-from apps.node_mgmt.constants import UNZIP_RUN_COMMAND, UNINSTALL_COMMAND, NODE_SERVER_URL_KEY
+from apps.node_mgmt.constants import RUN_COMMAND, UNINSTALL_COMMAND, NODE_SERVER_URL_KEY
 from apps.node_mgmt.models import SidecarEnv
 from apps.node_mgmt.utils.token_auth import generate_token
 from apps.rpc.executor import Executor
@@ -7,7 +7,7 @@ from apps.rpc.executor import Executor
 # 获取安装命令
 def get_install_command(os, package_name, cloud_region_id):
     """获取安装命令"""
-    unzip_run_command = UNZIP_RUN_COMMAND.get(os)
+    unzip_run_command = RUN_COMMAND.get(os)
     sidecar_token = generate_token({"username": "admin"})
     obj = SidecarEnv.objects.filter(cloud_region=cloud_region_id, key=NODE_SERVER_URL_KEY).first()
     server_url = obj.value if obj else "null"

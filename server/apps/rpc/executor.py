@@ -116,8 +116,8 @@ class Executor(object):
         :return: 解压结果
         """
         request_data = {
-            "file_path": file_path,
-            "target_path": target_path,
+            "zip_path": file_path,
+            "dest_dir": target_path,
         }
         return_data = self.unzip_local_client.run(self.instance_id, request_data, _timeout=timeout)
         return return_data
