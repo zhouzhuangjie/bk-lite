@@ -49,7 +49,7 @@ def install_controller(task_id):
             f"{controller_storage_dir}/{package_obj.name}",
             controller_storage_dir,
         )
-        unzip_name = resp["result"]
+        unzip_name = resp
     except Exception as e:
         base_run = False
         base_massage = str(e)
