@@ -16,7 +16,7 @@ const SidecarLayout = ({ children }: { children: React.ReactNode }) => {
     name: '',
     system: [],
     introduction: '',
-    icon: ''
+    icon: '',
   });
 
   useEffect(() => {
