@@ -289,7 +289,6 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
                     'node-manager.cloudregion.Configuration.description'
                   )}
                   name="description"
-                  
                   rules={[
                     { required: true, message: t('common.inputRequired') },
                   ]}
