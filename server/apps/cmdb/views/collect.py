@@ -182,3 +182,10 @@ class MidModelViewSet(ModelViewSet):
     ordering = ["-updated_at"]
     filterset_class = OidModelFilter
     pagination_class = CustomPageNumberPagination
+
+    def create(self, request, *args, **kwargs):
+        oid = request.data["oid"]
+        if OidMapping.objects.filter(oid=oid).exists():
+            return WebUtils.response_error(error_message="OID已存在!", status_code=400)
+
+        return super().create(request, *args, **kwargs)
