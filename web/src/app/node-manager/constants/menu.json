@@ -53,7 +53,7 @@
             {
               "title": "包管理",
               "url": "/node-manager/sidecar/controller/detail",
-              "icon": "shezhi",
+              "icon": "baoguanli-full",
               "name": "controller_packet"
             }
           ]
