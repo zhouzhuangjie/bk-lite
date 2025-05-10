@@ -62,7 +62,7 @@ COLLECTORS = [
         "node_operating_system": "linux",
         "service_type": "exec",
         "executable_path": "java",
-        "execute_parameters": "-jar exporter_jmx.jar 40000 %s",
+        "execute_parameters": "-jar jmx_jvm.jar 40000 %s",
         "validation_parameters": "",
         "default_template": "",
         "introduction": "JMX-JVM is a Java Management Extensions (JMX) monitoring tool that collects and monitors JVM metrics, providing real-time performance insights."
