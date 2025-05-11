@@ -16,24 +16,6 @@ class SuodDetector(AnomalyDetectionTask):
     def __init__(self):
         super().__init__()
 
-        self.feature_columns = []
-        self.train_config = {}
-        self.model = None
-
-    def save_model(self, model_path: str):
-        joblib.dump({
-            'model': self.model,
-            'feature_columns': self.feature_columns,
-            'train_config': self.train_config,
-        }, model_path)
-        logger.info(f"模型保存到: {model_path}")
-
-    def load_model(self, model_path: str):
-        data = joblib.load(model_path)
-        self.model = data['model']
-        self.feature_columns = data['feature_columns']
-        self.train_config = data['train_config']
-
     def train(self, train_config: Dict[str, Any] = {}):
         self.prepare_train_task(train_config)
 
