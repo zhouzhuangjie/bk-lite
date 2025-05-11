@@ -1,16 +1,15 @@
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.model_selection import train_test_split
 from typing import Dict, Any
 import joblib
 import numpy as np
 import pandas as pd
 from loguru import logger
-from pyod.models.xgbod import XGBOD
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-from sklearn.model_selection import train_test_split
-
 from src.anomaly_detection.base_anomaly_detection import BaseAnomalyDetection
 
 
-class XGBODDetector(BaseAnomalyDetection):
+class RandomForestAnomalyDetector(BaseAnomalyDetection):
     def __init__(self):
         self._init_state()
 
@@ -68,10 +67,10 @@ class XGBODDetector(BaseAnomalyDetection):
 
         # 训练模型
         model_params = train_config.get('hyper_params', {})
-        logger.info(f"开始训练 XGBOD 模型, 参数: {model_params}")
-        self.model = XGBOD(base_estimators=[], **model_params)
+        logger.info(f"开始训练 RandomForest 模型, 参数: {model_params}")
+        self.model = RandomForestClassifier(**model_params)
         self.model.fit(X_train, y_train)
-        logger.info("XGBOD 模型训练完成")
+        logger.info("RandomForest 模型训练完成")
 
     def evaluate_model(self) -> Dict[str, float]:
         X_val, y_val = self.val_data

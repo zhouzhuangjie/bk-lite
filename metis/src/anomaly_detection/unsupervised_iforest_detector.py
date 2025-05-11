@@ -1,16 +1,15 @@
 from typing import Dict, Any
-import joblib
-import numpy as np
-import pandas as pd
-from loguru import logger
-from pyod.models.xgbod import XGBOD
+from sklearn.ensemble import IsolationForest
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.model_selection import train_test_split
-
+import numpy as np
+import pandas as pd
+import joblib
+from loguru import logger
 from src.anomaly_detection.base_anomaly_detection import BaseAnomalyDetection
 
 
-class XGBODDetector(BaseAnomalyDetection):
+class UnsupervisedIForestDetector(BaseAnomalyDetection):
     def __init__(self):
         self._init_state()
 
@@ -48,34 +47,57 @@ class XGBODDetector(BaseAnomalyDetection):
         random_state = train_config.get('random_state', 42)
 
         X = df[self.feature_columns].values
-        y = df['label'].astype(int).values
+        y = df['label'].astype(int).values if 'label' in df.columns else None
 
-        # 数据划分
-        X_train_val, X_test, y_train_val, y_test = train_test_split(
-            X, y, test_size=test_size, stratify=y, random_state=random_state
-        )
-        X_train, X_val, y_train, y_val = train_test_split(
-            X_train_val, y_train_val, test_size=val_size, stratify=y_train_val, random_state=random_state
-        )
+        # 根据是否有标签采用不同的划分策略
+        if y is not None:
+            X_train_val, X_test, y_train_val, y_test = train_test_split(
+                X, y, test_size=test_size, stratify=y, random_state=random_state
+            )
+            X_train, X_val, y_train, y_val = train_test_split(
+                X_train_val, y_train_val, test_size=val_size, stratify=y_train_val, random_state=random_state
+            )
+        else:
+            # 无标签数据直接按比例划分
+            X_train_val, X_test = train_test_split(X, test_size=test_size, random_state=random_state)
+            X_train, X_val = train_test_split(X_train_val, test_size=val_size, random_state=random_state)
+            y_train = y_val = y_test = None
 
         self.train_data = (X_train, y_train)
         self.val_data = (X_val, y_val)
         self.test_data = (X_test, y_test)
 
         logger.info(f"训练集大小: {len(X_train)}, 验证集: {len(X_val)}, 测试集: {len(X_test)}")
-        logger.debug(
-            f"异常比例 - Train: {np.mean(y_train):.4f}, Val: {np.mean(y_val):.4f}, Test: {np.mean(y_test):.4f}")
 
-        # 训练模型
+        if y is not None:
+            logger.debug(
+                f"异常比例 - Train: {np.mean(y_train):.4f}, Val: {np.mean(y_val):.4f}, Test: {np.mean(y_test):.4f}")
+
+        # 模型训练
         model_params = train_config.get('hyper_params', {})
-        logger.info(f"开始训练 XGBOD 模型, 参数: {model_params}")
-        self.model = XGBOD(base_estimators=[], **model_params)
-        self.model.fit(X_train, y_train)
-        logger.info("XGBOD 模型训练完成")
+        logger.info(f"开始训练无监督 IForest 模型, 参数: {model_params}")
+        self.model = IsolationForest(**model_params)
+        self.model.fit(X_train)
+        logger.info("IForest 模型训练完成")
 
     def evaluate_model(self) -> Dict[str, float]:
+        if self.val_data is None:
+            logger.warning("未设置验证集，跳过评估")
+            return {}
+
         X_val, y_val = self.val_data
         y_pred = self.model.predict(X_val)
+        y_pred = (y_pred == -1).astype(int)  # 转为二值标签: 1 表示异常
+
+        if y_val is None:
+            # 无监督场景：返回异常点比例
+            anomaly_ratio = np.mean(y_pred)
+            logger.info(f"验证集异常点比例: {anomaly_ratio:.4f}")
+            return {
+                "anomaly_ratio": anomaly_ratio
+            }
+
+        # 有监督场景：返回分类指标
         return self._evaluate(y_val, y_pred)
 
     def _evaluate(self, y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
@@ -101,10 +123,11 @@ class XGBODDetector(BaseAnomalyDetection):
 
         for col in self.feature_columns:
             if col not in processed_df:
-                processed_df[col] = 0  # 填补缺失特征
+                processed_df[col] = 0  # 缺失特征补零
 
         X = processed_df[self.feature_columns].values
         y_pred = self.model.predict(X)
+        y_pred = (y_pred == -1).astype(int)
 
         result_df = input_df.copy()
         result_df['anomaly'] = y_pred
