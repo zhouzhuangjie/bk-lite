@@ -49,6 +49,7 @@ async def show_banner(app, loop):
         print(f.read())
 
     if os.getenv('SUPABASE_URL') and os.getenv('SUPABASE_KEY'):
+        logger.info(f"启动supabase能力,supabase地址{os.getenv('SUPABASE_URL')}")
         from supabase import create_client, Client
         app.ctx.supabase = create_client(os.getenv('SUPABASE_URL'), os.getenv('SUPABASE_KEY'))
 
