@@ -31,8 +31,6 @@ if os.getenv('MODE', 'DEBUG') != 'DEBUG':
 
 
 # 配置认证
-
-
 @auth.verify_password
 def verify_password(username, password):
     if os.getenv('MODE', 'DEBUG') == 'DEBUG':
@@ -45,8 +43,6 @@ def verify_password(username, password):
 
 
 # 配置启动钩子
-
-
 @app.before_server_start
 async def show_banner(app, loop):
     with open(f"src/asserts/banner.txt") as f:
