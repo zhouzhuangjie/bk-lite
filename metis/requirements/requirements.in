@@ -50,3 +50,5 @@ jieba==0.42.1
 pyod==2.0.5
 xgboost==3.0.0
 suod==0.1.4
+
+supabase==2.15.1
