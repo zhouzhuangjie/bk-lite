@@ -1,17 +1,19 @@
 import { ModalRef, ModalProps, TableDataItem } from '@/app/monitor/types';
-import { Form, Button, message, InputNumber, Select } from 'antd';
+import { Form, Button, message, InputNumber, Select, Spin } from 'antd';
 import { cloneDeep } from 'lodash';
 import React, {
   useState,
   useRef,
   useImperativeHandle,
   forwardRef,
+  useMemo,
   useEffect,
 } from 'react';
 import { useTranslation } from '@/utils/i18n';
 import { useFormItems } from '@/app/monitor/hooks/intergration';
 import OperateModal from '@/components/operate-modal';
 import useApiClient from '@/utils/request';
+import useMonitorApi from '@/app/monitor/api';
 import {
   INSTANCE_TYPE_MAP,
   TIMEOUT_UNITS,
@@ -22,6 +24,11 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
   const [form] = Form.useForm();
   const { t } = useTranslation();
   const { post } = useApiClient();
+  const { getConfigContent } = useMonitorApi();
+  const formRef = useRef(null);
+  const authPasswordRef = useRef<any>(null);
+  const privPasswordRef = useRef<any>(null);
+  const passwordRef = useRef<any>(null);
   const [pluginName, setPluginName] = useState<string>('');
   const [collectType, setCollectType] = useState<string>('');
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
@@ -33,48 +40,21 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
   const [privPasswordDisabled, setPrivPasswordDisabled] =
     useState<boolean>(true);
   const [configForm, setConfigForm] = useState<TableDataItem>({});
-  const formRef = useRef(null);
-  const authPasswordRef = useRef<any>(null);
-  const privPasswordRef = useRef<any>(null);
-  const passwordRef = useRef<any>(null);
+  const [entryForm, setEntryForm] = useState<TableDataItem>({});
+  const [pageLoading, setPageLoading] = useState<boolean>(false);
+
+  const showInterval = useMemo(() => {
+    return !!entryForm.is_child;
+  }, [entryForm]);
 
   useImperativeHandle(ref, () => ({
     showModal: ({ form, title }) => {
       const _form = cloneDeep(form);
-      const content = _form.content || {};
-      setConfigForm({
-        ...content,
-        id: _form.config_id,
-      });
-      const _collectType =
-        _form?.collect_type === 'http' ? 'vmware' : _form?.collect_type;
-      let _PluginName =
-        Object.keys(INSTANCE_TYPE_MAP).find(
-          (key) =>
-            INSTANCE_TYPE_MAP[key] === content.config?.tags?.instance_type
-        ) || '';
-      if (
-        ['Hardware Server SNMP General', 'Hardware Server IPMI'].includes(
-          _PluginName
-        )
-      ) {
-        _PluginName =
-          _form?.collect_type === 'ipmi'
-            ? 'Hardware Server IPMI'
-            : 'Hardware Server SNMP General';
-      }
-      if (['Storage SNMP General', 'Storage IPMI'].includes(_PluginName)) {
-        _PluginName =
-          _form?.collect_type === 'ipmi'
-            ? 'Hardware Server IPMI'
-            : 'Storage SNMP General';
-      }
-      setCollectType(_collectType);
-      setPluginName(_PluginName);
+      setEntryForm(_form);
       setTitle(title);
       setModalVisible(true);
       setConfirmLoading(false);
-      initData(content.config, _PluginName);
+      getContent(_form);
     },
   }));
 
@@ -95,6 +75,47 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
       passwordRef.current.focus();
     }
   }, [passwordDisabled]);
+
+  const getContent = async (data: any) => {
+    setPageLoading(true);
+    try {
+      const res = await getConfigContent({
+        id: data.config_id,
+      });
+      setConfigForm(res);
+      const _collectType =
+        data?.collect_type === 'http' ? 'vmware' : data?.collect_type;
+      let _PluginName =
+        Object.keys(INSTANCE_TYPE_MAP).find(
+          (key) => INSTANCE_TYPE_MAP[key] === data?.instance_type
+        ) || '';
+      if (
+        ['Hardware Server SNMP General', 'Hardware Server IPMI'].includes(
+          _PluginName
+        )
+      ) {
+        _PluginName =
+          data?.collect_type === 'ipmi'
+            ? 'Hardware Server IPMI'
+            : 'Hardware Server SNMP General';
+      }
+      if (['Storage SNMP General', 'Storage IPMI'].includes(_PluginName)) {
+        _PluginName =
+          data?.collect_type === 'ipmi'
+            ? 'Hardware Server IPMI'
+            : 'Storage SNMP General';
+      }
+      setCollectType(_collectType);
+      setPluginName(_PluginName);
+      const content = data?.is_child ? res.content?.config : res.content;
+      initData(content || {}, {
+        plugin_name: _PluginName,
+        is_child: data?.is_child,
+      });
+    } finally {
+      setPageLoading(false);
+    }
+  };
 
   const handleEditAuthPassword = () => {
     if (authPasswordDisabled) {
@@ -140,9 +161,11 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
     handleEditPassword,
   });
 
-  const initData = (row: TableDataItem, name: string) => {
+  const initData = (row: TableDataItem, config: TableDataItem) => {
     const formData: Record<string, any> = cloneDeep(row);
-    formData.interval = +formData.interval.replace('s', '');
+    if (formData.interval) {
+      formData.interval = +formData.interval.replace('s', '');
+    }
     if (formData.timeout) {
       formData.timeout = +formData.timeout.replace('s', '');
     }
@@ -157,19 +180,19 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
         'Bastion Host SNMP General',
         'Storage SNMP General',
         'Hardware Server SNMP General',
-      ].includes(name)
+      ].includes(config.plugin_name)
     ) {
       formData.monitor_ip =
         extractMongoDBUrl(formData.agents?.[0] || '').host || '';
       formData.port = extractMongoDBUrl(formData.agents?.[0] || '').port || '';
     }
-    if (['Hardware Server IPMI', 'Storage IPMI'].includes(name)) {
+    if (['Hardware Server IPMI', 'Storage IPMI'].includes(config.plugin_name)) {
       Object.assign(formData, extractIPMIUrl(formData.servers?.[0] || ''));
     }
-    if (['Website', 'Ping'].includes(name)) {
+    if (['Website', 'Ping'].includes(config.plugin_name)) {
       formData.monitor_url = formData.urls?.[0] || '';
     }
-    switch (name) {
+    switch (config.plugin_name) {
       case 'ElasticSearch':
         formData.server = formData.servers?.[0];
         break;
@@ -222,6 +245,10 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
         break;
       case 'VMWare':
         Object.assign(formData, extractVmvareUrl(formData.urls?.[0] || ''));
+        break;
+      case 'JVM':
+        formData.monitor_url =
+          (config.is_child ? formData.urls?.[0] : formData.jmxUrl) || '';
         break;
       default:
         break;
@@ -305,6 +332,7 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
   const handleCancel = () => {
     form.resetFields();
     setModalVisible(false);
+    setPageLoading(false);
     setAuthPasswordDisabled(true);
     setPrivPasswordDisabled(true);
     setPasswordDisabled(true);
@@ -317,41 +345,46 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
   };
 
   const operateConfig = async (params: TableDataItem) => {
-    if (
-      [
-        'Switch SNMP General',
-        'Firewall SNMP General',
-        'Detection Device SNMP General',
-        'Loadbalance SNMP General',
-        'Router SNMP General',
-        'Scanning Device SNMP General',
-        'Bastion Host SNMP General',
-        'Storage SNMP General',
-        'Hardware Server SNMP General',
-      ].includes(pluginName)
-    ) {
-      delete params.monitor_ip;
-      delete params.port;
-      Object.assign(configForm.config, params);
+    if (entryForm.is_child) {
+      if (
+        [
+          'Switch SNMP General',
+          'Firewall SNMP General',
+          'Detection Device SNMP General',
+          'Loadbalance SNMP General',
+          'Router SNMP General',
+          'Scanning Device SNMP General',
+          'Bastion Host SNMP General',
+          'Storage SNMP General',
+          'Hardware Server SNMP General',
+        ].includes(pluginName)
+      ) {
+        delete params.monitor_ip;
+        delete params.port;
+        Object.assign(configForm.content.config, params);
+      }
+      switch (pluginName) {
+        case 'ElasticSearch':
+          configForm.content.config.servers = [params.server];
+          break;
+        default:
+          break;
+      }
+      configForm.content.config.interval = params.interval + 's';
+      if (params.timeout) {
+        configForm.content.config.timeout = params.timeout + 's';
+      }
     }
-    switch (pluginName) {
-      case 'ElasticSearch':
-        configForm.config.servers = [params.server];
-        break;
-      default:
-        break;
-    }
-    configForm.config.interval = params.interval + 's';
-    if (params.timeout) {
-      configForm.config.timeout = params.timeout + 's';
-    }
+    const content: any = entryForm.is_child
+      ? {
+        config: configForm.content.config,
+        plugin: configForm.content.plugin,
+      }
+      : configForm.content;
     try {
       setConfirmLoading(true);
       await post('/monitor/api/node_mgmt/update_instance_child_config/', {
-        content: {
-          config: configForm.config,
-          plugin: configForm.plugin,
-        },
+        content,
         id: configForm.id,
       });
       message.success(t('common.successfullyModified'));
@@ -376,6 +409,7 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
             className="mr-[10px]"
             type="primary"
             loading={confirmLoading}
+            disabled={pageLoading}
             onClick={handleSubmit}
           >
             {t('common.confirm')}
@@ -384,41 +418,45 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
         </div>
       }
     >
-      <div className="px-[10px]">
-        <Form ref={formRef} form={form} name="basic" layout="vertical">
-          {formItems}
-          <Form.Item required label={t('monitor.intergrations.interval')}>
-            <Form.Item
-              noStyle
-              name="interval"
-              rules={[
-                {
-                  required: true,
-                  message: t('common.required'),
-                },
-              ]}
-            >
-              <InputNumber
-                className="mr-[10px]"
-                min={1}
-                precision={0}
-                addonAfter={
-                  <Select style={{ width: 116 }} defaultValue="s">
-                    {TIMEOUT_UNITS.map((item: string) => (
-                      <Option key={item} value={item}>
-                        {item}
-                      </Option>
-                    ))}
-                  </Select>
-                }
-              />
-            </Form.Item>
-            <span className="text-[12px] text-[var(--color-text-3)]">
-              {t('monitor.intergrations.intervalDes')}
-            </span>
-          </Form.Item>
-        </Form>
-      </div>
+      <Spin spinning={pageLoading}>
+        <div className="px-[10px]">
+          <Form ref={formRef} form={form} name="basic" layout="vertical">
+            {formItems}
+            {showInterval && (
+              <Form.Item required label={t('monitor.intergrations.interval')}>
+                <Form.Item
+                  noStyle
+                  name="interval"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <InputNumber
+                    className="mr-[10px]"
+                    min={1}
+                    precision={0}
+                    addonAfter={
+                      <Select style={{ width: 116 }} defaultValue="s">
+                        {TIMEOUT_UNITS.map((item: string) => (
+                          <Option key={item} value={item}>
+                            {item}
+                          </Option>
+                        ))}
+                      </Select>
+                    }
+                  />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.intervalDes')}
+                </span>
+              </Form.Item>
+            )}
+          </Form>
+        </div>
+      </Spin>
     </OperateModal>
   );
 });

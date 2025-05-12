@@ -16,8 +16,11 @@ import CodeEditor from '@/app/monitor/components/codeEditor';
 import { TableDataItem } from '@/app/monitor/types';
 const { Option } = Select;
 import Permission from '@/components/permission';
+import { IntergrationAccessProps } from '@/app/monitor/types/monitor';
 
-const AutomaticConfiguration: React.FC = () => {
+const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
+  showInterval = true,
+}) => {
   const [form] = Form.useForm();
   const { t } = useTranslation();
   const searchParams = useSearchParams();
@@ -215,36 +218,38 @@ const AutomaticConfiguration: React.FC = () => {
           </p>
         )}
         {formItems}
-        <Form.Item required label={t('monitor.intergrations.interval')}>
-          <Form.Item
-            noStyle
-            name="interval"
-            rules={[
-              {
-                required: true,
-                message: t('common.required'),
-              },
-            ]}
-          >
-            <InputNumber
-              className="mr-[10px]"
-              min={1}
-              precision={0}
-              addonAfter={
-                <Select style={{ width: 116 }} defaultValue="s">
-                  {TIMEOUT_UNITS.map((item: string) => (
-                    <Option key={item} value={item}>
-                      {item}
-                    </Option>
-                  ))}
-                </Select>
-              }
-            />
+        {showInterval && (
+          <Form.Item required label={t('monitor.intergrations.interval')}>
+            <Form.Item
+              noStyle
+              name="interval"
+              rules={[
+                {
+                  required: true,
+                  message: t('common.required'),
+                },
+              ]}
+            >
+              <InputNumber
+                className="mr-[10px]"
+                min={1}
+                precision={0}
+                addonAfter={
+                  <Select style={{ width: 116 }} defaultValue="s">
+                    {TIMEOUT_UNITS.map((item: string) => (
+                      <Option key={item} value={item}>
+                        {item}
+                      </Option>
+                    ))}
+                  </Select>
+                }
+              />
+            </Form.Item>
+            <span className="text-[12px] text-[var(--color-text-3)]">
+              {t('monitor.intergrations.intervalDes')}
+            </span>
           </Form.Item>
-          <span className="text-[12px] text-[var(--color-text-3)]">
-            {t('monitor.intergrations.intervalDes')}
-          </span>
-        </Form.Item>
+        )}
       </Form>
       <Permission requiredPermissions={['Add']}>
         <Button type="primary" loading={confirmLoading} onClick={handleSave}>
