@@ -16,14 +16,19 @@ import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
 import { useCommon } from '@/app/monitor/context/common';
 import { Organization, ListItem, TableDataItem } from '@/app/monitor/types';
-import { IntergrationMonitoredObject } from '@/app/monitor/types/monitor';
+import {
+  IntergrationAccessProps,
+  IntergrationMonitoredObject,
+} from '@/app/monitor/types/monitor';
 import { useUserInfoContext } from '@/context/userInfo';
 import { useColumnsAndFormItems } from '@/app/monitor/hooks/intergration';
 import Permission from '@/components/permission';
 
 const { Option } = Select;
 
-const AutomaticConfiguration: React.FC = () => {
+const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
+  showInterval = true,
+}) => {
   const [form] = Form.useForm();
   const { t } = useTranslation();
   const searchParams = useSearchParams();
@@ -486,7 +491,7 @@ const AutomaticConfiguration: React.FC = () => {
         configs: getConfigs(_values),
         collect_type: collectType,
         monitor_object_id: +objectId,
-        // collector: collectType === 'jmx' ? 'JMX-JVM' : 'Telegraf',
+        collector: collectType === 'jmx' ? 'JMX-JVM' : 'Telegraf',
         instances: dataSource.map((item) => {
           const { key, ...rest } = item;
           values.key = key;
@@ -635,36 +640,38 @@ const AutomaticConfiguration: React.FC = () => {
           {t('monitor.intergrations.configuration')}
         </b>
         {formItems}
-        <Form.Item required label={t('monitor.intergrations.interval')}>
-          <Form.Item
-            noStyle
-            name="interval"
-            rules={[
-              {
-                required: true,
-                message: t('common.required'),
-              },
-            ]}
-          >
-            <InputNumber
-              className="mr-[10px]"
-              min={1}
-              precision={0}
-              addonAfter={
-                <Select style={{ width: 116 }} defaultValue="s">
-                  {TIMEOUT_UNITS.map((item: string) => (
-                    <Option key={item} value={item}>
-                      {item}
-                    </Option>
-                  ))}
-                </Select>
-              }
-            />
+        {showInterval && (
+          <Form.Item required label={t('monitor.intergrations.interval')}>
+            <Form.Item
+              noStyle
+              name="interval"
+              rules={[
+                {
+                  required: true,
+                  message: t('common.required'),
+                },
+              ]}
+            >
+              <InputNumber
+                className="mr-[10px]"
+                min={1}
+                precision={0}
+                addonAfter={
+                  <Select style={{ width: 116 }} defaultValue="s">
+                    {TIMEOUT_UNITS.map((item: string) => (
+                      <Option key={item} value={item}>
+                        {item}
+                      </Option>
+                    ))}
+                  </Select>
+                }
+              />
+            </Form.Item>
+            <span className="text-[12px] text-[var(--color-text-3)]">
+              {t('monitor.intergrations.intervalDes')}
+            </span>
           </Form.Item>
-          <span className="text-[12px] text-[var(--color-text-3)]">
-            {t('monitor.intergrations.intervalDes')}
-          </span>
-        </Form.Item>
+        )}
         <b className="text-[14px] flex mb-[10px] ml-[-10px]">
           {t('monitor.intergrations.basicInformation')}
         </b>
