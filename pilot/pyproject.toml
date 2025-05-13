@@ -15,12 +15,11 @@ version = "3.0.0"
 authors = [{ name = "umaru", email = "529280602@qq.com" }]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 
 dependencies = [
-    "rasa==3.6.20",
+    "rasa==3.6.21",
     "python-dotenv==1.0.1",
     "jieba==0.42.1",
     "loguru==0.7.2",
