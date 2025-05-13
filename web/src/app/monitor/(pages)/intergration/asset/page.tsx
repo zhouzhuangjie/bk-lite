@@ -119,10 +119,7 @@ const Asset = () => {
               okButtonProps={{ loading: confirmLoading }}
               onConfirm={() => deleteInstConfirm(record)}
             >
-              <Button
-                type="link"
-                className="ml-[10px]"
-              >
+              <Button type="link" className="ml-[10px]">
                 {t('common.remove')}
               </Button>
             </Popconfirm>
@@ -287,7 +284,13 @@ const Asset = () => {
     configRef.current?.showModal({
       title: t('monitor.intergrations.updateConfigration'),
       type: 'edit',
-      form: row,
+      form: {
+        ...row,
+        instance_type:
+          OBJECT_INSTANCE_TYPE_MAP[
+            objects.find((item) => item.id === objectId)?.name || ''
+          ],
+      },
     });
   };
 
@@ -335,7 +338,7 @@ const Asset = () => {
       setRuleLoading(type !== 'timer');
       const params = {
         monitor_object_id: objectId,
-      }
+      };
       const data = await getInstanceGroupRule(params);
       setRuleList(data || []);
     } finally {
@@ -349,7 +352,7 @@ const Asset = () => {
       const params = {
         name: '',
         add_instance_count: true,
-      }
+      };
       const data = await getMonitorObject(params);
       setObjects(data);
       const _treeData = getTreeData(deepClone(data));
@@ -417,9 +420,9 @@ const Asset = () => {
       getObjects();
       getAssetInsts(objectId);
     } finally {
-      setConfirmLoading(false)
+      setConfirmLoading(false);
     }
-  }
+  };
 
   const clearText = () => {
     setSearchText('');

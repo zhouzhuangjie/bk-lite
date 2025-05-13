@@ -699,34 +699,16 @@ const useColumnsAndFormItems = ({
           displaycolumns: [columns[0], columns[12], ...columns.slice(4, 7)],
           formItems: (
             <>
-              <Form.Item label={t('monitor.intergrations.username')} required>
-                <Form.Item
-                  noStyle
-                  name="username"
-                  rules={[
-                    {
-                      required: true,
-                      message: t('common.required'),
-                    },
-                  ]}
-                >
+              <Form.Item label={t('monitor.intergrations.username')}>
+                <Form.Item noStyle name="username">
                   <Input className="w-[300px] mr-[10px]" />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.usernameDes')}
                 </span>
               </Form.Item>
-              <Form.Item label={t('monitor.intergrations.password')} required>
-                <Form.Item
-                  noStyle
-                  name="password"
-                  rules={[
-                    {
-                      required: true,
-                      message: t('common.required'),
-                    },
-                  ]}
-                >
+              <Form.Item label={t('monitor.intergrations.password')}>
+                <Form.Item noStyle name="password">
                   <Input
                     ref={passwordRef}
                     disabled={passwordDisabled}
@@ -1815,34 +1797,16 @@ const useFormItems = ({
         return {
           formItems: (
             <>
-              <Form.Item label={t('monitor.intergrations.username')} required>
-                <Form.Item
-                  noStyle
-                  name="username"
-                  rules={[
-                    {
-                      required: true,
-                      message: t('common.required'),
-                    },
-                  ]}
-                >
+              <Form.Item label={t('monitor.intergrations.username')}>
+                <Form.Item noStyle name="username">
                   <Input className="w-[300px] mr-[10px]" disabled={isEdit} />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.usernameDes')}
                 </span>
               </Form.Item>
-              <Form.Item label={t('monitor.intergrations.password')} required>
-                <Form.Item
-                  noStyle
-                  name="password"
-                  rules={[
-                    {
-                      required: true,
-                      message: t('common.required'),
-                    },
-                  ]}
-                >
+              <Form.Item label={t('monitor.intergrations.password')}>
+                <Form.Item noStyle name="password">
                   <Input
                     ref={passwordRef}
                     disabled={isEdit || passwordDisabled}
@@ -1875,7 +1839,7 @@ const useFormItems = ({
                     },
                   ]}
                 >
-                  <Input className="w-[300px] mr-[10px]" />
+                  <Input className="w-[300px] mr-[10px]" disabled={isEdit} />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.urlDes')}
