@@ -9,6 +9,7 @@ from src.tools.kubernetes_tools import (
     get_kubernetes_node_capacity, get_kubernetes_orphaned_resources,
     get_kubernetes_resource_yaml, get_kubernetes_pod_logs
 )
+import copy
 
 ToolsMap = {
     'current_time': [get_current_time],
@@ -43,4 +44,4 @@ class ToolsLoader:
     @staticmethod
     def load_tools(tools_protocol: str):
         tools_name = tools_protocol.split(":")[1]
-        return ToolsMap[tools_name]
+        return copy.deepcopy(ToolsMap[tools_name])
