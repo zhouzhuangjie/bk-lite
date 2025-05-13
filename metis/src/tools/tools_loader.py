@@ -104,10 +104,10 @@ class ToolsLoader:
     def load_tools(tool_server: ToolsServer):
         tools = []
         tools_name = tool_server.url.split(":")[1]
-        tools_config = copy.deepcopy(ToolsMap[tools_name])
-        for tool in tools_config:
-            func = tool['func']
-            enable_extra_prompt = tool['enable_extra_prompt']
+        for tool in ToolsMap[tools_name]:
+            cp_tool = copy.deepcopy(tool)
+            func = cp_tool['func']
+            enable_extra_prompt = cp_tool['enable_extra_prompt']
             if enable_extra_prompt:
                 final_prompt = f"""以下是函数的动态参数生成要求，param json 参数说明:\n"""
                 for key, value in tool_server.extra_prompt.items():
