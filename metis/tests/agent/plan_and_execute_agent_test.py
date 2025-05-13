@@ -20,7 +20,7 @@ async def test_compile_graph():
         model="gpt-4o",
         openai_api_base=os.getenv("OPENAI_BASE_URL"),
         openai_api_key=os.getenv("OPENAI_API_KEY"),
-        user_message="Jenkins最新一次构建成功的任务是哪个",
+        user_message="现在几点",
         user_id="umr",
         thread_id="2",
         tools_servers=tools_servers,

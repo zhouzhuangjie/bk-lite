@@ -86,7 +86,8 @@ async def summarize_enhance(request, body: SummarizeEnhanceRequest):
     :param body:
     :return:
     """
-    result = SummarizeManager.summarize(body.content, body.model, body.openai_api_base, body.openai_api_key)
+    result = SummarizeManager.summarize(
+        body.content, body.model, body.openai_api_base, body.openai_api_key)
     return json({"status": "success", "message": result})
 
 
@@ -116,16 +117,19 @@ async def custom_content_ingest(request):
     request_id = str(uuid.uuid4())[:8]
     knowledge_id = request.form.get('knowledge_id', 'unknown')
     knowledge_base_id = request.form.get('knowledge_base_id', 'unknown')
-    logger.info(f"[{request_id}] 自定义内容导入请求开始, 知识库ID: {knowledge_base_id}, 知识ID: {knowledge_id}")
+    logger.info(
+        f"[{request_id}] 自定义内容导入请求开始, 知识库ID: {knowledge_base_id}, 知识ID: {knowledge_id}")
 
     try:
         content = request.form.get('content')
-        content_preview = content[:100] + '...' if len(content) > 100 else content
+        content_preview = content[:100] + \
+            '...' if len(content) > 100 else content
         chunk_mode = request.form.get('chunk_mode')
         is_preview = request.form.get('preview', 'false').lower() == 'true'
         metadata = js.loads(request.form.get('metadata', '{}'))
 
-        logger.debug(f"[{request_id}] 内容预览: {content_preview}, 分块模式: {chunk_mode}, 预览模式: {is_preview}")
+        logger.debug(
+            f"[{request_id}] 内容预览: {content_preview}, 分块模式: {chunk_mode}, 预览模式: {is_preview}")
 
         # 加载自定义内容
         loader = RawLoader(content)
@@ -167,7 +171,8 @@ async def custom_content_ingest(request):
             embed_model_name=request.form.get('embed_model_name'),
             metadata=metadata
         )
-        logger.debug(f"[{request_id}] 存储到ES完成, 嵌入耗时: {time.time() - embedding_start_time:.2f}秒")
+        logger.debug(
+            f"[{request_id}] 存储到ES完成, 嵌入耗时: {time.time() - embedding_start_time:.2f}秒")
 
         response_time = time.time() - start_time
         logger.info(
@@ -176,7 +181,8 @@ async def custom_content_ingest(request):
     except Exception as e:
         error_detail = traceback.format_exc()
         response_time = time.time() - start_time
-        logger.error(f"[{request_id}] 自定义内容处理错误, 耗时: {response_time:.2f}秒, 错误: {str(e)}\n{error_detail}")
+        logger.error(
+            f"[{request_id}] 自定义内容处理错误, 耗时: {response_time:.2f}秒, 错误: {str(e)}\n{error_detail}")
         return json({"status": "error", "message": str(e)})
 
 
@@ -221,7 +227,8 @@ async def website_ingest(request):
         # 处理预览模式
         if is_preview:
             response_time = time.time() - start_time
-            logger.info(f"[{request_id}] 网站内容预览完成, 总耗时: {response_time:.2f}秒, 分块数: {len(chunked_docs)}")
+            logger.info(
+                f"[{request_id}] 网站内容预览完成, 总耗时: {response_time:.2f}秒, 分块数: {len(chunked_docs)}")
             return json({
                 "status": "success",
                 "message": "",
@@ -239,15 +246,18 @@ async def website_ingest(request):
             embed_model_name=request.form.get('embed_model_name'),
             metadata=metadata
         )
-        logger.debug(f"[{request_id}] 网站内容存储到ES完成, 嵌入耗时: {time.time() - embedding_start_time:.2f}秒")
+        logger.debug(
+            f"[{request_id}] 网站内容存储到ES完成, 嵌入耗时: {time.time() - embedding_start_time:.2f}秒")
 
         response_time = time.time() - start_time
-        logger.info(f"[{request_id}] 网站内容导入请求完成, 总耗时: {response_time:.2f}秒, 分块数: {len(chunked_docs)}")
+        logger.info(
+            f"[{request_id}] 网站内容导入请求完成, 总耗时: {response_time:.2f}秒, 分块数: {len(chunked_docs)}")
         return json({"status": "success", "message": "", "chunks_size": len(chunked_docs)})
     except Exception as e:
         error_detail = traceback.format_exc()
         response_time = time.time() - start_time
-        logger.error(f"[{request_id}] 网站内容处理错误, 耗时: {response_time:.2f}秒, 错误: {str(e)}\n{error_detail}")
+        logger.error(
+            f"[{request_id}] 网站内容处理错误, 耗时: {response_time:.2f}秒, 错误: {str(e)}\n{error_detail}")
         return json({"status": "error", "message": str(e)})
 
 
@@ -279,7 +289,8 @@ async def file_ingest(request):
     metadata = js.loads(request.form.get('metadata', '{}'))
     load_mode = request.form.get('load_mode', 'full')
 
-    logger.debug(f"[{request_id}] 文件处理模式: 分块模式={chunk_mode}, 预览模式={is_preview}")
+    logger.debug(
+        f"[{request_id}] 文件处理模式: 分块模式={chunk_mode}, 预览模式={is_preview}")
 
     try:
         with tempfile.NamedTemporaryFile(delete=True, suffix=f'.{file_extension}') as temp_file:
@@ -293,7 +304,8 @@ async def file_ingest(request):
 
             # 加载文件内容
             loading_start_time = time.time()
-            loader = RagService.get_file_loader(temp_path, file_extension, load_mode, request)
+            loader = RagService.get_file_loader(
+                temp_path, file_extension, load_mode, request)
             docs = loader.load()
             logger.debug(
                 f"[{request_id}] 文件内容加载完成, 耗时: {time.time() - loading_start_time:.2f}秒, 文档数: {len(docs)}")
@@ -333,15 +345,18 @@ async def file_ingest(request):
                 embed_model_name=request.form.get('embed_model_name'),
                 metadata=metadata
             )
-            logger.debug(f"[{request_id}] 文件内容存储到ES完成, 嵌入耗时: {time.time() - embedding_start_time:.2f}秒")
+            logger.debug(
+                f"[{request_id}] 文件内容存储到ES完成, 嵌入耗时: {time.time() - embedding_start_time:.2f}秒")
 
         response_time = time.time() - start_time
-        logger.info(f"[{request_id}] 文件导入请求完成, 总耗时: {response_time:.2f}秒, 分块数: {len(chunked_docs)}")
+        logger.info(
+            f"[{request_id}] 文件导入请求完成, 总耗时: {response_time:.2f}秒, 分块数: {len(chunked_docs)}")
         return json({"status": "success", "message": "", "chunks_size": len(chunked_docs)})
     except Exception as e:
         error_detail = traceback.format_exc()
         response_time = time.time() - start_time
-        logger.error(f"[{request_id}] 文件处理错误, 耗时: {response_time:.2f}秒, 错误: {str(e)}\n{error_detail}")
+        logger.error(
+            f"[{request_id}] 文件处理错误, 耗时: {response_time:.2f}秒, 错误: {str(e)}\n{error_detail}")
         return json({"status": "error", "message": str(e)})
 
 
@@ -375,7 +390,8 @@ async def delete_doc(request, body: ElasticSearchDocumentDeleteRequest):
     :return:
     """
     request_id = str(uuid.uuid4())[:8]
-    logger.info(f"[{request_id}] 删除文档请求, 索引名: {body.index_name}, 过滤条件: {body.metadata_filter}")
+    logger.info(
+        f"[{request_id}] 删除文档请求, 索引名: {body.index_name}, 过滤条件: {body.metadata_filter}")
     try:
         start_time = time.time()
         rag = ElasticSearchRag()
@@ -406,7 +422,8 @@ async def list_rag_document(request, body: ElasticSearchDocumentListRequest):
         rag = ElasticSearchRag()
         documents = rag.list_index_document(body)
         elapsed_time = time.time() - start_time
-        logger.info(f"[{request_id}] 查询RAG文档列表成功, 耗时: {elapsed_time:.2f}秒, 文档数: {len(documents)}")
+        logger.info(
+            f"[{request_id}] 查询RAG文档列表成功, 耗时: {elapsed_time:.2f}秒, 文档数: {len(documents)}")
         return json({"status": "success", "message": "", "documents": [doc.dict() for doc in documents]})
     except Exception as e:
         error_detail = traceback.format_exc()
@@ -419,7 +436,8 @@ async def list_rag_document(request, body: ElasticSearchDocumentListRequest):
 @validate(json=ElasticsearchDocumentMetadataUpdateRequest)
 async def update_rag_document_metadata(request, body: ElasticsearchDocumentMetadataUpdateRequest):
     request_id = str(uuid.uuid4())[:8]
-    logger.info(f"[{request_id}] 更新文档元数据请求, 索引名: {body.index_name}, 过滤条件: {body.metadata_filter}")
+    logger.info(
+        f"[{request_id}] 更新文档元数据请求, 索引名: {body.index_name}, 过滤条件: {body.metadata_filter}")
     try:
         start_time = time.time()
         rag = ElasticSearchRag()

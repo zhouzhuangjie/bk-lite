@@ -81,14 +81,14 @@ def test_native_rag():
         index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX'),
         search_query="你好",
         size=20,
-        embed_model_base_url=os.getenv('TEST_INFERENCE_BASE_URL'),
-        embed_model_api_key=os.getenv('TEST_INFERENCE_TOKEN'),
-        embed_model_name=os.getenv('TEST_BCE_EMBED_MODEL'),
+        embed_model_base_url='local:huggingface_embedding:BAAI/bge-small-zh-v1.5',
+        embed_model_api_key="",
+        embed_model_name="bge-small-zh-v1.5",
         enable_rerank=True,
-        rerank_model_base_url=f'{os.getenv('TEST_INFERENCE_BASE_URL')}/rerank',
+        rerank_model_base_url='local:bce:maidalun1020/bce-reranker-base_v1',
         rerank_top_k=5,
-        rerank_model_api_key=os.getenv('TEST_INFERENCE_TOKEN'),
-        rerank_model_name=os.getenv('TEST_BCE_RERANK_MODEL'),
+        rerank_model_api_key="",
+        rerank_model_name="bce-reranker-base_v1",
     )
 
     result = rag.search(request)
@@ -129,9 +129,9 @@ def test_native_rag_with_local_models():
 
 def test_native_rag_with_segment_recall():
     rag = ElasticSearchRag()
-
+    rag.ingest(get_sample_request())
     request = ElasticSearchRetrieverRequest(
-        index_name='knowledge_base_1',
+        index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX'),
         search_query="rework",
         size=20,
         embed_model_base_url="local:huggingface_embedding:BAAI/bge-small-zh-v1.5",
@@ -143,13 +143,18 @@ def test_native_rag_with_segment_recall():
 
     result = rag.search(request)
     logger.info(result)
+    
+    delete_index_req = ElasticSearchIndexDeleteRequest(
+        index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX')
+    )
+    rag.delete_index(delete_index_req)
 
 
 def test_native_rag_with_origin_recall():
     rag = ElasticSearchRag()
-
+    rag.ingest(get_sample_request())
     request = ElasticSearchRetrieverRequest(
-        index_name='knowledge_base_1',
+        index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX'),
         search_query="rework",
         size=20,
         embed_model_base_url="local:huggingface_embedding:BAAI/bge-small-zh-v1.5",
@@ -161,3 +166,9 @@ def test_native_rag_with_origin_recall():
 
     result = rag.search(request)
     logger.info(f"召回数量: {len(result)}")
+    
+    delete_index_req = ElasticSearchIndexDeleteRequest(
+        index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX')
+    )
+    rag.delete_index(delete_index_req)
+    
