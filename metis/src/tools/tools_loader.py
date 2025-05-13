@@ -1,4 +1,5 @@
 from src.tools.jenkins_tools import list_jenkins_jobs, trigger_jenkins_build
+from src.tools.python_tools import python_analyze_repl
 from src.tools.search_tools import duckduckgo_search
 from src.tools.time_tools import get_current_time
 from src.tools.kubernetes_tools import (
@@ -15,6 +16,9 @@ ToolsMap = {
     'jenkins': [
         list_jenkins_jobs,
         trigger_jenkins_build
+    ],
+    'python_analyze_repl': [
+        python_analyze_repl
     ],
     'kubernetes': [
         get_kubernetes_namespaces,
