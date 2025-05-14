@@ -7,7 +7,7 @@ setup:
 
 install:
 	./.venv/bin/pip-compile -v ./requirements/requirements.in ./requirements/requirements-dev.in \
-		--output-file ./requirements/requirements.txt 
+		--output-file ./requirements.txt 
 	./.venv/bin/pip-sync -v
 
 release:
