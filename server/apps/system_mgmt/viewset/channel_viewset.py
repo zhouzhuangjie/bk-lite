@@ -44,7 +44,56 @@ class ChannelViewSet(viewsets.ModelViewSet, GenericViewSetFun):
         """获取用户有权限的组ID集合"""
         if getattr(user, "is_superuser", False):
             return None  # superuser 返回 None 表示有权限访问所有组
-        return {g["id"] for g in getattr(user, "group_list", [])}
+        group_ids = set()
+        for group in getattr(user, "group_list", []) or []:
+            group_id = group.get("id") if isinstance(group, dict) else group
+            try:
+                group_ids.add(int(group_id))
+            except (TypeError, ValueError):
+                continue
+        return group_ids
+
+    def _normalize_team_ids(self, team):
+        """将请求或模型中的 team 统一为 int ID 列表。"""
+        if team is None:
+            return []
+        if isinstance(team, (int, str)):
+            team = [team]
+
+        team_ids = []
+        for team_id in team:
+            try:
+                team_ids.append(int(team_id))
+            except (TypeError, ValueError):
+                continue
+        return team_ids
+
+    def _validate_request_team_permission(self, request, require_team=False):
+        """校验本次请求写入的 team 是否完全在用户组织范围内。"""
+        if getattr(request.user, "is_superuser", False):
+            return True, None
+
+        has_team = "team" in request.data
+        if not has_team:
+            if not require_team:
+                return True, None
+            loader = self._get_loader(request)
+            message = loader.get("error.channel_team_required", "请选择渠道所属组织")
+            return False, JsonResponse({"result": False, "message": message}, status=400)
+
+        requested_team_ids = set(self._normalize_team_ids(request.data.get("team")))
+        if not requested_team_ids:
+            loader = self._get_loader(request)
+            message = loader.get("error.channel_team_required", "请选择渠道所属组织")
+            return False, JsonResponse({"result": False, "message": message}, status=400)
+
+        user_group_ids = self._get_user_group_ids(request.user)
+        if requested_team_ids - user_group_ids:
+            loader = self._get_loader(request)
+            message = loader.get("error.no_permission_access_channel", "无权访问该渠道")
+            return False, JsonResponse({"result": False, "message": message}, status=403)
+
+        return True, None
 
     def _reject_if_opspilot_managed(self, request, channel):
         """OpsPilot 工作流自动托管的 NATS 通道禁止编辑/删除（防 API 绕过前端）。"""
@@ -72,7 +121,7 @@ class ChannelViewSet(viewsets.ModelViewSet, GenericViewSetFun):
             return True, None
 
         user_group_ids = self._get_user_group_ids(request.user)
-        channel_team_ids = set(channel.team or [])
+        channel_team_ids = set(self._normalize_team_ids(channel.team))
 
         # 检查渠道的 team 是否与用户的组有交集
         if not user_group_ids.intersection(channel_team_ids):
@@ -129,6 +178,10 @@ class ChannelViewSet(viewsets.ModelViewSet, GenericViewSetFun):
 
     @HasPermission("channel_list-Add")
     def create(self, request, *args, **kwargs):
+        is_valid, error_response = self._validate_request_team_permission(request, require_team=True)
+        if not is_valid:
+            return error_response
+
         response = super().create(request, *args, **kwargs)
 
         # 记录操作日志
@@ -144,6 +197,9 @@ class ChannelViewSet(viewsets.ModelViewSet, GenericViewSetFun):
         obj = self.get_object()
         # 校验用户是否有权限访问该渠道
         is_valid, error_response = self._validate_channel_permission(request, obj)
+        if not is_valid:
+            return error_response
+        is_valid, error_response = self._validate_request_team_permission(request, require_team=True)
         if not is_valid:
             return error_response
         readonly_response = self._reject_if_opspilot_managed(request, obj)
@@ -165,6 +221,9 @@ class ChannelViewSet(viewsets.ModelViewSet, GenericViewSetFun):
         obj = self.get_object()
         # 校验用户是否有权限访问该渠道
         is_valid, error_response = self._validate_channel_permission(request, obj)
+        if not is_valid:
+            return error_response
+        is_valid, error_response = self._validate_request_team_permission(request)
         if not is_valid:
             return error_response
         readonly_response = self._reject_if_opspilot_managed(request, obj)
