@@ -374,8 +374,6 @@ export default function SigninClient({
         qrcode: userData.qrcode || false,
       };
 
-      console.log('Completing authentication with user data:', userDataForAuth);
-
       if (userData.token) {
         saveAuthToken({
           id: userDataForAuth.id,
@@ -416,7 +414,6 @@ export default function SigninClient({
           thirdLoginFlag,
         );
 
-        console.log('SignIn successful, redirecting to:', targetUrl);
         finishAuthentication(targetUrl);
       } else {
         console.error('SignIn failed with unknown error');
