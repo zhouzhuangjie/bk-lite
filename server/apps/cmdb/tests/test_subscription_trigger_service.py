@@ -58,6 +58,8 @@ def make_rule(**kw):
 
 
 def make_change_record(model_id, inst_id, before, after, created_at, type=UPDATE_INST):
+    before = {"organization": [1], **before} if before else before
+    after = {"organization": [1], **after} if after else after
     rec = ChangeRecord.objects.create(
         model_id=model_id,
         inst_id=inst_id,
@@ -447,3 +449,211 @@ class TestUpdateSnapshot:
         svc._update_snapshot({"instances": []}, timezone.now())
         rule.refresh_from_db()
         assert rule.last_triggered_at is None
+
+
+class TestOrganizationScope:
+    def test_主实例查询仅使用规则所属组织(self, mocker, patch_model_info):
+        rule = make_rule(
+            name="scope_current",
+            organization=7,
+            instance_filter={"instance_ids": [1, 2]},
+        )
+        instance_list = mocker.patch(
+            "apps.cmdb.services.subscription_trigger.InstanceManage.instance_list",
+            return_value=([{"_id": 1}], 1),
+        )
+
+        SubscriptionTriggerService(rule)._get_current_instances()
+
+        assert instance_list.call_args.kwargs["permission_map"] == {
+            7: {"permission_instances_map": {}, "inst_names": []}
+        }
+
+    def test_关联实例裁剪到规则所属组织(self, mocker, patch_model_info):
+        rule = make_rule(name="scope_relation", organization=7)
+        mocker.patch(
+            "apps.cmdb.services.subscription_trigger.InstanceManage.instance_association_map",
+            return_value={1: [10, 11]},
+        )
+        instance_list = mocker.patch(
+            "apps.cmdb.services.subscription_trigger.InstanceManage.instance_list",
+            return_value=([{"_id": 10}], 1),
+        )
+
+        relation_map, failed_ids = SubscriptionTriggerService(rule)._get_relation_instances(
+            [1], "switch"
+        )
+
+        assert relation_map == {1: [10]}
+        assert failed_ids == set()
+        assert instance_list.call_args.kwargs["permission_map"] == {
+            7: {"permission_instances_map": {}, "inst_names": []}
+        }
+
+    def test_关联查询降级后仍裁剪到规则所属组织(
+        self, mocker, patch_model_info
+    ):
+        rule = make_rule(name="scope_relation_fallback", organization=7)
+        mocker.patch(
+            "apps.cmdb.services.subscription_trigger.InstanceManage.instance_association_map",
+            side_effect=RuntimeError("batch unavailable"),
+        )
+        mocker.patch(
+            "apps.cmdb.services.subscription_trigger.InstanceManage.instance_association",
+            return_value=[
+                {"src_model_id": "switch", "src_inst_id": 10},
+                {"src_model_id": "switch", "src_inst_id": 11},
+            ],
+        )
+        instance_list = mocker.patch(
+            "apps.cmdb.services.subscription_trigger.InstanceManage.instance_list",
+            return_value=([{"_id": 10}], 1),
+        )
+
+        relation_map, failed_ids = SubscriptionTriggerService(
+            rule
+        )._get_relation_instances([1], "switch")
+
+        assert relation_map == {1: [10]}
+        assert failed_ids == set()
+        assert instance_list.call_args.kwargs["permission_map"] == {
+            7: {"permission_instances_map": {}, "inst_names": []}
+        }
+
+    def test_旧快照首轮只重建组织范围基线(self, mocker, patch_model_info):
+        rule = make_rule(
+            name="scope_legacy_snapshot",
+            organization=7,
+            trigger_types=[TriggerType.ATTRIBUTE_CHANGE.value],
+            trigger_config={"attribute_change": {"fields": ["cpu"]}},
+            snapshot_data={"instances": [99]},
+        )
+        mocker.patch.object(
+            SubscriptionTriggerService,
+            "_get_current_instances",
+            return_value=[{"_id": 1, "inst_name": "本组织主机"}],
+        )
+        check_attribute_change = mocker.patch.object(
+            SubscriptionTriggerService,
+            "_check_attribute_change",
+            return_value=[
+                TriggerEvent(
+                    rule_id=rule.id,
+                    rule_name=rule.name,
+                    model_id=rule.model_id,
+                    model_name="主机",
+                    trigger_type=TriggerType.ATTRIBUTE_CHANGE.value,
+                    inst_id=99,
+                    inst_name="跨组织主机",
+                    change_summary="cpu: 1 → 2",
+                    triggered_at=timezone.now().isoformat(),
+                )
+            ],
+        )
+
+        events = SubscriptionTriggerService(rule).process()
+
+        assert events == []
+        check_attribute_change.assert_not_called()
+        rule.refresh_from_db()
+        assert rule.snapshot_data["scope_organization"] == 7
+        assert rule.snapshot_data["instances"] == [1]
+
+    def test_旧快照关联查询失败时等待恢复后再重建(
+        self, mocker, patch_model_info
+    ):
+        rule = make_rule(
+            name="scope_legacy_relation_retry",
+            organization=7,
+            trigger_types=[TriggerType.RELATION_CHANGE.value],
+            trigger_config={
+                "relation_change": {
+                    "related_models": [
+                        {"related_model": "switch", "fields": []}
+                    ]
+                }
+            },
+            snapshot_data={
+                "instances": [1],
+                "relations": {"1": {"switch": [99]}},
+            },
+        )
+        original_last_check = rule.last_check_time
+        mocker.patch.object(
+            SubscriptionTriggerService,
+            "_get_current_instances",
+            return_value=[{"_id": 1, "inst_name": "本组织主机"}],
+        )
+        mocker.patch.object(
+            SubscriptionTriggerService,
+            "_get_relation_instances",
+            side_effect=[
+                ({1: [10]}, {1}),
+                ({1: [11]}, set()),
+            ],
+        )
+
+        assert SubscriptionTriggerService(rule).process() == []
+        rule.refresh_from_db()
+        assert rule.snapshot_data == {
+            "instances": [1],
+            "relations": {"1": {"switch": [99]}},
+        }
+        assert rule.last_check_time == original_last_check
+
+        assert SubscriptionTriggerService(rule).process() == []
+        rule.refresh_from_db()
+        assert rule.snapshot_data["scope_organization"] == 7
+        assert rule.snapshot_data["relations"] == {"1": {"switch": [11]}}
+
+    def test_主实例迁出组织后不读取跨组织字段变化(
+        self, patch_model_info
+    ):
+        now = timezone.now()
+        rule = make_rule(
+            name="scope_moved_out",
+            organization=7,
+            trigger_config={"attribute_change": {"fields": ["cpu"]}},
+            last_check_time=now - timedelta(hours=1),
+            snapshot_data={
+                "instances": [1],
+                "scope_organization": 7,
+            },
+        )
+        make_change_record(
+            "host",
+            1,
+            {"organization": [7], "cpu": "1", "inst_name": "旧名称"},
+            {"organization": [9], "cpu": "2", "inst_name": "跨组织名称"},
+            now - timedelta(minutes=5),
+        )
+
+        events = SubscriptionTriggerService(rule)._check_attribute_change(
+            [], now
+        )
+
+        assert events == []
+
+    def test_关联实例迁出组织后不读取跨组织字段变化(
+        self, patch_model_info
+    ):
+        now = timezone.now()
+        rule = make_rule(
+            name="scope_related_moved_out",
+            organization=7,
+            last_check_time=now - timedelta(hours=1),
+        )
+        make_change_record(
+            "switch",
+            10,
+            {"organization": [7], "port": "1"},
+            {"organization": [9], "port": "2"},
+            now - timedelta(minutes=5),
+        )
+
+        change_map, count = SubscriptionTriggerService(
+            rule
+        )._build_related_change_map("switch", [10], {"port"}, now)
+
+        assert change_map == {}
+        assert count == 1

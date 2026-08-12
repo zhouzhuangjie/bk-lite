@@ -89,3 +89,15 @@ def check_subscription_manage_permission(
         return rule_organization in allowed_org_ids
 
     return rule_organization == current_team_id
+
+
+def build_subscription_scope_permission_map(
+    organization: int,
+) -> dict[int, dict[str, Any]]:
+    """构造资产订阅读取实例时使用的精确组织权限边界。"""
+    return {
+        int(organization): {
+            "permission_instances_map": {},
+            "inst_names": [],
+        }
+    }

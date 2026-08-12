@@ -75,6 +75,7 @@ def make_event(
     triggered_at="2026-06-24T08:00:00Z",
     model_name="主机",
     model_id="host",
+    scope_organization=1,
 ):
     return TriggerEvent(
         rule_id=rule_id,
@@ -86,6 +87,7 @@ def make_event(
         inst_name=inst_name,
         change_summary=change_summary,
         triggered_at=triggered_at,
+        scope_organization=scope_organization,
     )
 
 
@@ -229,12 +231,13 @@ class TestRelationChangeSummary:
 
     def test_有新增删除_替换为名称(self, mocker):
         summary = "关联模型[host]变化, 新增关联: [1], 删除关联: [2]"
-        mocker.patch.object(
+        name_map = mocker.patch.object(
             SubscriptionTaskService, "_get_instance_name_map", return_value={1: "主机1", 2: "主机2"},
         )
-        out = SubscriptionTaskService._format_relation_change_summary(summary)
+        out = SubscriptionTaskService._format_relation_change_summary(summary, 7)
         assert "新增关联: [主机1]" in out
         assert "删除关联: [主机2]" in out
+        name_map.assert_called_once_with("host", [1, 2], 7)
 
     def test_名称映射为空_原样返回(self, mocker):
         summary = "关联模型[host]变化, 新增关联: [1]"
@@ -251,18 +254,21 @@ class TestGetInstanceNameMap:
         assert SubscriptionTaskService._get_instance_name_map("host", []) == {}
 
     def test_正常构建_id到名称(self, mocker):
-        mocker.patch(
+        instance_list = mocker.patch(
             "apps.cmdb.services.subscription_task.InstanceManage.instance_list",
             return_value=([{"_id": 1, "inst_name": "主机1"}, {"_id": 2, "inst_name": "主机2"}, {"inst_name": "无id"},], 3,),  # 无 _id 跳过
         )
-        out = SubscriptionTaskService._get_instance_name_map("host", [1, 2])
+        out = SubscriptionTaskService._get_instance_name_map("host", [1, 2], 7)
         assert out == {1: "主机1", 2: "主机2"}
+        assert instance_list.call_args.kwargs["permission_map"] == {
+            7: {"permission_instances_map": {}, "inst_names": []}
+        }
 
     def test_查询异常返回空(self, mocker):
         mocker.patch(
             "apps.cmdb.services.subscription_task.InstanceManage.instance_list", side_effect=RuntimeError("db down"),
         )
-        assert SubscriptionTaskService._get_instance_name_map("host", [1]) == {}
+        assert SubscriptionTaskService._get_instance_name_map("host", [1], 7) == {}
 
 
 class TestDecodeAndGroup:
@@ -337,6 +343,10 @@ class TestCheckRules:
         deliveries = list(SubscriptionDelivery.objects.order_by("channel_id"))
         assert [delivery.channel_id for delivery in deliveries] == [10, 20]
         assert all(delivery.status == SubscriptionDeliveryStatus.PENDING for delivery in deliveries)
+        assert all(
+            delivery.events[0]["scope_organization"] == rule.organization
+            for delivery in deliveries
+        )
         assert kwargs["delivery_ids"] == [delivery.id for delivery in deliveries]
         assert "event_groups" not in kwargs
 
@@ -414,12 +424,14 @@ class TestSendNotifications:
         rule = SubscriptionRule.objects.create(
             name=f"send-rule-{attempt_count}", organization=1, model_id="host", recipients={"users": ["alice"]}, channel_ids=[10],
         )
+        event = make_event(rule_id=rule.id).to_dict()
+        event["scope_organization"] = rule.organization
         return SubscriptionDelivery.objects.create(
             dedupe_key=str(attempt_count).zfill(64),
             rule=rule,
             rule_id_snapshot=rule.id,
             trigger_type=TriggerType.ATTRIBUTE_CHANGE.value,
-            events=[make_event(rule_id=rule.id).to_dict()],
+            events=[event],
             recipients=rule.recipients,
             channel_id=10,
             attempt_count=attempt_count,
@@ -488,6 +500,22 @@ class TestSendNotifications:
         delivery.refresh_from_db()
         assert delivery.status == SubscriptionDeliveryStatus.FAILED
         assert delivery.last_error == "投递事件无法解码"
+        client.send_msg_with_channel.assert_not_called()
+
+    def test_旧投递缺少组织范围标记时拒绝发送(self, mocker):
+        delivery = self._create_delivery()
+        delivery.events[0].pop("scope_organization")
+        delivery.save(update_fields=["events"])
+        client = mocker.patch(
+            "apps.cmdb.services.subscription_task.SystemMgmt"
+        ).return_value
+        client.send_msg_with_channel.return_value = {"result": True}
+
+        SubscriptionTaskService.send_notifications(delivery_ids=[delivery.id])
+
+        delivery.refresh_from_db()
+        assert delivery.status == SubscriptionDeliveryStatus.FAILED
+        assert delivery.last_error == "投递事件缺少有效组织范围"
         client.send_msg_with_channel.assert_not_called()
 
     def test_发送租约过期后可由扫描任务恢复(self, mocker):

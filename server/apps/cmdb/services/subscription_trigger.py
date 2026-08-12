@@ -18,7 +18,10 @@ from apps.cmdb.models.change_record import (
 from apps.cmdb.models.subscription_rule import SubscriptionRule
 from apps.cmdb.services.instance import InstanceManage
 from apps.cmdb.services.model import ModelManage
-from apps.cmdb.utils.subscription_utils import truncate_value
+from apps.cmdb.utils.subscription_utils import (
+    build_subscription_scope_permission_map,
+    truncate_value,
+)
 from apps.core.logger import cmdb_logger as logger
 
 
@@ -50,6 +53,7 @@ class TriggerEvent:
     inst_name: str
     change_summary: str
     triggered_at: str
+    scope_organization: int | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -138,7 +142,12 @@ class SubscriptionTriggerService:
         logger.info(f"[Subscription] 当前实例集加载完成 rule_id={self.rule.id}, instances_count={len(instances)}")
         if not instances:
             self._update_snapshot(
-                {"instances": [], "relations": {}, "expiration_notified": {}},
+                {
+                    "instances": [],
+                    "relations": {},
+                    "expiration_notified": {},
+                    "scope_organization": self.rule.organization,
+                },
                 checkpoint,
             )
             logger.info(f"[Subscription] 当前实例为空，已更新快照 rule_id={self.rule.id}")
@@ -158,11 +167,38 @@ class SubscriptionTriggerService:
                     relation_failed_instance_ids_by_model[related_model],
                 ) = self._get_relation_instances(instance_ids, related_model)
 
+        previous_snapshot = self.rule.snapshot_data or {}
+        scope_changed = previous_snapshot.get(
+            "scope_organization"
+        ) != self.rule.organization
+        if scope_changed and any(
+            failed_instance_ids
+            for failed_instance_ids in relation_failed_instance_ids_by_model.values()
+        ):
+            # 迁移旧快照时不能复用来源不明的旧关联 ID。保留旧快照与
+            # 检查时间，等待关联查询恢复后再以完整的组织边界重建基线。
+            logger.warning(
+                "[Subscription] 旧快照迁移期间关联查询失败，保留旧快照并等待重试 "
+                f"rule_id={self.rule.id}, organization={self.rule.organization}"
+            )
+            return []
+
         current_snapshot = self._build_current_snapshot(
             instances,
             relation_maps_by_model,
             relation_failed_instance_ids_by_model,
         )
+        current_snapshot["scope_organization"] = self.rule.organization
+
+        if scope_changed:
+            # 旧快照可能包含跨组织实例。首次按新边界运行时只重建基线，
+            # 避免把被裁剪的旧实例误报为离开范围，或继续读取其变更记录。
+            self._update_snapshot(current_snapshot, checkpoint)
+            logger.info(
+                "[Subscription] 旧快照缺少有效组织范围，已按当前规则重建 "
+                f"rule_id={self.rule.id}, organization={self.rule.organization}"
+            )
+            return []
 
         if TriggerType.ATTRIBUTE_CHANGE.value in self.rule.trigger_types:
             self.events.extend(self._check_attribute_change(instances, checkpoint))
@@ -206,7 +242,7 @@ class SubscriptionTriggerService:
                 page=page,
                 page_size=page_size,
                 order="",
-                permission_map={},
+                permission_map=self._scope_permission_map(),
                 creator="",
             )
             all_instances.extend(data)
@@ -217,6 +253,39 @@ class SubscriptionTriggerService:
 
         return all_instances
 
+    def _scope_permission_map(self) -> dict[int, dict[str, Any]]:
+        """构造仅包含规则所属组织的实例读取边界。"""
+        return build_subscription_scope_permission_map(self.rule.organization)
+
+    def _scoped_instance_map(
+        self, model_id: str, instance_ids: list[int]
+    ) -> dict[int, dict[str, Any]]:
+        """按规则组织裁剪一组实例 ID，并返回可见实例。"""
+        normalized_ids = sorted({int(inst_id) for inst_id in instance_ids})
+        if not normalized_ids:
+            return {}
+
+        instances, _ = InstanceManage.instance_list(
+            model_id=model_id,
+            params=[
+                {
+                    "field": "id",
+                    "type": "id[]",
+                    "value": normalized_ids,
+                }
+            ],
+            page=1,
+            page_size=max(1, len(normalized_ids)),
+            order="",
+            permission_map=self._scope_permission_map(),
+            creator="",
+        )
+        return {
+            int(instance["_id"]): instance
+            for instance in instances
+            if instance.get("_id") is not None
+        }
+
     def _get_relation_instances(self, instance_ids: list[int], related_model: str) -> tuple[dict[int, list[int]], set[int]]:
         logger.info(f"[Subscription] 开始查询关联实例 rule_id={self.rule.id}, related_model={related_model}, instance_count={len(instance_ids)}")
         try:
@@ -225,6 +294,22 @@ class SubscriptionTriggerService:
                 instance_ids,
                 related_model=related_model,
             )
+            related_ids = [
+                related_id
+                for ids in relation_map.values()
+                for related_id in ids
+            ]
+            visible_ids = set(
+                self._scoped_instance_map(related_model, related_ids)
+            )
+            relation_map = {
+                int(instance_id): [
+                    int(related_id)
+                    for related_id in related_ids
+                    if int(related_id) in visible_ids
+                ]
+                for instance_id, related_ids in relation_map.items()
+            }
             logger.info(
                 f"[Subscription] 关联实例批量查询完成 rule_id={self.rule.id}, related_model={related_model}, relation_map_size={len(relation_map)}"
             )
@@ -255,6 +340,18 @@ class SubscriptionTriggerService:
                 elif rel.get("dst_model_id") == related_model:
                     related_ids.append(int(rel.get("dst_inst_id")))
             relation_map[inst_id] = sorted(list(set(related_ids)))
+        related_ids = [
+            related_id for ids in relation_map.values() for related_id in ids
+        ]
+        visible_ids = set(self._scoped_instance_map(related_model, related_ids))
+        relation_map = {
+            instance_id: [
+                related_id
+                for related_id in related_ids
+                if related_id in visible_ids
+            ]
+            for instance_id, related_ids in relation_map.items()
+        }
         logger.info(
             "[Subscription] 关联实例查询完成 "
             f"rule_id={self.rule.id}, relation_map_size={len(relation_map)}, "
@@ -372,6 +469,8 @@ class SubscriptionTriggerService:
         for record in related_change_records:
             before_data = record.before_data or {}
             after_data = record.after_data or {}
+            if not self._change_record_in_scope(before_data, after_data):
+                continue
             changed_fields = self._get_changed_fields(before_data, after_data)
             matched_fields = sorted(list(changed_fields & watch_fields)) if watch_fields else sorted(list(changed_fields))
             if not matched_fields:
@@ -386,6 +485,25 @@ class SubscriptionTriggerService:
                 continue
             related_change_map.setdefault(record.inst_id, []).append("字段变化: " + "; ".join(change_details))
         return related_change_map, len(related_change_records)
+
+    def _change_record_in_scope(
+        self, before_data: dict[str, Any], after_data: dict[str, Any]
+    ) -> bool:
+        """仅接受变更前后都明确属于规则组织的历史记录。"""
+        scope = int(self.rule.organization)
+        payloads = [payload for payload in (before_data, after_data) if payload]
+        if not payloads:
+            return False
+        for payload in payloads:
+            organizations = payload.get("organization")
+            if not isinstance(organizations, list) or scope not in {
+                int(organization)
+                for organization in organizations
+                if isinstance(organization, int)
+                or (isinstance(organization, str) and organization.isdigit())
+            }:
+                return False
+        return True
 
     def _build_related_inst_name_map(
         self,
@@ -407,21 +525,9 @@ class SubscriptionTriggerService:
 
         related_inst_name_map: dict[int, str] = {}
         try:
-            related_instances, _ = InstanceManage.instance_list(
-                model_id=related_model,
-                params=[
-                    {
-                        "field": "id",
-                        "type": "id[]",
-                        "value": related_instance_ids,
-                    }
-                ],
-                page=1,
-                page_size=max(1, len(related_instance_ids)),
-                order="",
-                permission_map={},
-                creator="",
-            )
+            related_instances = self._scoped_instance_map(
+                related_model, related_instance_ids
+            ).values()
             for related_inst in related_instances:
                 related_inst_id = related_inst.get("_id")
                 if related_inst_id is None:
@@ -514,6 +620,8 @@ class SubscriptionTriggerService:
         for record in records:
             before_data = record.before_data or {}
             after_data = record.after_data or {}
+            if not self._change_record_in_scope(before_data, after_data):
+                continue
             changed_fields = self._get_changed_fields(before_data, after_data)
             matched = sorted(list(changed_fields & watch_fields))
             if not matched:

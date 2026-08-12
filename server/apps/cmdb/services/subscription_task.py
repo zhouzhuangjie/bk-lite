@@ -14,6 +14,7 @@ from apps.cmdb.models.subscription_delivery import SubscriptionDelivery, Subscri
 from apps.cmdb.models.subscription_rule import SubscriptionRule
 from apps.cmdb.services.instance import InstanceManage
 from apps.cmdb.services.subscription_trigger import SubscriptionTriggerService, TriggerEvent
+from apps.cmdb.utils.subscription_utils import build_subscription_scope_permission_map
 from apps.cmdb.utils.subscription_utils import get_inst_display_name
 from apps.core.logger import cmdb_logger as logger
 from apps.rpc.system_mgmt import SystemMgmt
@@ -138,6 +139,10 @@ class SubscriptionTaskService:
         rule = SubscriptionRule.objects.filter(id=delivery.rule_id_snapshot, is_enabled=True,).first()
         if rule is None:
             raise ValueError("订阅规则不存在或已停用")
+        if any(
+            event.scope_organization != rule.organization for event in events
+        ):
+            raise ValueError("投递事件缺少有效组织范围")
 
         title, content = cls._build_notification_content(rule, events)
         receivers = cls._get_receivers_from_recipients(system_mgmt_client, delivery.recipients,)
@@ -164,7 +169,16 @@ class SubscriptionTaskService:
     def _persist_event_groups(cls, rule: SubscriptionRule, event_groups: list[dict[str, Any]],) -> list[int]:
         delivery_ids: list[int] = []
         for group in event_groups:
-            events = sorted(group.get("events", []), key=cls._canonical_json,)
+            events = sorted(
+                [
+                    {
+                        **event,
+                        "scope_organization": rule.organization,
+                    }
+                    for event in group.get("events", [])
+                ],
+                key=cls._canonical_json,
+            )
             for channel_id in rule.channel_ids:
                 dedupe_payload = {
                     "rule_id": rule.id,
@@ -360,12 +374,16 @@ class SubscriptionTaskService:
             return f"- {event.inst_name}"
 
         if trigger_type == TriggerType.RELATION_CHANGE.value:
-            return SubscriptionTaskService._format_relation_change_summary(summary)
+            return SubscriptionTaskService._format_relation_change_summary(
+                summary, event.scope_organization
+            )
 
         return summary
 
     @staticmethod
-    def _format_relation_change_summary(summary: str) -> str:
+    def _format_relation_change_summary(
+        summary: str, scope_organization: int | None = None
+    ) -> str:
         model_match = re.search(r"关联模型\[([^\]]+)\]变化", summary)
         if not model_match:
             return summary
@@ -381,7 +399,9 @@ class SubscriptionTaskService:
         if not all_ids:
             return summary
 
-        id_name_map = SubscriptionTaskService._get_instance_name_map(related_model, all_ids)
+        id_name_map = SubscriptionTaskService._get_instance_name_map(
+            related_model, all_ids, scope_organization
+        )
         if not id_name_map:
             return summary
 
@@ -414,8 +434,12 @@ class SubscriptionTaskService:
         return parsed_ids
 
     @staticmethod
-    def _get_instance_name_map(model_id: str, instance_ids: list[int]) -> dict[int, str]:
-        if not model_id or not instance_ids:
+    def _get_instance_name_map(
+        model_id: str,
+        instance_ids: list[int],
+        scope_organization: int | None = None,
+    ) -> dict[int, str]:
+        if not model_id or not instance_ids or scope_organization is None:
             return {}
         try:
             data, _ = InstanceManage.instance_list(
@@ -424,7 +448,9 @@ class SubscriptionTaskService:
                 page=1,
                 page_size=max(1, len(instance_ids)),
                 order="",
-                permission_map={},
+                permission_map=build_subscription_scope_permission_map(
+                    scope_organization
+                ),
                 creator="",
             )
         except Exception as exc:

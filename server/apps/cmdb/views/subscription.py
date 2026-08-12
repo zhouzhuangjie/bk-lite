@@ -10,6 +10,8 @@ from rest_framework.decorators import action
 
 from config.drf.pagination import CustomPageNumberPagination
 from apps.core.utils.team_utils import get_current_team
+from apps.core.utils.current_team_scope import validate_assignable_organizations
+from apps.core.exceptions.base_app_exception import BaseAppException
 
 
 class SubscriptionViewSet(viewsets.ModelViewSet):
@@ -67,6 +69,17 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        try:
+            validate_assignable_organizations(
+                request, [serializer.validated_data["organization"]]
+            )
+        except BaseAppException:
+            return WebUtils.response_403("无权在目标组织创建订阅")
+        target_rule = SubscriptionRule(
+            organization=serializer.validated_data["organization"]
+        )
+        if not self._check_manage_permission(target_rule, request):
+            return WebUtils.response_403("仅可在当前组织或下级组织创建订阅")
         serializer.save(
             created_by=request.user.username,
             updated_by=request.user.username,
@@ -83,6 +96,20 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
         partial = kwargs.pop("partial", False)
         serializer = self.get_serializer(rule, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
+        target_organization = serializer.validated_data.get(
+            "organization", rule.organization
+        )
+        try:
+            validate_assignable_organizations(
+                request, [rule.organization, target_organization]
+            )
+        except BaseAppException:
+            return WebUtils.response_403("无权将订阅调整到目标组织")
+        target_rule = SubscriptionRule(
+            organization=target_organization
+        )
+        if not self._check_manage_permission(target_rule, request):
+            return WebUtils.response_403("仅可将订阅调整到当前组织或下级组织")
         serializer.save(
             updated_by=request.user.username, updated_by_domain=request.user.domain
         )
