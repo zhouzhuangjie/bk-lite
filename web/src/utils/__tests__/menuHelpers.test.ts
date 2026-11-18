@@ -7,6 +7,7 @@ import {
   isMenuPathMatch,
   isPathCoveredByMenus,
   resolveMenuIcon,
+  resolveSegmentedSelectedUrl,
 } from '../menuHelpers';
 import type { MenuItem } from '@/types/index';
 
@@ -350,4 +351,11 @@ describe('integration center second-layer tabs', () => {
     ).filter((item) => !item.isNotMenuItem);
     expect(tabs.map((item) => item.name)).toEqual(['integration_instances', 'provider_packs']);
   });
+});
+
+it('ITSM 详情选中最近的列表页签，避免短前缀抢占', () => {
+  const items = [menu({url:'/itsm/form',name:'form'}), menu({url:'/itsm/form/tables',name:'data'}), menu({url:'/itsm/form/integrations',name:'data'})];
+  expect(resolveSegmentedSelectedUrl('/itsm/form/tables/3', items)).toBe('/itsm/form/tables');
+  expect(resolveSegmentedSelectedUrl('/itsm/form/integrations/13/configure', items)).toBe('/itsm/form/integrations');
+  expect(resolveSegmentedSelectedUrl('/itsm/form/tables-extra', items)).toBe('/itsm/form');
 });
